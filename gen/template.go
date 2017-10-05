@@ -291,6 +291,46 @@ func (c *j{{.current.Name}}SelectBuilder) Where(query interface{}, value ...inte
 	c.SelectBuilder.Where(query, value...)
 	return c
 }
+//GroupBy returns a j{{.current.Name}}SelectBuilder instead of builder.SelectBuilder.
+func (c *j{{.current.Name}}SelectBuilder) GroupBy(col ...string) *j{{.current.Name}}SelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+//Having returns a j{{.current.Name}}SelectBuilder instead of builder.SelectBuilder.
+func (c *j{{.current.Name}}SelectBuilder) Having(query interface{}, value ...string) *j{{.current.Name}}SelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+//Limit returns a j{{.current.Name}}SelectBuilder instead of builder.SelectBuilder.
+func (c *j{{.current.Name}}SelectBuilder) Limit(n uint64) *j{{.current.Name}}SelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+//Offset returns a j{{.current.Name}}SelectBuilder instead of builder.SelectBuilder.
+func (c *j{{.current.Name}}SelectBuilder) Offset(n uint64) *j{{.current.Name}}SelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+//OrderAsc returns a j{{.current.Name}}SelectBuilder instead of builder.SelectBuilder.
+func (c *j{{.current.Name}}SelectBuilder) OrderAsc(col string) *j{{.current.Name}}SelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+//OrderDesc returns a j{{.current.Name}}SelectBuilder instead of builder.SelectBuilder.
+func (c *j{{.current.Name}}SelectBuilder) OrderDesc(col string) *j{{.current.Name}}SelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+//OrderDir returns a j{{.current.Name}}SelectBuilder instead of builder.SelectBuilder.
+func (c *j{{.current.Name}}SelectBuilder) OrderDir(col string, isAsc bool) *j{{.current.Name}}SelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+//OrderBy returns a j{{.current.Name}}SelectBuilder instead of builder.SelectBuilder.
+func (c *j{{.current.Name}}SelectBuilder) OrderBy(col string) *j{{.current.Name}}SelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
 //Join returns a j{{.current.Name}}SelectBuilder instead of builder.SelectBuilder.
 func (c *j{{.current.Name}}SelectBuilder) Join(table, on interface{}) *j{{.current.Name}}SelectBuilder {
 	c.SelectBuilder.Join(table, on)
