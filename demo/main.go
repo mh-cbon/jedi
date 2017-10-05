@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -25,7 +26,7 @@ func main() {
 
 	defer func() {
 		if driver == "sqlite3" {
-			// os.Remove(dsn)
+			os.Remove(dsn)
 		}
 	}()
 
@@ -75,14 +76,6 @@ func t2(sess *dbr.Session) {
 			JoinBrand(qBrand.Alias()).
 			JoinBrand2(qBrand2.Alias()).
 			Where(dbr.Or(qBrand2.ID.Eq(1), qBrand.ID.Eq(1))).
-			String(),
-	)
-	log.Println(
-		qProduct.Select(m.Fields()...).
-			JoinBrand(qBrand.Alias()).
-			Where(qBrand.ID.In(
-				JBrand(sess).Select(JBrandModel.ID.Name()).Where(JBrandModel.Name.Like("r")).String(),
-			)).
 			String(),
 	)
 	p1 := &Product{SKU: "test"}
