@@ -15,9 +15,9 @@ type Struct struct {
 	Name           string
 	IsAutoGoType   bool
 	Fields         []*Field
-	// TableVar  string
 }
 
+//Pks returns only primary keys
 func (s *Struct) Pks() []*Field {
 	ret := []*Field{}
 	for _, a := range s.Fields {
@@ -27,6 +27,8 @@ func (s *Struct) Pks() []*Field {
 	}
 	return ret
 }
+
+//GetFieldByName finds the property with given name
 func (s *Struct) GetFieldByName(n string) *Field {
 	for _, a := range s.Fields {
 		if a.Name == n {
@@ -50,6 +52,7 @@ type Field struct {
 	IsNullable bool
 }
 
+// IsStar returns true if the go type is pointer
 func (f *Field) IsStar() bool {
 	return strings.HasPrefix(f.GoType, "*")
 }

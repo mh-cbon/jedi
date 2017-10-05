@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
+	"log"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -25,7 +25,7 @@ func main() {
 
 	defer func() {
 		if driver == "sqlite3" {
-			os.Remove(dsn)
+			// os.Remove(dsn)
 		}
 	}()
 
@@ -54,6 +54,66 @@ func main() {
 
 func t2(sess *dbr.Session) {
 
+	qProduct := JProduct(sess).As("test")
+	m := qProduct.Model()
+	log.Println(
+		m.ID.Aliased(),
+	)
+	log.Println(
+		JProductModel.ID.Aliased(),
+	)
+	log.Println(
+		qProduct.Select(m.Fields()...).String(),
+	)
+	log.Println(
+		qProduct.Select(m.Fields()...).JoinBrand("").String(),
+	)
+	qBrand := JBrand(sess).As("b").Model()
+	qBrand2 := JBrand(sess).As("b2").Model()
+	log.Println(
+		qProduct.Select(m.Fields()...).
+			JoinBrand(qBrand.Alias()).
+			JoinBrand2(qBrand2.Alias()).
+			Where(dbr.Or(qBrand2.ID.Eq(1), qBrand.ID.Eq(1))).
+			String(),
+	)
+	log.Println(
+		qProduct.Select(m.Fields()...).
+			JoinBrand(qBrand.Alias()).
+			Where(qBrand.ID.In(
+				JBrand(sess).Select(JBrandModel.ID.Name()).Where(JBrandModel.Name.Like("r")).String(),
+			)).
+			String(),
+	)
+	p1 := &Product{SKU: "test"}
+	p2 := &Product{SKU: "test1"}
+	b1 := &Brand{Name: "b1"}
+	b2 := &Brand{Name: "b2r"}
+	p1.SetBrand(b1)
+	p2.SetBrand(b2)
+	_, err := JBrand(sess).Insert(b1, b2)
+	fail(err)
+	_, err = JProduct(sess).Insert(p1, p2)
+	fail(err)
+	log.Println(
+		JBrand(sess).Select(JBrandModel.ID.Name()).Where(JBrandModel.Name.Like("r")).String(),
+	)
+	x, err3 := JBrand(sess).Select(JBrandModel.ID.Name()).Where(JBrandModel.Name.Like("r")).ReturnInt64()
+	fail(err3)
+	log.Println(x)
+
+	log.Println(
+		qProduct.Select(m.Fields()...).
+			LeftJoinBrand(qBrand.Alias()).
+			Where(qBrand.Name.Like("r")).
+			String(),
+	)
+	products, err2 := qProduct.Select(m.Fields()...).
+		LeftJoinBrand(qBrand.Alias()).
+		Where(qBrand.Name.Like("r")).
+		ReadAll()
+	fail(err2)
+	log.Println(products[0].SKU)
 }
 
 func t1(sess *dbr.Session) {

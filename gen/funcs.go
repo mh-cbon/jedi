@@ -1,41 +1,24 @@
 package gen
 
 import (
-	"bytes"
 	"strings"
 
+	"github.com/mh-cbon/jedi/drivers"
 	"github.com/mh-cbon/jedi/model"
 )
 
-func findStruct(all []*model.Struct, n string) *model.Struct {
-	if strings.Index(n, ".") > -1 {
-		n = strings.Split(n, ".")[0]
-	}
-	for _, a := range all {
-		if a.Name == n {
-			return a
-		}
-	}
-	return nil
-}
-
-func findProp(all []*model.Struct, n string) *model.Field {
-	var nprop string
-	if strings.Index(n, ".") == -1 {
-		return nil
-	}
-	nprop = strings.Split(n, ".")[1]
-	n = strings.Split(n, ".")[0]
-	for _, a := range all {
-		if a.Name == n {
-			for _, f := range a.Fields {
-				if f.Name == nprop {
-					return f
-				}
+func findLocals(all []*model.Struct, s *model.Struct, f *model.Field) []*model.Field {
+	var ret []*model.Field
+	if f.HasOne != "" {
+		foreign := model.FindStruct(all, f.HasOne)
+		for _, pk := range foreign.Pks() {
+			local := s.GetFieldByName(strings.Title(f.Name) + "" + pk.Name)
+			if local != nil {
+				ret = append(ret, local)
 			}
 		}
 	}
-	return nil
+	return ret
 }
 
 func itemGoType(s string) string {
@@ -80,8 +63,9 @@ var funcs = map[string]interface{}{
 		return a
 	},
 	"itemGoType": itemGoType,
-	"findStruct": findStruct,
-	"findProp":   findProp,
+	"findStruct": model.FindStruct,
+	"findProp":   model.FindProp,
+	"findLocals": findLocals,
 	"notPk": func(fields []*model.Field) []*model.Field {
 		var ret []*model.Field
 		for _, c := range fields {
@@ -127,28 +111,136 @@ var funcs = map[string]interface{}{
 		}
 		return ret
 	},
-	"isHasMany2Many": func(fields []*model.Field) []*model.Field {
+	"isHasMany2Many": func(all []*model.Struct, fields []*model.Field) []*model.Field {
 		var ret []*model.Field
 		for _, c := range fields {
-			if c.IsPk == true {
-				ret = append(ret, c)
+			if c.HasMany != "" {
+				foreign := model.FindProp(all, c.HasMany)
+				if foreign == nil {
+					ret = append(ret, c)
+				} else if foreign.HasMany != "" {
+					ret = append(ret, c)
+				}
 			}
 		}
 		return ret
 	},
-	"isHasMany2One": func(fields []*model.Field) []*model.Field {
+	"isHasMany2One": func(all []*model.Struct, fields []*model.Field) []*model.Field {
 		var ret []*model.Field
 		for _, c := range fields {
-			if c.IsPk == true {
-				ret = append(ret, c)
+			if c.HasMany != "" {
+				foreign := model.FindProp(all, c.HasMany)
+				if foreign != nil && foreign.HasOne != "" {
+					ret = append(ret, c)
+				}
 			}
 		}
+		return ret
+	},
+	"getHasOne": func(all []*model.Struct, aboutStruct *model.Struct, aboutField *model.Field) *model.HasOne {
+		var ret *model.HasOne
+
+		foreign := model.FindStruct(all, aboutField.HasOne)
+		if foreign == nil {
+			return ret
+		}
+		foreignProp := model.FindProp(all, aboutField.HasOne)
+		if foreignProp == nil {
+			return ret
+		}
+
+		ret = &model.HasOne{
+			Local:   aboutStruct,
+			Foreign: foreign,
+		}
+
+		for _, pk := range foreign.Pks() {
+			j := &model.JoinFields{
+				LocalField:   aboutStruct.GetFieldByName(strings.Title(aboutField.Name) + pk.Name),
+				ForeignField: pk,
+			}
+			ret.Fields = append(ret.Fields, j)
+		}
+
+		return ret
+	},
+	"getMany2One": func(all []*model.Struct, aboutStruct *model.Struct, aboutField *model.Field) *model.Many2One {
+		var ret *model.Many2One
+
+		foreign := model.FindStruct(all, aboutField.HasMany)
+		if foreign == nil {
+			return ret
+		}
+		foreignProp := model.FindProp(all, aboutField.HasMany)
+		if foreignProp == nil {
+			return ret
+		}
+
+		ret = &model.Many2One{
+			Local:   aboutStruct,
+			Foreign: foreign,
+		}
+
+		for _, pk := range aboutStruct.Pks() {
+			j := &model.JoinFields{
+				LocalField:   pk,
+				ForeignField: foreign.GetFieldByName(strings.Title(foreignProp.Name) + pk.Name),
+			}
+			ret.Fields = append(ret.Fields, j)
+		}
+
+		return ret
+	},
+	"getMany2Many": func(all []*model.Struct, aboutStruct *model.Struct, aboutField *model.Field) *model.Many2Many {
+		var ret *model.Many2Many
+
+		foreign := model.FindStruct(all, aboutField.HasMany)
+		if foreign == nil {
+			return ret
+		}
+		foreignProp := model.FindProp(all, aboutField.HasMany)
+		if foreignProp == nil {
+			return ret
+		}
+
+		n := model.HasMany2ManyGoTypeName(aboutStruct, foreign, aboutField, foreignProp)
+		ret = &model.Many2Many{
+			Local:   aboutStruct,
+			Foreign: foreign,
+			Middle:  model.FindStruct(all, n),
+		}
+
+		for _, pk := range ret.Local.Pks() {
+			j := &model.JoinFields{
+				LocalField:   pk,
+				ForeignField: ret.Middle.GetFieldByName(strings.Title(aboutStruct.Name) + pk.Name),
+			}
+			ret.LMFields = append(ret.LMFields, j)
+		}
+
+		for _, pk := range ret.Foreign.Pks() {
+			j := &model.JoinFields{
+				LocalField:   pk,
+				ForeignField: ret.Middle.GetFieldByName(strings.Title(foreign.Name) + pk.Name),
+			}
+			ret.FMFields = append(ret.FMFields, j)
+		}
+
 		return ret
 	},
 	"withSQLType": func(fields []*model.Field) []*model.Field {
 		var ret []*model.Field
 		for _, c := range fields {
 			if c.SQLType != "" {
+				ret = append(ret, c)
+			}
+		}
+		return ret
+	},
+	"withoutSQLType": func(fields []*model.Field) []*model.Field {
+		var ret []*model.Field
+		for _, c := range fields {
+			if c.SQLType == "" {
 				ret = append(ret, c)
 			}
 		}
@@ -215,7 +307,7 @@ var funcs = map[string]interface{}{
 		ret := []string{}
 		for _, c := range fields {
 			if c.IsPk {
-				ret = append(ret, c.SQLName+" "+c.GoType)
+				ret = append(ret, c.Name+" "+c.GoType)
 			}
 		}
 		return strings.Join(ret, ",")
@@ -235,9 +327,12 @@ var funcs = map[string]interface{}{
 		for _, f := range s.Fields {
 			if f.SQLType != "" {
 				cols += f.SQLName
+				if f.IsPk && driver == drivers.Mysql && f.SQLType == "TEXT" {
+					f.SQLType = "VARCHAR(255)"
+				}
 				cols += " " + f.SQLType
 				if f.IsPk {
-					if driver == "sqlite3" {
+					if driver == drivers.Sqlite {
 						if f.IsAI && f.IsPk {
 							cols += " PRIMARY KEY"
 						} else {
@@ -246,7 +341,7 @@ var funcs = map[string]interface{}{
 						if f.IsAI {
 							cols += " AUTOINCREMENT"
 						}
-					} else if driver == "mysql" {
+					} else if driver == drivers.Mysql {
 						hasPk = append(hasPk, f.SQLName)
 						cols += " NOT NULL"
 						if f.IsAI {
@@ -257,7 +352,7 @@ var funcs = map[string]interface{}{
 				cols += ",\n"
 			}
 		}
-		if driver == "mysql" && len(hasPk) > 0 {
+		if driver == drivers.Mysql && len(hasPk) > 0 {
 			cols += "PRIMARY KEY (" + strings.Join(hasPk, ",") + ") ,\n"
 		} else if driver == "sqlite3" && len(hasPk) > 0 {
 			cols += "PRIMARY KEY (" + strings.Join(hasPk, ",") + ") ,\n"
@@ -276,15 +371,5 @@ var funcs = map[string]interface{}{
 	},
 	"dropView": func(driver string, s model.Struct) string {
 		return "DROP VIEW IF EXISTS " + s.SQLName
-	},
-	"printHelperDecl": func(field model.Field) (string, error) {
-		var out bytes.Buffer
-		err := HelpersDecl.Execute(&out, field)
-		return (&out).String(), err
-	},
-	"printHelperBody": func(field model.Field) (string, error) {
-		var out bytes.Buffer
-		err := HelpersBody.Execute(&out, field)
-		return (&out).String(), err
 	},
 }

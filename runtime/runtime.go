@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gocraft/dbr"
+	"github.com/gocraft/dbr/dialect"
 	"github.com/mh-cbon/jedi/drivers"
 )
 
@@ -30,14 +31,16 @@ func Setup(conn *dbr.Connection, force bool) error {
 	return nil
 }
 
+// Setuper can create/drop tables.
 type Setuper interface {
 	Create(db *dbr.Connection) error
 	Drop(db *dbr.Connection) error
 }
 
+// Setupable returns a Setuper
 type Setupable func() Setuper
 
-// Setup the current driver at runtime
+// Register the current driver at runtime
 func Register(m ...Setupable) {
 	toSetup = append(toSetup, m...)
 }
@@ -48,4 +51,17 @@ func GetCurrentDriver() string {
 		panic("Did you configured jedi ? See drivers.Setup()")
 	}
 	return CurrentDriver
+}
+
+// GetDialect returns current dbr dialct
+func GetDialect() dbr.Dialect {
+	switch GetCurrentDriver() {
+	case drivers.Sqlite:
+		return dialect.SQLite3
+	case drivers.Mysql:
+		return dialect.MySQL
+	case drivers.Pgsql:
+		return dialect.PostgreSQL
+	}
+	return nil
 }

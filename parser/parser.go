@@ -133,14 +133,16 @@ func Parse(file string) ([]*model.Struct, error) {
 			if f.HasOne != "" {
 				foreign := findStruct(res, f.HasOne)
 				if foreign == nil {
-					log.Printf("has_one not found %#v in %#v\n", f.HasOne, r.Name)
+					log.Printf("jedi: has_one not found %#v in %#v\n", f.HasOne, r.Name)
 					continue
 				}
 				for _, pk := range foreign.Pks() {
-					if g := r.GetFieldByName(f.HasOne + pk.Name); g == nil {
-						log.Printf("missing field %#v on %#v\n", pk.Name, r.Name)
+					rRequiredField := strings.Title(f.Name) + pk.Name
+					if g := r.GetFieldByName(rRequiredField); g == nil {
+						log.Printf("jedi: missing field %v.%v it has_one=%v, so it needs a field named %v\n",
+							r.Name, rRequiredField, f.HasOne, rRequiredField)
 					} else if g.IsStar() != f.IsStar() {
-						log.Printf("incompatible fields, must be go pointer or value, not both, %#v on %#v\n", g.Name, r.Name)
+						log.Printf("jedi: incompatible fields %q / %q in %q, must be both go pointer or both value\n", g.Name, f.Name, r.Name)
 					}
 				}
 			}
@@ -155,43 +157,35 @@ func Parse(file string) ([]*model.Struct, error) {
 				if strings.Index(f.HasMany, ".") == -1 {
 					foreign := findStruct(res, f.HasMany)
 					if foreign == nil {
-						log.Printf("has_many not found %#v in %#v\n", f.HasMany, r.Name)
+						log.Printf("jedi: has_many not found %q in %q\n", f.HasMany, r.Name)
 						continue
 					}
 
 				} else {
 					foreignProp := findProp(res, f.HasMany)
-					if foreignProp == nil {
-						log.Printf("has_many not found %#v in %#v\n", f.HasMany, r.Name)
-						continue
-					}
+					foreign := findStruct(res, f.HasMany)
 					if foreignProp.HasMany != "" {
-						nLeft := r.Name + "." + f.Name
-						n := hasManyTableName(nLeft, f.HasMany)
-						if _, ok := todos[n]; ok == false {
-							if foreignProp.On != "" && f.On != "" && f.On != foreignProp.On {
-								log.Printf("has_many with different On target %#v Vs %#v\n", f.On, foreignProp.On)
-							}
-							gType := f.On
-							if gType == "" {
-								gType = foreignProp.On
-							}
-							IsAutoGoType := false
-							if gType == "" {
-								IsAutoGoType = true
-								gType = hasManyGoTypeName(nLeft, f.HasMany)
-							}
+						IsAutoGoType := foreignProp.On == "" && f.On == ""
+						if !IsAutoGoType && f.On != foreignProp.On {
+							log.Printf("jedi: has_many with different 'On' target %v.%v @on=%v Vs %v.%v @on=%v\n",
+								r.Name, f.Name, f.On, foreign.Name, foreignProp.Name, foreignProp.Name)
+						}
+
+						gType := model.HasMany2ManyGoTypeName(r, foreign, f, foreignProp)
+						if _, ok := todos[gType]; ok == false {
 							if IsAutoGoType {
-								todos[n] = &model.Struct{
-									SQLName:      n,
+								todos[gType] = &model.Struct{
+									SQLName:      model.HasMany2ManyTableName(r, foreign, f, foreignProp),
 									Name:         gType,
 									IsAutoGoType: IsAutoGoType,
 								}
-								hasManyAddColumns(todos[n], r, findStruct(res, f.HasMany), f, foreignProp)
+								hasManyAddColumns(todos[gType], r, foreign, f, foreignProp)
 							}
 						}
-					} else if foreignProp.HasOne != "" {
-						//-
+					} else if foreignProp.HasOne == "" {
+						log.Printf("jedi: remote target %v.%v is missing a reverse has_many property to %v.%v such as @has_many=%v\n",
+							foreign.Name, foreignProp.Name, r.Name, f.Name, f.HasMany)
+
 					}
 				}
 			}
@@ -271,29 +265,6 @@ func findProp(all []*model.Struct, n string) *model.Field {
 	return nil
 }
 
-func hasManyGoTypeName(left, right string) string {
-	var n string
-	if left > right {
-		n = right + "To" + left
-	} else {
-		n = left + "To" + right
-	}
-	sName := strings.Replace(n, ".", "", -1)
-	return sName
-}
-
-func hasManyTableName(left, right string) string {
-	var n string
-	if left > right {
-		n = right + "_" + left
-	} else {
-		n = left + "_" + right
-	}
-	sName := strings.ToLower(n)
-	sName = strings.Replace(sName, ".", "_", -1)
-	return sName
-}
-
 func parseStructTypeSpec(ts *ast.TypeSpec, str *ast.StructType) (*model.Struct, error) {
 	res := &model.Struct{
 		Name: ts.Name.Name,
@@ -370,12 +341,14 @@ func parseStructFieldTag(tag string) (sqlName string, props map[string]string) {
 		"has_one":  "",
 		"on":       "",
 	}
+
 	parts := strings.Split(tag, ",")
 	if len(parts) == 0 || len(parts) > 2 {
 		return
 	}
 
 	for _, p := range parts {
+		p = strings.TrimSpace(p)
 		if strings.HasPrefix(p, "@") && len(p) > 1 {
 			u := strings.Split(p[1:], "=")
 			if len(u) > 1 {
@@ -453,7 +426,7 @@ func strSQLType(x ast.Expr) string {
 		case "string":
 			return "TEXT"
 		}
-		return s
+		return ""
 	case *ast.BasicLit:
 		return t.Value
 	default:
