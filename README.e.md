@@ -179,9 +179,9 @@ JTodoModel.ID.IsAI()
 // more in the documentation
 ```
 
-# Jedi crud
+# Jedi CRUD
 
-`jedi` provides CRUD and more via a specialized querier type.
+`jedi` provides `CRUD` and more via a specialized querier type.
 
 ```go
 type jTodoQuerier struct {

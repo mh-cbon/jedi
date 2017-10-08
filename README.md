@@ -32,7 +32,7 @@ __"✔/-"__ are items in progress, check the [CI](https://travis-ci.org/mh-cbon/
 - [Jedi setup](#jedi-setup)
   - [Schema](#schema)
 - [Jedi model](#jedi-model)
-- [Jedi crud](#jedi-crud)
+- [Jedi CRUD](#jedi-crud)
   - [Find](#find)
   - [Insert](#insert)
   - [Update](#update)
@@ -212,9 +212,9 @@ JTodoModel.ID.IsAI()
 // more in the documentation
 ```
 
-# Jedi crud
+# Jedi CRUD
 
-`jedi` provides CRUD and more via a specialized querier type.
+`jedi` provides `CRUD` and more via a specialized querier type.
 
 ```go
 type jTodoQuerier struct {
