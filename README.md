@@ -29,8 +29,8 @@ __"✔/-"__ are items in progress, check the [CI](https://travis-ci.org/mh-cbon/
 - [Install](#install)
 - [Implementing a model](#implementing-a-model)
   - [Declaration](#declaration)
-  - [Schema](#schema)
 - [Jedi setup](#jedi-setup)
+  - [Schema](#schema)
 - [Jedi model](#jedi-model)
 - [Jedi crud](#jedi-crud)
   - [Find](#find)
@@ -97,6 +97,40 @@ Run `go generate [package]` to generate the helpers.
 
 The generated go code is written into files such as `<original file name>_jedi.go`.
 
+# Jedi setup
+
+Every `jedi` types is automatically registered at runtime.
+
+Call `jedi.Setup(conn, forceSchemaReset)` to setup jedi driver and schema at runtime.
+
+When `forceSchemaReset=true` the schema is dropped then created.
+
+```go
+package main
+
+import (
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/gocraft/dbr"
+	jedi "github.com/mh-cbon/jedi/runtime"
+)
+
+func main () {
+	dsn := "schema.db"
+	conn, err := dbr.Open("sqlite3", dsn, nil)
+	if err != nil {
+		t.Fatalf("Connection setup failed: %v", err)
+	}
+	defer conn.Close()
+	defer os.Remove(dsn)
+
+	forceSchemaReset := true
+	if err := jedi.Setup(conn, forceSchemaReset); err != nil {
+		panic(err)
+	}
+	//...
+}
+```
+
 ## Schema
 
 `jedi` creates for you a `jedi.Setuper` type for each `jedi` types.
@@ -126,39 +160,6 @@ func main() {
 	if err := JTodoSetup().Create(conn); err != nil {
 		panic(err)
 	}
-}
-```
-
-# Jedi setup
-
-Every `jedi` types is automatically registered at runtime.
-
-Call `jedi.Setup(conn, forceSchemaReset)` to setup jedi driver and schema at runtime.
-
-When `forceSchemaReset=true` the schema is dropped then created.
-
-```go
-package main
-
-import (
-	_ "github.com/mattn/go-sqlite3"
-	jedi "github.com/mh-cbon/jedi/runtime"
-)
-
-func main () {
-	dsn := "schema.db"
-	conn, err := dbr.Open("sqlite3", dsn, nil)
-	if err != nil {
-		t.Fatalf("Connection setup failed: %v", err)
-	}
-	defer conn.Close()
-	defer os.Remove(dsn)
-
-	forceSchemaReset := true
-	if err := jedi.Setup(conn, forceSchemaReset); err != nil {
-		panic(err)
-	}
-	//...
 }
 ```
 
