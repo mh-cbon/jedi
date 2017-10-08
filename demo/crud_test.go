@@ -18,7 +18,7 @@ func TestCRUD(t *testing.T) {
 		}
 	}()
 
-	sess := conn.NewSession(nil)
+	sess := conn.NewSession(&jedi.EventReceiver{W: os.Stderr})
 
 	t.Run("insert data", func(t *testing.T) {
 		p1 := &Product{SKU: "test"}

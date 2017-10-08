@@ -7,12 +7,14 @@ import (
 	"strings"
 
 	"github.com/gocraft/dbr"
+	dbrdialect "github.com/gocraft/dbr/dialect"
 	"github.com/mh-cbon/jedi/builder"
 	"github.com/mh-cbon/jedi/drivers"
 	"github.com/mh-cbon/jedi/runtime"
 )
 
 var _ = fmt.Sprintf
+var _ = dbrdialect.PostgreSQL
 
 func init() {
 	runtime.Register(
@@ -476,6 +478,11 @@ func (c jSampleQuerier) Insert(items ...*Sample) (sql.Result, error) {
 
 				`id`,
 			)
+			b := dbr.NewBuffer()
+			if err := query.Build(dbrdialect.PostgreSQL, b); err != nil {
+				panic(err)
+			}
+			fmt.Println("     ", b.String())
 
 			var auto0 *int64
 
@@ -1289,6 +1296,11 @@ func (c jBasicTypesQuerier) Insert(items ...*BasicTypes) (sql.Result, error) {
 
 				`id`,
 			)
+			b := dbr.NewBuffer()
+			if err := query.Build(dbrdialect.PostgreSQL, b); err != nil {
+				panic(err)
+			}
+			fmt.Println("     ", b.String())
 
 			var auto0 *int64
 
@@ -2764,6 +2776,11 @@ func (c jDateTypeQuerier) Insert(items ...*DateType) (sql.Result, error) {
 
 				`id`,
 			)
+			b := dbr.NewBuffer()
+			if err := query.Build(dbrdialect.PostgreSQL, b); err != nil {
+				panic(err)
+			}
+			fmt.Println("     ", b.String())
 
 			var auto0 *int64
 

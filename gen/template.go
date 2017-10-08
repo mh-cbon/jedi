@@ -24,12 +24,14 @@ import (
 	"strings"
 
 	"github.com/gocraft/dbr"
+	dbrdialect "github.com/gocraft/dbr/dialect"
 	"github.com/mh-cbon/jedi/runtime"
 	"github.com/mh-cbon/jedi/drivers"
 	"github.com/mh-cbon/jedi/builder"
 )
 
 var _ = fmt.Sprintf
+var _ = dbrdialect.PostgreSQL
 
 func init(){
 	runtime.Register(
@@ -451,6 +453,11 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 						{{$col.SQLName | quote}},
 						{{end}}
 					)
+					b := dbr.NewBuffer()
+					if err := query.Build(dbrdialect.PostgreSQL, b); err != nil {
+						panic(err)
+					}
+					fmt.Println("     ", b.String())
 					{{range $i, $col := .current.Fields | isAI}}
 					var auto{{$i}} *{{$col.GoType | itemGoType}}
 					{{end}}
