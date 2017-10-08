@@ -7,7 +7,7 @@ A golang database generator on top of [dbr](https://github.com/gocraft/dbr)
 Compatibility
 - ‎✔ SQLite3
 - ‎✔ MySQL
-- ‎‎✔/- PostgreSQL
+- ‎‎✔ PostgreSQL
 
 Features
 - ‎✔ Table create / drop
@@ -186,7 +186,7 @@ JTodoModel.ID.In(1, 2)
 JTodoModel.ID.Gte(1)
 // more in the documentation
 
-JTodoModel.Task.Like("r")
+JTodoModel.Task.Like("r%")
 JTodoModel.Task.In("t", "r")
 // more in the documentation
 ```
@@ -353,7 +353,7 @@ func main () {
 	// ...
 	todo, err := JTodo(sess).
 		Select("task"). // input sql values.
-		Where(JTodoModel.Task.Like("whatever")). // set some conditions
+		Where(JTodoModel.Task.Like("%whatever%")). // set some conditions
 		Read() // get all results found
 	if err != nil {
 		panic(err)
@@ -371,7 +371,7 @@ The `Where(query interface{}, value ...interface{}) <type>SelectBuilder` is a sh
 ```go
 func main () {
 	// ...
-	todo, err := JTodo(sess).Where(JTodoModel.Task.Like("whatever")).Read()
+	todo, err := JTodo(sess).Where(JTodoModel.Task.Like("%whatever%")).Read()
 	if err != nil {
 		panic(err)
 	}
@@ -389,7 +389,7 @@ It s a shorthand for `DELETE FROM XXXX`
 func main () {
 	// ...
 	res, err := JTodo(sess).
-		Delete().Where(JTodoModel.Task.Like("whatever")).Exec()
+		Delete().Where(JTodoModel.Task.Like("%whatever%")).Exec()
 	if err != nil {
 		panic(err)
 	}

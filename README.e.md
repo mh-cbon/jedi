@@ -12,7 +12,7 @@ A golang database generator on top of [dbr](https://github.com/gocraft/dbr)
 Compatibility
 - ‎✔ SQLite3
 - ‎✔ MySQL
-- ‎‎✔/- PostgreSQL
+- ‎‎✔ PostgreSQL
 
 Features
 - ‎✔ Table create / drop
