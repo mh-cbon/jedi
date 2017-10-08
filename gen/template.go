@@ -236,7 +236,7 @@ type {{.current.Name}} struct {
 type j{{.current.Name}}DeleteBuilder struct {
 	*builder.DeleteBuilder
 }
-//Build builds the sql string using current dialect into given bufer
+//Build builds the sql string into given buffer using current dialect
 func (c *j{{.current.Name}}DeleteBuilder) Build(b dbr.Buffer) error {
 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
 }
