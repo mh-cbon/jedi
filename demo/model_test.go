@@ -19,6 +19,7 @@ func getConnFromEnv(t *testing.T, forceSetup bool) *dbr.Connection {
 	if dsn == "" {
 		dsn = "db.db"
 	}
+	t.Logf("Driver:%q dsn:%v", driver, dsn)
 	conn, err := dbr.Open(driver, dsn, nil)
 	if err != nil {
 		t.Fatalf("Connection setup failed: %v", err)
