@@ -342,6 +342,8 @@ var funcs = map[string]interface{}{
 					cols += " VARCHAR(255)"
 				} else if f.GoType == "time.Time" && driver == drivers.Pgsql {
 					cols += " timestamp"
+				} else if f.GoType == "*time.Time" && driver == drivers.Pgsql {
+					cols += " timestamp"
 				} else {
 					cols += " " + f.SQLType
 				}
