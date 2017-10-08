@@ -4,7 +4,7 @@ A golang database generator on top of [dbr](https://github.com/gocraft/dbr)
 
 Compatibility
 - ‎✔ SQLite3
-- ‎✔ MySQL
+- ‎✔/- MySQL
 - ‎‎✔/- PostgreSQL
 
 Features
@@ -17,6 +17,8 @@ Features
 - ‎✔ hasOne relation helper
 - ‎✔ hasMany2One relation helper
 - ‎‎✔/‎- hasMany2Many relation helper
+
+__"✔/-"__ are items in progress, check the [CI](https://travis-ci.org/mh-cbon/jedi)
 
 `jedi` is a go generator, read more about [go generate](https://blog.golang.org/generate)
 
