@@ -74,7 +74,7 @@ func J{{.current.Name}}Setup() runtime.Setuper {
 			} else if driver==drivers.Mysql {
 				create = {{.current | createTable "mysql" | quote}}
 			} else if driver==drivers.Pgsql {
-				create = {{.current | createTable "pgsql" | quote}}
+				create = {{.current | createTable "postgres" | quote}}
 			}
 		{{end}}
 		{{if notEmpty .current.SQLTableDrop}}
@@ -85,7 +85,7 @@ func J{{.current.Name}}Setup() runtime.Setuper {
 			} else if driver==drivers.Mysql {
 				drop = {{.current | dropTable "mysql" | quote}}
 			} else if driver==drivers.Pgsql {
-				drop = {{.current | dropTable "pgsql" | quote}}
+				drop = {{.current | dropTable "postgres" | quote}}
 			}
 		{{end}}
 	{{else}}
@@ -97,7 +97,7 @@ func J{{.current.Name}}Setup() runtime.Setuper {
 			} else if driver==drivers.Mysql {
 				create = {{.current | createView "mysql" | quote}}
 			} else if driver==drivers.Pgsql {
-				create = {{.current | createView "pgsql" | quote}}
+				create = {{.current | createView "postgres" | quote}}
 			}
 		{{end}}
 		{{if notEmpty .current.SQLViewDrop}}
@@ -108,7 +108,7 @@ func J{{.current.Name}}Setup() runtime.Setuper {
 			} else if driver==drivers.Mysql {
 				drop = {{.current | dropView "mysql" | quote}}
 			} else if driver==drivers.Pgsql {
-				drop = {{.current | dropView "pgsql" | quote}}
+				drop = {{.current | dropView "postgres" | quote}}
 			}
 		{{end}}
 	{{end}}

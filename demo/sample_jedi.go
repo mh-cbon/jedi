@@ -80,8 +80,8 @@ PRIMARY KEY (id)
 id INTEGER,
 name TEXT,
 description TEXT,
-update_date datetime,
-removal_date datetime
+update_date timestamp,
+removal_date timestamp
 
 )`
 	}
@@ -2316,8 +2316,8 @@ PRIMARY KEY (id)
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS date_type (
 id INTEGER,
-t datetime,
-tp datetime
+t timestamp,
+tp timestamp
 
 )`
 	}
