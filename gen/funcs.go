@@ -383,7 +383,7 @@ var funcs = map[string]interface{}{
 		return "DROP TABLE IF EXISTS " + s.SQLName
 	},
 	"createView": func(driver string, s model.Struct) string {
-		if driver == drivers.Mysql {
+		if driver == drivers.Mysql || driver == drivers.Pgsql {
 			return "CREATE OR REPLACE VIEW " + s.SQLName + " AS " + s.SQLViewSelect + ""
 		}
 		return "CREATE VIEW IF NOT EXISTS " + s.SQLName + " AS " + s.SQLViewSelect + ""
