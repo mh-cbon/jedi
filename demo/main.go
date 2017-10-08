@@ -107,6 +107,9 @@ func t2(sess *dbr.Session) {
 		ReadAll()
 	fail(err2)
 	log.Println(products[0].SKU)
+
+	//todo: implement
+	// qProduct.Where(qProduct.ID.Eq(1))
 }
 
 func t1(sess *dbr.Session) {

@@ -1,7 +1,9 @@
+//Package main is the jedi cli a golang database generator
 package main
 
 import (
 	"flag"
+	"fmt"
 	"go/build"
 	"log"
 	"os"
@@ -13,7 +15,45 @@ import (
 	"github.com/mh-cbon/jedi/parser"
 )
 
+// VERSION of the program
+var VERSION = "0.0.0"
+
+func showHelp() {
+	showVersion()
+	fmt.Print(`
+A golang database generator to work with dbr (https://github.com/gocraft/dbr)
+
+Usage
+	jedi [import packages]
+
+	As a go generator, it looks for environment variables, namely:
+		GOFILE: the path to the file containing the //jedi: comments
+		GOPACKAGE: the package path related to the GOFILE
+
+`)
+}
+func showVersion() {
+	fmt.Printf(`jedi - %v
+`, VERSION)
+}
+
 func main() {
+
+	var help bool
+	var version bool
+	flag.BoolVar(&help, "help", false, "Show help")
+	flag.BoolVar(&version, "version", false, "Show version")
+
+	flag.Parse()
+
+	if help {
+		showHelp()
+		os.Exit(0)
+	}
+	if version {
+		showVersion()
+		os.Exit(0)
+	}
 
 	wd, err := os.Getwd()
 	if err != nil {

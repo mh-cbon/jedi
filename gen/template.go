@@ -132,32 +132,28 @@ type j{{.current.Name}}Model struct {
 }
 
 // Eq provided items.
-func (j j{{.current.Name}}Model) Eq (s ...*{{.current.Name}}) dbr.Builder{
+func (j j{{.current.Name}}Model) Eq(s ...*{{.current.Name}}) dbr.Builder{
 	ors := []dbr.Builder{}
 	for _, t := range s {
-		ors = append(ors, dbr.Or(
-			dbr.And(
+		ors = append(ors, dbr.And(
 				{{range $index, $col := .current.Fields | isPk}}
-				dbr.Eq({{$col.SQLName | quote}}, t.{{$col.Name}} ),
+				J{{$.current.Name}}Model.{{$col.Name}}.Eq( t.{{$col.Name}} ),
 				{{end}}
-			),
 		))
 	}
-	return dbr.And(ors...)
+	return dbr.Or(ors...)
 }
 // In provided items.
-func (j j{{.current.Name}}Model) In (s ...*{{.current.Name}}) dbr.Builder{
+func (j j{{.current.Name}}Model) In(s ...*{{.current.Name}}) dbr.Builder{
 	ors := []dbr.Builder{}
 	for _, t := range s {
-		ors = append(ors, dbr.Or(
-			dbr.And(
+		ors = append(ors, dbr.And(
 				{{range $index, $col := .current.Fields | isPk}}
-				dbr.Eq({{$col.SQLName | quote}}, t.{{$col.Name}} ),
+				J{{$.current.Name}}Model.{{$col.Name}}.Eq( t.{{$col.Name}} ),
 				{{end}}
-			),
 		))
 	}
-	return dbr.And(ors...)
+	return dbr.Or(ors...)
 }
 // As returns a copy with an alias.
 func (j j{{.current.Name}}Model) As (as string) j{{.current.Name}}Model{
@@ -297,7 +293,7 @@ func (c *j{{.current.Name}}SelectBuilder) GroupBy(col ...string) *j{{.current.Na
 	return c
 }
 //Having returns a j{{.current.Name}}SelectBuilder instead of builder.SelectBuilder.
-func (c *j{{.current.Name}}SelectBuilder) Having(query interface{}, value ...string) *j{{.current.Name}}SelectBuilder {
+func (c *j{{.current.Name}}SelectBuilder) Having(query interface{}, value ...interface{}) *j{{.current.Name}}SelectBuilder {
 	c.SelectBuilder.Having(query, value...)
 	return c
 }
@@ -384,13 +380,17 @@ func (c j{{.current.Name}}Querier) Model() j{{.current.Name}}Model {
 //Select returns a {{.current.Name}} Select Builder.
 func (c j{{.current.Name}}Querier) Select(what ...string) *j{{.current.Name}}SelectBuilder {
 	m := c.Model()
-	if len(what) == 0 {
-		what = m.Fields("*")
-	}
 	dialect := runtime.GetDialect()
 	from := dialect.QuoteIdent(m.Table())
 	if m.Alias()!="" && m.Alias()!=m.Table() {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias()!="" && m.Alias()!=m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias+".*")
 	}
 	return &j{{.current.Name}}SelectBuilder{
 		as: c.as,
@@ -398,6 +398,11 @@ func (c j{{.current.Name}}Querier) Select(what ...string) *j{{.current.Name}}Sel
 			SelectBuilder: c.db.Select(what...).From(from),
 		},
 	}
+}
+
+//Where returns a {{.current.Name}} Select Builder.
+func (c j{{.current.Name}}Querier) Where(query interface{}, value ...interface{}) *j{{.current.Name}}SelectBuilder {
+	return c.Select().Where(query, value...)
 }
 
 //Count returns a {{.current.Name}} Select Builder to count given expressions.
@@ -494,18 +499,9 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 
 		// DeleteAll given {{.current.Name}}
 		func (c j{{.current.Name}}Querier) DeleteAll(items ...*{{.current.Name}}) (sql.Result, error) {
-			q := c.Delete()
-			for _, item := range items {
-				q = q.Where(
-					dbr.Or(
-						dbr.And(
-							{{range $i, $col := .current.Fields | isPk}}
-							J{{$.current.Name}}Model.{{$col.Name}}.Eq( item.{{$col.Name}} ),
-							{{end}}
-						),
-					),
-				)
-			}
+			q := c.Delete().Where(
+				J{{$.current.Name}}Model.In(items...),
+			)
 			return q.Exec()
 		}
 
@@ -644,14 +640,18 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 	}
 
 	// Set{{$f.Name | ucfirst}} copies pk values to this object properties
-	func (g *{{$.current.Name | itemGoType}}) Set{{$f.Name | ucfirst}}(o {{$f.GoType}}) {
+	func (g *{{$.current.Name | itemGoType}}) Set{{$f.Name | ucfirst}}(o {{$f.GoType}}) *{{$.current.Name | itemGoType}} {
 		{{range $i, $col := $foreign.Fields | isPk}}
 			{{if $f.IsStar}}
+			if o == nil {
+				g.{{$f.Name | ucfirst}}{{$col.Name}} = nil
+			} else {
 				{{if $col.IsStar}}
-				g.{{$f.Name | ucfirst}}{{$col.Name}} = o.{{$col.Name}}
+					g.{{$f.Name | ucfirst}}{{$col.Name}} = o.{{$col.Name}}
 				{{else}}
 				g.{{$f.Name | ucfirst}}{{$col.Name}} = &o.{{$col.Name}}
 				{{end}}
+			}
 			{{end}}
 			{{if not $f.IsStar}}
 				{{if $col.IsStar}}
@@ -667,10 +667,11 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 				{{end}}
 			{{end}}
 		{{end}}
+		return g
 	}
 
 	// Unset{{$f.Name | ucfirst}} set defaults values to this object properties
-	func (g *{{$.current.Name | itemGoType}}) Unset{{$f.Name | ucfirst}}() {
+	func (g *{{$.current.Name | itemGoType}}) Unset{{$f.Name | ucfirst}}() *{{$.current.Name | itemGoType}}{
 		{{$localFields := findLocals $.all $.current $f}}
 		{{range $i, $col := $localFields}}
 		var def{{$i}} {{$col.GoType}}
@@ -681,154 +682,419 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 		{{if $f.IsStar}}
 		g.{{$f.Name}} = nil
 		{{end}}
+		return g
 	}
 {{end}}
 
 {{range $i, $f := .current.Fields | isHasMany2Many .all}}
 
-{{$m2m := getMany2Many $.all $.current $f}}
+	{{$m2m := getMany2Many $.all $.current $f}}
 
-// {{$f.Name | ucfirst}} returns a query builder to select {{$f.Name | ucfirst}} linked to this {{$.current.Name}}
-func (g *{{$.current.Name}}) {{$f.Name | ucfirst}}(db dbr.SessionRunner,
-	As{{$m2m.Foreign.Name}}, As{{$m2m.Middle.Name}} , As{{$m2m.Local.Name}} string,
-) *j{{$m2m.Foreign.Name}}SelectBuilder {
+	// {{$f.Name | ucfirst}} returns a query builder to select {{$f.Name | ucfirst}} linked to this {{$.current.Name}}
+	func (g *{{$.current.Name}}) {{$f.Name | ucfirst}}(db dbr.SessionRunner,
+		As{{$m2m.Foreign.Name}}, As{{$m2m.Middle.Name}} , As{{$m2m.Local.Name}} string,
+	) *j{{$m2m.Foreign.Name}}SelectBuilder {
 
-	leftTable := J{{$m2m.Foreign.Name}}Model.Table()
-	if As{{$m2m.Foreign.Name}} != "" {
-		leftTable = As{{$m2m.Foreign.Name}}
+		leftTable := J{{$m2m.Foreign.Name}}Model.Table()
+		var query *j{{$m2m.Foreign.Name}}SelectBuilder
+		if As{{$m2m.Foreign.Name}} != "" {
+			leftTable = As{{$m2m.Foreign.Name}}
+			query = J{{$m2m.Foreign.Name}}(db).As(As{{$m2m.Foreign.Name}}).Select(As{{$m2m.Foreign.Name}} + ".*")
+		} else {
+			query = J{{$m2m.Foreign.Name}}(db).Select(leftTable + ".*")
+		}
+
+		midTable := J{{$m2m.Middle.Name}}Model.Table()
+		{
+			on := ""
+			if As{{$m2m.Middle.Name}} != "" {
+				midTable = As{{$m2m.Middle.Name}}
+			}
+			{{range $i, $j := $m2m.FMFields}}
+			on += fmt.Sprintf("%v.%v = %v.%v",
+				midTable, "{{$j.ForeignField.SQLName}}",
+				leftTable, "{{$j.LocalField.SQLName}}",
+				)
+			{{end}}
+
+			if As{{$m2m.Middle.Name}} == "" {
+				query = query.Join(dbr.I(J{{$m2m.Middle.Name}}Model.Table()), on)
+			} else {
+				query = query.Join(dbr.I(J{{$m2m.Middle.Name}}Model.Table()).As(As{{$m2m.Middle.Name}}), on)
+			}
+		}
+
+		rightTable := J{{$m2m.Local.Name}}Model.Table()
+		{
+			on := ""
+			if As{{$m2m.Local.Name}} != "" {
+				rightTable = As{{$m2m.Local.Name}}
+			}
+			{{range $i, $j := $m2m.LMFields}}
+			on += fmt.Sprintf("%v.%v = %v.%v",
+				midTable, "{{$j.ForeignField.SQLName}}",
+				rightTable, "{{$j.LocalField.SQLName}}",
+				)
+			{{end}}
+
+			if As{{$m2m.Local.Name}} == "" {
+				query = query.Join(dbr.I(J{{$m2m.Local.Name}}Model.Table()), on)
+			} else {
+				query = query.Join(dbr.I(J{{$m2m.Local.Name}}Model.Table()).As(As{{$m2m.Local.Name}}), on)
+			}
+		}
+
+		{
+			m := J{{$m2m.Local.Name}}Model
+			if As{{$m2m.Local.Name}} != "" {
+				 m = m.As(As{{$m2m.Local.Name}})
+			}
+			query = query.Where(
+				{{range $i, $col := $m2m.Local.Pks}}
+				m.{{$col.Name}}.Eq(g.{{$col.Name}}),
+				{{end}}
+			)
+		}
+
+		return query
 	}
 
-	query := J{{$m2m.Foreign.Name}}(db).Select(leftTable + ".*")
-
-	midTable := J{{$m2m.Middle.Name}}Model.Table()
-	midWhat := midTable
-	if As{{$m2m.Middle.Name}} != "" {
-		midWhat = fmt.Sprintf("%v as %v", midTable, As{{$m2m.Middle.Name}})
+	//LinkWith{{$f.Name | ucfirst}} writes new links with {{$m2m.Local.Name}}.
+	func (g *{{$.current.Name}}) LinkWith{{$f.Name | ucfirst}}(db dbr.SessionRunner, items ...*{{$f.GoType | itemGoType}}) (sql.Result, error) {
+		toInsert := []*{{$m2m.Middle.Name}}{}
+		for _, item := range items {
+			toInsert = append(toInsert, &{{$m2m.Middle.Name}}{
+				{{range $i, $j := $m2m.FMFields}}
+					{{$j.ForeignField.Name}}: item.{{$j.LocalField.Name}},
+				{{end}}
+				{{range $i, $j := $m2m.LMFields}}
+					{{$j.ForeignField.Name}}: g.{{$j.LocalField.Name}},
+				{{end}}
+			})
+		}
+		return J{{$m2m.Middle.Name}}(db).Insert(toInsert...)
 	}
 
-	{
-		on := ""
+	//UnlinkWith{{$f.Name | ucfirst}} deletes given existing links with {{$m2m.Local.Name}}.
+	func (g *{{$.current.Name}}) UnlinkWith{{$f.Name | ucfirst}}(db dbr.SessionRunner, items ...*{{$f.GoType | itemGoType}}) (sql.Result, error) {
+		toDelete := []*{{$m2m.Middle.Name}}{}
+		for _, item := range items {
+			toDelete = append(toDelete, &{{$m2m.Middle.Name}}{
+				{{range $i, $j := $m2m.FMFields}}
+					{{$j.ForeignField.Name}}: item.{{$j.LocalField.Name}},
+				{{end}}
+				{{range $i, $j := $m2m.LMFields}}
+					{{$j.ForeignField.Name}}: g.{{$j.LocalField.Name}},
+				{{end}}
+			})
+		}
+		return J{{$m2m.Middle.Name}}(db).DeleteAll(toDelete...)
+	}
+
+	//UnlinkAll{{$f.Name | ucfirst}} deletes all existing links with {{$m2m.Local.Name}}.
+	func (g *{{$.current.Name}}) UnlinkAll{{$f.Name | ucfirst}}(db dbr.SessionRunner) (sql.Result, error) {
+		return J{{$m2m.Middle.Name}}(db).Delete().Where(
+			{{range $i, $j := $m2m.LMFields}}
+				J{{$m2m.Middle.Name}}Model.{{$j.ForeignField.Name}}.Eq(g.{{$j.LocalField.Name}}),
+			{{end}}
+		).Exec()
+	}
+
+	//Set{{$f.Name | ucfirst}} replaces existing links with {{$m2m.Local.Name}}.
+	func (g *{{$.current.Name}}) Set{{$f.Name | ucfirst}}(db dbr.SessionRunner, items ...*{{$f.GoType | itemGoType}}) (sql.Result, error) {
+		if res, err := g.UnlinkAll{{$f.Name | ucfirst}}(db); err != nil {
+			return res, err
+		}
+		return g.LinkWith{{$f.Name | ucfirst}}(db, items...)
+	}
+
+	// Join{{$f.Name | ucfirst}} adds a JOIN to {{$m2m.Local.Name}}.{{$f.Name | ucfirst}}
+	func (c *j{{$.current.Name}}SelectBuilder) Join{{$f.Name | ucfirst}}(
+		As{{$m2m.Middle.Name}}, As{{$m2m.Foreign.Name}} string,
+	) *j{{$m2m.Local.Name}}SelectBuilder {
+
+		query := c
+
+		leftTable := J{{$m2m.Local.Name}}Model.Table()
+		if c.as != "" {
+			leftTable = c.as
+		}
+
+		midTable := J{{$m2m.Middle.Name}}Model.Table()
 		if As{{$m2m.Middle.Name}} != "" {
 			midTable = As{{$m2m.Middle.Name}}
 		}
-		{{range $i, $j := $m2m.FMFields}}
-		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "{{$j.ForeignField.SQLName}}",
-			leftTable, "{{$j.LocalField.SQLName}}",
-			)
-		{{end}}
 
-		query = query.Join(midWhat, on)
-	}
+		{
+			on := ""
+			{{range $i, $j := $m2m.LMFields}}
+			on += fmt.Sprintf("%v.%v = %v.%v",
+				midTable, "{{$j.ForeignField.SQLName}}",
+				leftTable, "{{$j.LocalField.SQLName}}",
+				)
+			{{end}}
 
-	rightTable := J{{$m2m.Local.Name}}Model.Table()
-	rightWhat := rightTable
-	if As{{$m2m.Local.Name}} != "" {
-		rightWhat = fmt.Sprintf("%v as %v", rightTable, As{{$m2m.Local.Name}})
-	}
-	{
-		on := ""
-		if As{{$m2m.Local.Name}} != "" {
-			rightTable = As{{$m2m.Local.Name}}
+			if As{{$m2m.Middle.Name}} == "" {
+				query = query.Join(dbr.I(J{{$m2m.Middle.Name}}Model.Table()), on)
+			} else {
+				query = query.Join(dbr.I(J{{$m2m.Middle.Name}}Model.Table()).As(As{{$m2m.Middle.Name}}), on)
+			}
 		}
-		{{range $i, $j := $m2m.LMFields}}
+
+		{
+			rightTable := J{{$m2m.Foreign.Name}}Model.Table()
+			if As{{$m2m.Foreign.Name}} != "" {
+				rightTable = As{{$m2m.Foreign.Name}}
+			}
+			on := ""
+			{{range $i, $j := $m2m.FMFields}}
+			on += fmt.Sprintf("%v.%v = %v.%v",
+				midTable, "{{$j.ForeignField.SQLName}}",
+				rightTable, "{{$j.LocalField.SQLName}}",
+				)
+			{{end}}
+
+			if As{{$m2m.Foreign.Name}} == "" {
+				query = query.Join(dbr.I(J{{$m2m.Foreign.Name}}Model.Table()), on)
+			} else {
+				query = query.Join(dbr.I(J{{$m2m.Foreign.Name}}Model.Table()).As(As{{$m2m.Foreign.Name}}), on)
+			}
+		}
+
+		return query
+	}
+
+	// LeftJoin{{$f.Name | ucfirst}} adds a LEFT JOIN to {{$m2m.Local.Name}}.{{$f.Name | ucfirst}}
+	func (c *j{{$.current.Name}}SelectBuilder) LeftJoin{{$f.Name | ucfirst}}(
+		As{{$m2m.Middle.Name}}, As{{$m2m.Foreign.Name}} string,
+	) *j{{$m2m.Local.Name}}SelectBuilder {
+
+		query := c
+
+		leftTable := J{{$m2m.Local.Name}}Model.Table()
+		if c.as != "" {
+			leftTable = c.as
+		}
+
+		midTable := J{{$m2m.Middle.Name}}Model.Table()
+		if As{{$m2m.Middle.Name}} != "" {
+			midTable = As{{$m2m.Middle.Name}}
+		}
+
+		{
+			on := ""
+			{{range $i, $j := $m2m.LMFields}}
+			on += fmt.Sprintf("%v.%v = %v.%v",
+				midTable, "{{$j.ForeignField.SQLName}}",
+				leftTable, "{{$j.LocalField.SQLName}}",
+				)
+			{{end}}
+
+			if As{{$m2m.Middle.Name}} == "" {
+				query = query.LeftJoin(dbr.I(J{{$m2m.Middle.Name}}Model.Table()), on)
+			} else {
+				query = query.LeftJoin(dbr.I(J{{$m2m.Middle.Name}}Model.Table()).As(As{{$m2m.Middle.Name}}), on)
+			}
+		}
+
+		{
+			rightTable := J{{$m2m.Foreign.Name}}Model.Table()
+			if As{{$m2m.Foreign.Name}} != "" {
+				rightTable = As{{$m2m.Foreign.Name}}
+			}
+			on := ""
+			{{range $i, $j := $m2m.FMFields}}
+			on += fmt.Sprintf("%v.%v = %v.%v",
+				midTable, "{{$j.ForeignField.SQLName}}",
+				rightTable, "{{$j.LocalField.SQLName}}",
+				)
+			{{end}}
+
+			if As{{$m2m.Foreign.Name}} == "" {
+				query = query.LeftJoin(dbr.I(J{{$m2m.Foreign.Name}}Model.Table()), on)
+			} else {
+				query = query.LeftJoin(dbr.I(J{{$m2m.Foreign.Name}}Model.Table()).As(As{{$m2m.Foreign.Name}}), on)
+			}
+		}
+
+		return query
+	}
+
+	// RightJoin{{$f.Name | ucfirst}} adds a RIGHT JOIN to {{$m2m.Local.Name}}.{{$f.Name | ucfirst}}
+	func (c *j{{$.current.Name}}SelectBuilder) RightJoin{{$f.Name | ucfirst}}(
+		As{{$m2m.Middle.Name}}, As{{$m2m.Foreign.Name}} string,
+	) *j{{$m2m.Local.Name}}SelectBuilder {
+
+		query := c
+
+		leftTable := J{{$m2m.Local.Name}}Model.Table()
+		if c.as != "" {
+			leftTable = c.as
+		}
+
+		midTable := J{{$m2m.Middle.Name}}Model.Table()
+		if As{{$m2m.Middle.Name}} != "" {
+			midTable = As{{$m2m.Middle.Name}}
+		}
+
+		{
+			on := ""
+			{{range $i, $j := $m2m.LMFields}}
+			on += fmt.Sprintf("%v.%v = %v.%v",
+				midTable, "{{$j.ForeignField.SQLName}}",
+				leftTable, "{{$j.LocalField.SQLName}}",
+				)
+			{{end}}
+
+			if As{{$m2m.Middle.Name}} == "" {
+				query = query.RightJoin(dbr.I(J{{$m2m.Middle.Name}}Model.Table()), on)
+			} else {
+				query = query.RightJoin(dbr.I(J{{$m2m.Middle.Name}}Model.Table()).As(As{{$m2m.Middle.Name}}), on)
+			}
+		}
+
+		{
+			rightTable := J{{$m2m.Foreign.Name}}Model.Table()
+			if As{{$m2m.Foreign.Name}} != "" {
+				rightTable = As{{$m2m.Foreign.Name}}
+			}
+			on := ""
+			{{range $i, $j := $m2m.FMFields}}
+			on += fmt.Sprintf("%v.%v = %v.%v",
+				midTable, "{{$j.ForeignField.SQLName}}",
+				rightTable, "{{$j.LocalField.SQLName}}",
+				)
+			{{end}}
+
+			if As{{$m2m.Foreign.Name}} == "" {
+				query = query.RightJoin(dbr.I(J{{$m2m.Foreign.Name}}Model.Table()), on)
+			} else {
+				query = query.RightJoin(dbr.I(J{{$m2m.Foreign.Name}}Model.Table()).As(As{{$m2m.Foreign.Name}}), on)
+			}
+		}
+
+		return query
+	}
+
+{{end}}
+
+{{range $i, $f := .current.Fields | isHasMany2One .all}}
+
+	{{$m2o := getMany2One $.all $.current $f}}
+
+	// {{$f.Name | ucfirst}} returns a query builder to select {{$f.Name | ucfirst}} linked to this {{$.current.Name}}
+	func (g *{{$.current.Name}}) {{$f.Name | ucfirst}}(db dbr.SessionRunner,
+		As{{$m2o.ForeignField.Name | ucfirst}}, As{{$m2o.LocalField.Name | ucfirst}} string,
+	) *j{{$m2o.Foreign.Name}}SelectBuilder {
+
+		var query *j{{$m2o.Foreign.Name}}SelectBuilder
+
+		leftTable := J{{$m2o.Foreign.Name}}Model.Table()
+		if As{{$m2o.ForeignField.Name | ucfirst}} != "" {
+			leftTable = As{{$m2o.ForeignField.Name | ucfirst}}
+			query = J{{$m2o.Foreign.Name}}(db).As(As{{$m2o.ForeignField.Name | ucfirst}}).Select(leftTable + ".*")
+		} else {
+			query = J{{$m2o.Foreign.Name}}(db).Select(leftTable + ".*")
+		}
+
+		rightTable := J{{$m2o.Local.Name}}Model.Table()
+		if As{{$m2o.LocalField.Name | ucfirst}} != "" {
+			rightTable = As{{$m2o.LocalField.Name | ucfirst}}
+		}
+
+		on := ""
+		{{range $i, $j := $m2o.Fields}}
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "{{$j.ForeignField.SQLName}}",
+			leftTable, "{{$j.ForeignField.SQLName}}",
 			rightTable, "{{$j.LocalField.SQLName}}",
 			)
 		{{end}}
 
-		query = query.Join(rightWhat, on)
+		if As{{$m2o.LocalField.Name | ucfirst}} == "" {
+			return query.Join(dbr.I(J{{$m2o.Local.Name}}Model.Table()), on)
+		}
+		return query.Join(dbr.I(J{{$m2o.Local.Name}}Model.Table()).As(As{{$m2o.LocalField.Name | ucfirst}}), on)
 	}
 
-	return query
-}
 
-//LinkWith{{$f.Name | ucfirst}} writes new links with {{$m2m.Local.Name}}.
-func (g *{{$.current.Name}}) LinkWith{{$f.Name | ucfirst}}(db dbr.SessionRunner, items ...*{{$f.GoType | itemGoType}}) (sql.Result, error) {
-	toInsert := []*{{$m2m.Middle.Name}}{}
-	for _, item := range items {
-		toInsert = append(toInsert, &{{$m2m.Middle.Name}}{
-			{{range $i, $j := $m2m.FMFields}}
-				{{$j.ForeignField.Name}}: item.{{$j.LocalField.Name}},
-			{{end}}
-			{{range $i, $j := $m2m.LMFields}}
-				{{$j.ForeignField.Name}}: g.{{$j.LocalField.Name}},
-			{{end}}
-		})
-	}
-	return J{{$m2m.Middle.Name}}(db).Insert(toInsert...)
-}
-
-//UnlinkWith{{$f.Name | ucfirst}} deletes given existing links with {{$m2m.Local.Name}}.
-func (g *{{$.current.Name}}) UnlinkWith{{$f.Name | ucfirst}}(db dbr.SessionRunner, items ...*{{$f.GoType | itemGoType}}) (sql.Result, error) {
-	toDelete := []*{{$m2m.Middle.Name}}{}
-	for _, item := range items {
-		toDelete = append(toDelete, &{{$m2m.Middle.Name}}{
-			{{range $i, $j := $m2m.FMFields}}
-				{{$j.ForeignField.Name}}: item.{{$j.LocalField.Name}},
-			{{end}}
-			{{range $i, $j := $m2m.LMFields}}
-				{{$j.ForeignField.Name}}: g.{{$j.LocalField.Name}},
-			{{end}}
-		})
-	}
-	return J{{$m2m.Middle.Name}}(db).DeleteAll(toDelete...)
-}
-
-//UnlinkAll{{$f.Name | ucfirst}} deletes all existing links with {{$m2m.Local.Name}}.
-func (g *{{$.current.Name}}) UnlinkAll{{$f.Name | ucfirst}}(db dbr.SessionRunner) (sql.Result, error) {
-	return J{{$m2m.Middle.Name}}(db).Delete().Where(
-		{{range $i, $j := $m2m.LMFields}}
-			J{{$m2m.Middle.Name}}Model.{{$j.ForeignField.Name}}.Eq(g.{{$j.LocalField.Name}}),
-		{{end}}
-	).Exec()
-}
-
-//Set{{$f.Name | ucfirst}} replaces existing links with {{$m2m.Local.Name}}.
-func (g *{{$.current.Name}}) Set{{$f.Name | ucfirst}}(db dbr.SessionRunner, items ...*{{$f.GoType | itemGoType}}) (sql.Result, error) {
-	if res, err := g.UnlinkAll{{$f.Name | ucfirst}}(db); err != nil {
-		return res, err
-	}
-	return g.LinkWith{{$f.Name | ucfirst}}(db, items...)
-}
-{{end}}
-
-{{range $i, $f := .current.Fields | isHasMany2One .all}}
-{{$m2o := getMany2One $.all $.current $f}}
-// {{$f.Name | ucfirst}} returns a query builder to select {{$f.Name | ucfirst}} linked to this {{$.current.Name}}
-func (g *{{$.current.Name}}) {{$f.Name | ucfirst}}(db dbr.SessionRunner,
-	As{{$m2o.Foreign.Name}}, As{{$m2o.Local.Name}} string,
-) *j{{$m2o.Foreign.Name}}SelectBuilder {
-
-	leftTable := J{{$m2o.Foreign.Name}}Model.Table()
-	if As{{$m2o.Foreign.Name}} != "" {
-		leftTable = As{{$m2o.Foreign.Name}}
-	}
-
-	query := J{{$m2o.Foreign.Name}}(db).Select(leftTable + ".*")
-
-	rightTable := J{{$m2o.Local.Name}}Model.Table()
-	rightWhat := rightTable
-	if As{{$m2o.Local.Name}} != "" {
-		rightWhat = fmt.Sprintf("%v as %v", rightTable, As{{$m2o.Local.Name}})
-	}
-
-	on := ""
-	if As{{$m2o.Local.Name}} != "" {
-		rightTable = As{{$m2o.Local.Name}}
-	}
-	{{range $i, $j := $m2o.Fields}}
-	on += fmt.Sprintf("%v.%v = %v.%v",
-		leftTable, "{{$j.ForeignField.SQLName}}",
-		rightTable, "{{$j.LocalField.SQLName}}",
+	// Join{{$f.Name | ucfirst}} adds a JOIN to {{$m2o.Local.Name}}.{{$f.Name | ucfirst}}
+	func (c *j{{$.current.Name}}SelectBuilder) Join{{$f.Name | ucfirst}}(
+		As{{$f.Name | ucfirst}} string,
+	) *j{{$.current.Name}}SelectBuilder {
+		dialect := runtime.GetDialect()
+		on := ""
+		localTable := dialect.QuoteIdent(J{{$m2o.Local.Name}}Model.Table())
+		if c.as != "" {
+			localTable = dialect.QuoteIdent(c.as)
+		}
+		foreiTable := dialect.QuoteIdent(J{{$m2o.Foreign.Name}}Model.Table())
+		if As{{$f.Name | ucfirst}} != "" {
+			foreiTable = dialect.QuoteIdent(As{{$f.Name | ucfirst}})
+		}
+		{{range $i, $col := $m2o.Fields}}
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			localTable, dialect.QuoteIdent("{{$col.LocalField.SQLName}}"),
+			foreiTable, dialect.QuoteIdent("{{$col.ForeignField.SQLName}}"),
 		)
-	{{end}}
+		{{end}}
+		if As{{$f.Name | ucfirst}} == "" {
+			return c.Join(dbr.I(J{{$m2o.Foreign.Name}}Model.Table()), on)
+		}
+		return c.Join(dbr.I(J{{$m2o.Foreign.Name}}Model.Table()).As(As{{$f.Name | ucfirst}}), on)
+	}
 
-	query = query.Join(rightWhat, on)
+	// LeftJoin{{$f.Name | ucfirst}} adds a LEFT JOIN to {{$m2o.Local.Name}}.{{$f.Name | ucfirst}}
+	func (c *j{{$.current.Name}}SelectBuilder) LeftJoin{{$f.Name | ucfirst}}(
+		As{{$f.Name | ucfirst}} string,
+	) *j{{$.current.Name}}SelectBuilder {
+		dialect := runtime.GetDialect()
+		on := ""
+		localTable := dialect.QuoteIdent(J{{$m2o.Local.Name}}Model.Table())
+		if c.as != "" {
+			localTable = dialect.QuoteIdent(c.as)
+		}
+		foreiTable := dialect.QuoteIdent(J{{$m2o.Foreign.Name}}Model.Table())
+		if As{{$f.Name | ucfirst}} != "" {
+			foreiTable = dialect.QuoteIdent(As{{$f.Name | ucfirst}})
+		}
+		{{range $i, $col := $m2o.Fields}}
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			localTable, dialect.QuoteIdent("{{$col.LocalField.SQLName}}"),
+			foreiTable, dialect.QuoteIdent("{{$col.ForeignField.SQLName}}"),
+		)
+		{{end}}
+		if As{{$f.Name | ucfirst}} == "" {
+			return c.LeftJoin(dbr.I(J{{$m2o.Foreign.Name}}Model.Table()), on)
+		}
+		return c.LeftJoin(dbr.I(J{{$m2o.Foreign.Name}}Model.Table()).As(As{{$f.Name | ucfirst}}), on)
+	}
 
-	return query
-}
+	// RightJoin{{$f.Name | ucfirst}} adds a Right JOIN to {{$m2o.Local.Name}}.{{$f.Name | ucfirst}}
+	func (c *j{{$.current.Name}}SelectBuilder) RightJoin{{$f.Name | ucfirst}}(
+		As{{$f.Name | ucfirst}} string,
+	) *j{{$.current.Name}}SelectBuilder {
+		dialect := runtime.GetDialect()
+		on := ""
+		localTable := dialect.QuoteIdent(J{{$m2o.Local.Name}}Model.Table())
+		if c.as != "" {
+			localTable = dialect.QuoteIdent(c.as)
+		}
+		foreiTable := dialect.QuoteIdent(J{{$m2o.Foreign.Name}}Model.Table())
+		if As{{$f.Name | ucfirst}} != "" {
+			foreiTable = dialect.QuoteIdent(As{{$f.Name | ucfirst}})
+		}
+		{{range $i, $col := $m2o.Fields}}
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			localTable, dialect.QuoteIdent("{{$col.LocalField.SQLName}}"),
+			foreiTable, dialect.QuoteIdent("{{$col.ForeignField.SQLName}}"),
+		)
+		{{end}}
+		if As{{$f.Name | ucfirst}} == "" {
+			return c.RightJoin(dbr.I(J{{$m2o.Foreign.Name}}Model.Table()), on)
+		}
+		return c.RightJoin(dbr.I(J{{$m2o.Foreign.Name}}Model.Table()).As(As{{$f.Name | ucfirst}}), on)
+	}
+
 {{end}}
 `))
 

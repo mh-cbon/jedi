@@ -118,34 +118,32 @@ type jProductModel struct {
 	Brand2 builder.RelPropertyMeta
 
 	Master builder.RelPropertyMeta
+
+	Variances builder.RelPropertyMeta
 }
 
 // Eq provided items.
 func (j jProductModel) Eq(s ...*Product) dbr.Builder {
 	ors := []dbr.Builder{}
 	for _, t := range s {
-		ors = append(ors, dbr.Or(
-			dbr.And(
+		ors = append(ors, dbr.And(
 
-				dbr.Eq(`id`, t.ID),
-			),
+			JProductModel.ID.Eq(t.ID),
 		))
 	}
-	return dbr.And(ors...)
+	return dbr.Or(ors...)
 }
 
 // In provided items.
 func (j jProductModel) In(s ...*Product) dbr.Builder {
 	ors := []dbr.Builder{}
 	for _, t := range s {
-		ors = append(ors, dbr.Or(
-			dbr.And(
+		ors = append(ors, dbr.And(
 
-				dbr.Eq(`id`, t.ID),
-			),
+			JProductModel.ID.Eq(t.ID),
 		))
 	}
-	return dbr.And(ors...)
+	return dbr.Or(ors...)
 }
 
 // As returns a copy with an alias.
@@ -169,6 +167,8 @@ func (j jProductModel) As(as string) jProductModel {
 	// j.Brand2.TableAlias = as
 
 	// j.Master.TableAlias = as
+
+	// j.Variances.TableAlias = as
 
 	return j
 }
@@ -207,6 +207,8 @@ func (j jProductModel) Properties() map[string]builder.MetaProvider {
 	ret["Brand2"] = j.Brand2
 
 	ret["Master"] = j.Master
+
+	ret["Variances"] = j.Variances
 
 	return ret
 }
@@ -281,6 +283,11 @@ var JProductModel = jProductModel{
 		`master`, `*Product`,
 		`Product.master`, ``, ``,
 	),
+
+	Variances: builder.NewRelMeta(
+		`variances`, `[]*Product`,
+		``, `Product.master`, ``,
+	),
 }
 
 type jProductDeleteBuilder struct {
@@ -346,6 +353,54 @@ func (c *jProductSelectBuilder) Where(query interface{}, value ...interface{}) *
 	return c
 }
 
+//GroupBy returns a jProductSelectBuilder instead of builder.SelectBuilder.
+func (c *jProductSelectBuilder) GroupBy(col ...string) *jProductSelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jProductSelectBuilder instead of builder.SelectBuilder.
+func (c *jProductSelectBuilder) Having(query interface{}, value ...interface{}) *jProductSelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jProductSelectBuilder instead of builder.SelectBuilder.
+func (c *jProductSelectBuilder) Limit(n uint64) *jProductSelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jProductSelectBuilder instead of builder.SelectBuilder.
+func (c *jProductSelectBuilder) Offset(n uint64) *jProductSelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jProductSelectBuilder instead of builder.SelectBuilder.
+func (c *jProductSelectBuilder) OrderAsc(col string) *jProductSelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jProductSelectBuilder instead of builder.SelectBuilder.
+func (c *jProductSelectBuilder) OrderDesc(col string) *jProductSelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jProductSelectBuilder instead of builder.SelectBuilder.
+func (c *jProductSelectBuilder) OrderDir(col string, isAsc bool) *jProductSelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jProductSelectBuilder instead of builder.SelectBuilder.
+func (c *jProductSelectBuilder) OrderBy(col string) *jProductSelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
 //Join returns a jProductSelectBuilder instead of builder.SelectBuilder.
 func (c *jProductSelectBuilder) Join(table, on interface{}) *jProductSelectBuilder {
 	c.SelectBuilder.Join(table, on)
@@ -402,13 +457,17 @@ func (c jProductQuerier) Model() jProductModel {
 //Select returns a Product Select Builder.
 func (c jProductQuerier) Select(what ...string) *jProductSelectBuilder {
 	m := c.Model()
-	if len(what) == 0 {
-		what = m.Fields("*")
-	}
 	dialect := runtime.GetDialect()
 	from := dialect.QuoteIdent(m.Table())
 	if m.Alias() != "" && m.Alias() != m.Table() {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias() != "" && m.Alias() != m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias + ".*")
 	}
 	return &jProductSelectBuilder{
 		as: c.as,
@@ -416,6 +475,11 @@ func (c jProductQuerier) Select(what ...string) *jProductSelectBuilder {
 			SelectBuilder: c.db.Select(what...).From(from),
 		},
 	}
+}
+
+//Where returns a Product Select Builder.
+func (c jProductQuerier) Where(query interface{}, value ...interface{}) *jProductSelectBuilder {
+	return c.Select().Where(query, value...)
 }
 
 //Count returns a Product Select Builder to count given expressions.
@@ -510,17 +574,9 @@ func (c jProductQuerier) DeleteByPk(ID int64) error {
 
 // DeleteAll given Product
 func (c jProductQuerier) DeleteAll(items ...*Product) (sql.Result, error) {
-	q := c.Delete()
-	for _, item := range items {
-		q = q.Where(
-			dbr.Or(
-				dbr.And(
-
-					JProductModel.ID.Eq(item.ID),
-				),
-			),
-		)
-	}
+	q := c.Delete().Where(
+		JProductModel.In(items...),
+	)
 	return q.Exec()
 }
 
@@ -647,14 +703,21 @@ func (g *Product) Brand(db dbr.SessionRunner) (*Brand, error) {
 }
 
 // SetBrand copies pk values to this object properties
-func (g *Product) SetBrand(o *Brand) {
+func (g *Product) SetBrand(o *Brand) *Product {
 
-	g.BrandID = &o.ID
+	if o == nil {
+		g.BrandID = nil
+	} else {
 
+		g.BrandID = &o.ID
+
+	}
+
+	return g
 }
 
 // UnsetBrand set defaults values to this object properties
-func (g *Product) UnsetBrand() {
+func (g *Product) UnsetBrand() *Product {
 
 	var def0 *int64
 
@@ -662,6 +725,7 @@ func (g *Product) UnsetBrand() {
 
 	g.brand = nil
 
+	return g
 }
 
 // JoinBrand2 adds a JOIN to Product.Brand2
@@ -779,14 +843,21 @@ func (g *Product) Brand2(db dbr.SessionRunner) (*Brand, error) {
 }
 
 // SetBrand2 copies pk values to this object properties
-func (g *Product) SetBrand2(o *Brand) {
+func (g *Product) SetBrand2(o *Brand) *Product {
 
-	g.Brand2ID = &o.ID
+	if o == nil {
+		g.Brand2ID = nil
+	} else {
 
+		g.Brand2ID = &o.ID
+
+	}
+
+	return g
 }
 
 // UnsetBrand2 set defaults values to this object properties
-func (g *Product) UnsetBrand2() {
+func (g *Product) UnsetBrand2() *Product {
 
 	var def0 *int64
 
@@ -794,6 +865,7 @@ func (g *Product) UnsetBrand2() {
 
 	g.brand2 = nil
 
+	return g
 }
 
 // JoinMaster adds a JOIN to Product.Master
@@ -911,14 +983,21 @@ func (g *Product) Master(db dbr.SessionRunner) (*Product, error) {
 }
 
 // SetMaster copies pk values to this object properties
-func (g *Product) SetMaster(o *Product) {
+func (g *Product) SetMaster(o *Product) *Product {
 
-	g.MasterID = &o.ID
+	if o == nil {
+		g.MasterID = nil
+	} else {
 
+		g.MasterID = &o.ID
+
+	}
+
+	return g
 }
 
 // UnsetMaster set defaults values to this object properties
-func (g *Product) UnsetMaster() {
+func (g *Product) UnsetMaster() *Product {
 
 	var def0 *int64
 
@@ -926,6 +1005,7 @@ func (g *Product) UnsetMaster() {
 
 	g.master = nil
 
+	return g
 }
 
 // Categories returns a query builder to select Categories linked to this Product
@@ -934,18 +1014,15 @@ func (g *Product) Categories(db dbr.SessionRunner,
 ) *jCategorySelectBuilder {
 
 	leftTable := JCategoryModel.Table()
+	var query *jCategorySelectBuilder
 	if AsCategory != "" {
 		leftTable = AsCategory
+		query = JCategory(db).As(AsCategory).Select(AsCategory + ".*")
+	} else {
+		query = JCategory(db).Select(leftTable + ".*")
 	}
-
-	query := JCategory(db).Select(leftTable + ".*")
 
 	midTable := JCategoryproductsToProductcategoriesModel.Table()
-	midWhat := midTable
-	if AsCategoryproductsToProductcategories != "" {
-		midWhat = fmt.Sprintf("%v as %v", midTable, AsCategoryproductsToProductcategories)
-	}
-
 	{
 		on := ""
 		if AsCategoryproductsToProductcategories != "" {
@@ -957,14 +1034,14 @@ func (g *Product) Categories(db dbr.SessionRunner,
 			leftTable, "id",
 		)
 
-		query = query.Join(midWhat, on)
+		if AsCategoryproductsToProductcategories == "" {
+			query = query.Join(dbr.I(JCategoryproductsToProductcategoriesModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JCategoryproductsToProductcategoriesModel.Table()).As(AsCategoryproductsToProductcategories), on)
+		}
 	}
 
 	rightTable := JProductModel.Table()
-	rightWhat := rightTable
-	if AsProduct != "" {
-		rightWhat = fmt.Sprintf("%v as %v", rightTable, AsProduct)
-	}
 	{
 		on := ""
 		if AsProduct != "" {
@@ -976,7 +1053,22 @@ func (g *Product) Categories(db dbr.SessionRunner,
 			rightTable, "id",
 		)
 
-		query = query.Join(rightWhat, on)
+		if AsProduct == "" {
+			query = query.Join(dbr.I(JProductModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JProductModel.Table()).As(AsProduct), on)
+		}
+	}
+
+	{
+		m := JProductModel
+		if AsProduct != "" {
+			m = m.As(AsProduct)
+		}
+		query = query.Where(
+
+			m.ID.Eq(g.ID),
+		)
 	}
 
 	return query
@@ -1024,6 +1116,279 @@ func (g *Product) SetCategories(db dbr.SessionRunner, items ...*Category) (sql.R
 		return res, err
 	}
 	return g.LinkWithCategories(db, items...)
+}
+
+// JoinCategories adds a JOIN to Product.Categories
+func (c *jProductSelectBuilder) JoinCategories(
+	AsCategoryproductsToProductcategories, AsCategory string,
+) *jProductSelectBuilder {
+
+	query := c
+
+	leftTable := JProductModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JCategoryproductsToProductcategoriesModel.Table()
+	if AsCategoryproductsToProductcategories != "" {
+		midTable = AsCategoryproductsToProductcategories
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "product_id",
+			leftTable, "id",
+		)
+
+		if AsCategoryproductsToProductcategories == "" {
+			query = query.Join(dbr.I(JCategoryproductsToProductcategoriesModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JCategoryproductsToProductcategoriesModel.Table()).As(AsCategoryproductsToProductcategories), on)
+		}
+	}
+
+	{
+		rightTable := JCategoryModel.Table()
+		if AsCategory != "" {
+			rightTable = AsCategory
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "category_id",
+			rightTable, "id",
+		)
+
+		if AsCategory == "" {
+			query = query.Join(dbr.I(JCategoryModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JCategoryModel.Table()).As(AsCategory), on)
+		}
+	}
+
+	return query
+}
+
+// LeftJoinCategories adds a LEFT JOIN to Product.Categories
+func (c *jProductSelectBuilder) LeftJoinCategories(
+	AsCategoryproductsToProductcategories, AsCategory string,
+) *jProductSelectBuilder {
+
+	query := c
+
+	leftTable := JProductModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JCategoryproductsToProductcategoriesModel.Table()
+	if AsCategoryproductsToProductcategories != "" {
+		midTable = AsCategoryproductsToProductcategories
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "product_id",
+			leftTable, "id",
+		)
+
+		if AsCategoryproductsToProductcategories == "" {
+			query = query.LeftJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()), on)
+		} else {
+			query = query.LeftJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()).As(AsCategoryproductsToProductcategories), on)
+		}
+	}
+
+	{
+		rightTable := JCategoryModel.Table()
+		if AsCategory != "" {
+			rightTable = AsCategory
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "category_id",
+			rightTable, "id",
+		)
+
+		if AsCategory == "" {
+			query = query.LeftJoin(dbr.I(JCategoryModel.Table()), on)
+		} else {
+			query = query.LeftJoin(dbr.I(JCategoryModel.Table()).As(AsCategory), on)
+		}
+	}
+
+	return query
+}
+
+// RightJoinCategories adds a RIGHT JOIN to Product.Categories
+func (c *jProductSelectBuilder) RightJoinCategories(
+	AsCategoryproductsToProductcategories, AsCategory string,
+) *jProductSelectBuilder {
+
+	query := c
+
+	leftTable := JProductModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JCategoryproductsToProductcategoriesModel.Table()
+	if AsCategoryproductsToProductcategories != "" {
+		midTable = AsCategoryproductsToProductcategories
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "product_id",
+			leftTable, "id",
+		)
+
+		if AsCategoryproductsToProductcategories == "" {
+			query = query.RightJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()), on)
+		} else {
+			query = query.RightJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()).As(AsCategoryproductsToProductcategories), on)
+		}
+	}
+
+	{
+		rightTable := JCategoryModel.Table()
+		if AsCategory != "" {
+			rightTable = AsCategory
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "category_id",
+			rightTable, "id",
+		)
+
+		if AsCategory == "" {
+			query = query.RightJoin(dbr.I(JCategoryModel.Table()), on)
+		} else {
+			query = query.RightJoin(dbr.I(JCategoryModel.Table()).As(AsCategory), on)
+		}
+	}
+
+	return query
+}
+
+// Variances returns a query builder to select Variances linked to this Product
+func (g *Product) Variances(db dbr.SessionRunner,
+	AsMaster, AsVariances string,
+) *jProductSelectBuilder {
+
+	var query *jProductSelectBuilder
+
+	leftTable := JProductModel.Table()
+	if AsMaster != "" {
+		leftTable = AsMaster
+		query = JProduct(db).As(AsMaster).Select(leftTable + ".*")
+	} else {
+		query = JProduct(db).Select(leftTable + ".*")
+	}
+
+	rightTable := JProductModel.Table()
+	if AsVariances != "" {
+		rightTable = AsVariances
+	}
+
+	on := ""
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		leftTable, "master_id",
+		rightTable, "id",
+	)
+
+	if AsVariances == "" {
+		return query.Join(dbr.I(JProductModel.Table()), on)
+	}
+	return query.Join(dbr.I(JProductModel.Table()).As(AsVariances), on)
+}
+
+// JoinVariances adds a JOIN to Product.Variances
+func (c *jProductSelectBuilder) JoinVariances(
+	AsVariances string,
+) *jProductSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JProductModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JProductModel.Table())
+	if AsVariances != "" {
+		foreiTable = dialect.QuoteIdent(AsVariances)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("id"),
+		foreiTable, dialect.QuoteIdent("master_id"),
+	)
+
+	if AsVariances == "" {
+		return c.Join(dbr.I(JProductModel.Table()), on)
+	}
+	return c.Join(dbr.I(JProductModel.Table()).As(AsVariances), on)
+}
+
+// LeftJoinVariances adds a LEFT JOIN to Product.Variances
+func (c *jProductSelectBuilder) LeftJoinVariances(
+	AsVariances string,
+) *jProductSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JProductModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JProductModel.Table())
+	if AsVariances != "" {
+		foreiTable = dialect.QuoteIdent(AsVariances)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("id"),
+		foreiTable, dialect.QuoteIdent("master_id"),
+	)
+
+	if AsVariances == "" {
+		return c.LeftJoin(dbr.I(JProductModel.Table()), on)
+	}
+	return c.LeftJoin(dbr.I(JProductModel.Table()).As(AsVariances), on)
+}
+
+// RightJoinVariances adds a Right JOIN to Product.Variances
+func (c *jProductSelectBuilder) RightJoinVariances(
+	AsVariances string,
+) *jProductSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JProductModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JProductModel.Table())
+	if AsVariances != "" {
+		foreiTable = dialect.QuoteIdent(AsVariances)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("id"),
+		foreiTable, dialect.QuoteIdent("master_id"),
+	)
+
+	if AsVariances == "" {
+		return c.RightJoin(dbr.I(JProductModel.Table()), on)
+	}
+	return c.RightJoin(dbr.I(JProductModel.Table()).As(AsVariances), on)
 }
 
 type jCategorySetup struct {
@@ -1102,28 +1467,24 @@ type jCategoryModel struct {
 func (j jCategoryModel) Eq(s ...*Category) dbr.Builder {
 	ors := []dbr.Builder{}
 	for _, t := range s {
-		ors = append(ors, dbr.Or(
-			dbr.And(
+		ors = append(ors, dbr.And(
 
-				dbr.Eq(`id`, t.ID),
-			),
+			JCategoryModel.ID.Eq(t.ID),
 		))
 	}
-	return dbr.And(ors...)
+	return dbr.Or(ors...)
 }
 
 // In provided items.
 func (j jCategoryModel) In(s ...*Category) dbr.Builder {
 	ors := []dbr.Builder{}
 	for _, t := range s {
-		ors = append(ors, dbr.Or(
-			dbr.And(
+		ors = append(ors, dbr.And(
 
-				dbr.Eq(`id`, t.ID),
-			),
+			JCategoryModel.ID.Eq(t.ID),
 		))
 	}
-	return dbr.And(ors...)
+	return dbr.Or(ors...)
 }
 
 // As returns a copy with an alias.
@@ -1267,6 +1628,54 @@ func (c *jCategorySelectBuilder) Where(query interface{}, value ...interface{}) 
 	return c
 }
 
+//GroupBy returns a jCategorySelectBuilder instead of builder.SelectBuilder.
+func (c *jCategorySelectBuilder) GroupBy(col ...string) *jCategorySelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jCategorySelectBuilder instead of builder.SelectBuilder.
+func (c *jCategorySelectBuilder) Having(query interface{}, value ...interface{}) *jCategorySelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jCategorySelectBuilder instead of builder.SelectBuilder.
+func (c *jCategorySelectBuilder) Limit(n uint64) *jCategorySelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jCategorySelectBuilder instead of builder.SelectBuilder.
+func (c *jCategorySelectBuilder) Offset(n uint64) *jCategorySelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jCategorySelectBuilder instead of builder.SelectBuilder.
+func (c *jCategorySelectBuilder) OrderAsc(col string) *jCategorySelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jCategorySelectBuilder instead of builder.SelectBuilder.
+func (c *jCategorySelectBuilder) OrderDesc(col string) *jCategorySelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jCategorySelectBuilder instead of builder.SelectBuilder.
+func (c *jCategorySelectBuilder) OrderDir(col string, isAsc bool) *jCategorySelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jCategorySelectBuilder instead of builder.SelectBuilder.
+func (c *jCategorySelectBuilder) OrderBy(col string) *jCategorySelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
 //Join returns a jCategorySelectBuilder instead of builder.SelectBuilder.
 func (c *jCategorySelectBuilder) Join(table, on interface{}) *jCategorySelectBuilder {
 	c.SelectBuilder.Join(table, on)
@@ -1323,13 +1732,17 @@ func (c jCategoryQuerier) Model() jCategoryModel {
 //Select returns a Category Select Builder.
 func (c jCategoryQuerier) Select(what ...string) *jCategorySelectBuilder {
 	m := c.Model()
-	if len(what) == 0 {
-		what = m.Fields("*")
-	}
 	dialect := runtime.GetDialect()
 	from := dialect.QuoteIdent(m.Table())
 	if m.Alias() != "" && m.Alias() != m.Table() {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias() != "" && m.Alias() != m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias + ".*")
 	}
 	return &jCategorySelectBuilder{
 		as: c.as,
@@ -1337,6 +1750,11 @@ func (c jCategoryQuerier) Select(what ...string) *jCategorySelectBuilder {
 			SelectBuilder: c.db.Select(what...).From(from),
 		},
 	}
+}
+
+//Where returns a Category Select Builder.
+func (c jCategoryQuerier) Where(query interface{}, value ...interface{}) *jCategorySelectBuilder {
+	return c.Select().Where(query, value...)
 }
 
 //Count returns a Category Select Builder to count given expressions.
@@ -1422,17 +1840,9 @@ func (c jCategoryQuerier) DeleteByPk(ID int64) error {
 
 // DeleteAll given Category
 func (c jCategoryQuerier) DeleteAll(items ...*Category) (sql.Result, error) {
-	q := c.Delete()
-	for _, item := range items {
-		q = q.Where(
-			dbr.Or(
-				dbr.And(
-
-					JCategoryModel.ID.Eq(item.ID),
-				),
-			),
-		)
-	}
+	q := c.Delete().Where(
+		JCategoryModel.In(items...),
+	)
 	return q.Exec()
 }
 
@@ -1450,18 +1860,15 @@ func (g *Category) Products(db dbr.SessionRunner,
 ) *jProductSelectBuilder {
 
 	leftTable := JProductModel.Table()
+	var query *jProductSelectBuilder
 	if AsProduct != "" {
 		leftTable = AsProduct
+		query = JProduct(db).As(AsProduct).Select(AsProduct + ".*")
+	} else {
+		query = JProduct(db).Select(leftTable + ".*")
 	}
-
-	query := JProduct(db).Select(leftTable + ".*")
 
 	midTable := JCategoryproductsToProductcategoriesModel.Table()
-	midWhat := midTable
-	if AsCategoryproductsToProductcategories != "" {
-		midWhat = fmt.Sprintf("%v as %v", midTable, AsCategoryproductsToProductcategories)
-	}
-
 	{
 		on := ""
 		if AsCategoryproductsToProductcategories != "" {
@@ -1473,14 +1880,14 @@ func (g *Category) Products(db dbr.SessionRunner,
 			leftTable, "id",
 		)
 
-		query = query.Join(midWhat, on)
+		if AsCategoryproductsToProductcategories == "" {
+			query = query.Join(dbr.I(JCategoryproductsToProductcategoriesModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JCategoryproductsToProductcategoriesModel.Table()).As(AsCategoryproductsToProductcategories), on)
+		}
 	}
 
 	rightTable := JCategoryModel.Table()
-	rightWhat := rightTable
-	if AsCategory != "" {
-		rightWhat = fmt.Sprintf("%v as %v", rightTable, AsCategory)
-	}
 	{
 		on := ""
 		if AsCategory != "" {
@@ -1492,7 +1899,22 @@ func (g *Category) Products(db dbr.SessionRunner,
 			rightTable, "id",
 		)
 
-		query = query.Join(rightWhat, on)
+		if AsCategory == "" {
+			query = query.Join(dbr.I(JCategoryModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JCategoryModel.Table()).As(AsCategory), on)
+		}
+	}
+
+	{
+		m := JCategoryModel
+		if AsCategory != "" {
+			m = m.As(AsCategory)
+		}
+		query = query.Where(
+
+			m.ID.Eq(g.ID),
+		)
 	}
 
 	return query
@@ -1540,6 +1962,168 @@ func (g *Category) SetProducts(db dbr.SessionRunner, items ...*Product) (sql.Res
 		return res, err
 	}
 	return g.LinkWithProducts(db, items...)
+}
+
+// JoinProducts adds a JOIN to Category.Products
+func (c *jCategorySelectBuilder) JoinProducts(
+	AsCategoryproductsToProductcategories, AsProduct string,
+) *jCategorySelectBuilder {
+
+	query := c
+
+	leftTable := JCategoryModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JCategoryproductsToProductcategoriesModel.Table()
+	if AsCategoryproductsToProductcategories != "" {
+		midTable = AsCategoryproductsToProductcategories
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "category_id",
+			leftTable, "id",
+		)
+
+		if AsCategoryproductsToProductcategories == "" {
+			query = query.Join(dbr.I(JCategoryproductsToProductcategoriesModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JCategoryproductsToProductcategoriesModel.Table()).As(AsCategoryproductsToProductcategories), on)
+		}
+	}
+
+	{
+		rightTable := JProductModel.Table()
+		if AsProduct != "" {
+			rightTable = AsProduct
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "product_id",
+			rightTable, "id",
+		)
+
+		if AsProduct == "" {
+			query = query.Join(dbr.I(JProductModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JProductModel.Table()).As(AsProduct), on)
+		}
+	}
+
+	return query
+}
+
+// LeftJoinProducts adds a LEFT JOIN to Category.Products
+func (c *jCategorySelectBuilder) LeftJoinProducts(
+	AsCategoryproductsToProductcategories, AsProduct string,
+) *jCategorySelectBuilder {
+
+	query := c
+
+	leftTable := JCategoryModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JCategoryproductsToProductcategoriesModel.Table()
+	if AsCategoryproductsToProductcategories != "" {
+		midTable = AsCategoryproductsToProductcategories
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "category_id",
+			leftTable, "id",
+		)
+
+		if AsCategoryproductsToProductcategories == "" {
+			query = query.LeftJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()), on)
+		} else {
+			query = query.LeftJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()).As(AsCategoryproductsToProductcategories), on)
+		}
+	}
+
+	{
+		rightTable := JProductModel.Table()
+		if AsProduct != "" {
+			rightTable = AsProduct
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "product_id",
+			rightTable, "id",
+		)
+
+		if AsProduct == "" {
+			query = query.LeftJoin(dbr.I(JProductModel.Table()), on)
+		} else {
+			query = query.LeftJoin(dbr.I(JProductModel.Table()).As(AsProduct), on)
+		}
+	}
+
+	return query
+}
+
+// RightJoinProducts adds a RIGHT JOIN to Category.Products
+func (c *jCategorySelectBuilder) RightJoinProducts(
+	AsCategoryproductsToProductcategories, AsProduct string,
+) *jCategorySelectBuilder {
+
+	query := c
+
+	leftTable := JCategoryModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JCategoryproductsToProductcategoriesModel.Table()
+	if AsCategoryproductsToProductcategories != "" {
+		midTable = AsCategoryproductsToProductcategories
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "category_id",
+			leftTable, "id",
+		)
+
+		if AsCategoryproductsToProductcategories == "" {
+			query = query.RightJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()), on)
+		} else {
+			query = query.RightJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()).As(AsCategoryproductsToProductcategories), on)
+		}
+	}
+
+	{
+		rightTable := JProductModel.Table()
+		if AsProduct != "" {
+			rightTable = AsProduct
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "product_id",
+			rightTable, "id",
+		)
+
+		if AsProduct == "" {
+			query = query.RightJoin(dbr.I(JProductModel.Table()), on)
+		} else {
+			query = query.RightJoin(dbr.I(JProductModel.Table()).As(AsProduct), on)
+		}
+	}
+
+	return query
 }
 
 type jBrandSetup struct {
@@ -1620,28 +2204,24 @@ type jBrandModel struct {
 func (j jBrandModel) Eq(s ...*Brand) dbr.Builder {
 	ors := []dbr.Builder{}
 	for _, t := range s {
-		ors = append(ors, dbr.Or(
-			dbr.And(
+		ors = append(ors, dbr.And(
 
-				dbr.Eq(`id`, t.ID),
-			),
+			JBrandModel.ID.Eq(t.ID),
 		))
 	}
-	return dbr.And(ors...)
+	return dbr.Or(ors...)
 }
 
 // In provided items.
 func (j jBrandModel) In(s ...*Brand) dbr.Builder {
 	ors := []dbr.Builder{}
 	for _, t := range s {
-		ors = append(ors, dbr.Or(
-			dbr.And(
+		ors = append(ors, dbr.And(
 
-				dbr.Eq(`id`, t.ID),
-			),
+			JBrandModel.ID.Eq(t.ID),
 		))
 	}
-	return dbr.And(ors...)
+	return dbr.Or(ors...)
 }
 
 // As returns a copy with an alias.
@@ -1794,6 +2374,54 @@ func (c *jBrandSelectBuilder) Where(query interface{}, value ...interface{}) *jB
 	return c
 }
 
+//GroupBy returns a jBrandSelectBuilder instead of builder.SelectBuilder.
+func (c *jBrandSelectBuilder) GroupBy(col ...string) *jBrandSelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jBrandSelectBuilder instead of builder.SelectBuilder.
+func (c *jBrandSelectBuilder) Having(query interface{}, value ...interface{}) *jBrandSelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jBrandSelectBuilder instead of builder.SelectBuilder.
+func (c *jBrandSelectBuilder) Limit(n uint64) *jBrandSelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jBrandSelectBuilder instead of builder.SelectBuilder.
+func (c *jBrandSelectBuilder) Offset(n uint64) *jBrandSelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jBrandSelectBuilder instead of builder.SelectBuilder.
+func (c *jBrandSelectBuilder) OrderAsc(col string) *jBrandSelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jBrandSelectBuilder instead of builder.SelectBuilder.
+func (c *jBrandSelectBuilder) OrderDesc(col string) *jBrandSelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jBrandSelectBuilder instead of builder.SelectBuilder.
+func (c *jBrandSelectBuilder) OrderDir(col string, isAsc bool) *jBrandSelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jBrandSelectBuilder instead of builder.SelectBuilder.
+func (c *jBrandSelectBuilder) OrderBy(col string) *jBrandSelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
 //Join returns a jBrandSelectBuilder instead of builder.SelectBuilder.
 func (c *jBrandSelectBuilder) Join(table, on interface{}) *jBrandSelectBuilder {
 	c.SelectBuilder.Join(table, on)
@@ -1850,13 +2478,17 @@ func (c jBrandQuerier) Model() jBrandModel {
 //Select returns a Brand Select Builder.
 func (c jBrandQuerier) Select(what ...string) *jBrandSelectBuilder {
 	m := c.Model()
-	if len(what) == 0 {
-		what = m.Fields("*")
-	}
 	dialect := runtime.GetDialect()
 	from := dialect.QuoteIdent(m.Table())
 	if m.Alias() != "" && m.Alias() != m.Table() {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias() != "" && m.Alias() != m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias + ".*")
 	}
 	return &jBrandSelectBuilder{
 		as: c.as,
@@ -1864,6 +2496,11 @@ func (c jBrandQuerier) Select(what ...string) *jBrandSelectBuilder {
 			SelectBuilder: c.db.Select(what...).From(from),
 		},
 	}
+}
+
+//Where returns a Brand Select Builder.
+func (c jBrandQuerier) Where(query interface{}, value ...interface{}) *jBrandSelectBuilder {
+	return c.Select().Where(query, value...)
 }
 
 //Count returns a Brand Select Builder to count given expressions.
@@ -1949,17 +2586,9 @@ func (c jBrandQuerier) DeleteByPk(ID int64) error {
 
 // DeleteAll given Brand
 func (c jBrandQuerier) DeleteAll(items ...*Brand) (sql.Result, error) {
-	q := c.Delete()
-	for _, item := range items {
-		q = q.Where(
-			dbr.Or(
-				dbr.And(
-
-					JBrandModel.ID.Eq(item.ID),
-				),
-			),
-		)
-	}
+	q := c.Delete().Where(
+		JBrandModel.In(items...),
+	)
 	return q.Exec()
 }
 
@@ -1973,68 +2602,224 @@ func (c jBrandQuerier) Find(ID int64) (*Brand, error) {
 
 // Products returns a query builder to select Products linked to this Brand
 func (g *Brand) Products(db dbr.SessionRunner,
-	AsProduct, AsBrand string,
+	AsBrand, AsProducts string,
 ) *jProductSelectBuilder {
 
+	var query *jProductSelectBuilder
+
 	leftTable := JProductModel.Table()
-	if AsProduct != "" {
-		leftTable = AsProduct
+	if AsBrand != "" {
+		leftTable = AsBrand
+		query = JProduct(db).As(AsBrand).Select(leftTable + ".*")
+	} else {
+		query = JProduct(db).Select(leftTable + ".*")
 	}
 
-	query := JProduct(db).Select(leftTable + ".*")
-
 	rightTable := JBrandModel.Table()
-	rightWhat := rightTable
-	if AsBrand != "" {
-		rightWhat = fmt.Sprintf("%v as %v", rightTable, AsBrand)
+	if AsProducts != "" {
+		rightTable = AsProducts
 	}
 
 	on := ""
-	if AsBrand != "" {
-		rightTable = AsBrand
-	}
 
 	on += fmt.Sprintf("%v.%v = %v.%v",
 		leftTable, "brand_id",
 		rightTable, "id",
 	)
 
-	query = query.Join(rightWhat, on)
+	if AsProducts == "" {
+		return query.Join(dbr.I(JBrandModel.Table()), on)
+	}
+	return query.Join(dbr.I(JBrandModel.Table()).As(AsProducts), on)
+}
 
-	return query
+// JoinProducts adds a JOIN to Brand.Products
+func (c *jBrandSelectBuilder) JoinProducts(
+	AsProducts string,
+) *jBrandSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JBrandModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JProductModel.Table())
+	if AsProducts != "" {
+		foreiTable = dialect.QuoteIdent(AsProducts)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("id"),
+		foreiTable, dialect.QuoteIdent("brand_id"),
+	)
+
+	if AsProducts == "" {
+		return c.Join(dbr.I(JProductModel.Table()), on)
+	}
+	return c.Join(dbr.I(JProductModel.Table()).As(AsProducts), on)
+}
+
+// LeftJoinProducts adds a LEFT JOIN to Brand.Products
+func (c *jBrandSelectBuilder) LeftJoinProducts(
+	AsProducts string,
+) *jBrandSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JBrandModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JProductModel.Table())
+	if AsProducts != "" {
+		foreiTable = dialect.QuoteIdent(AsProducts)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("id"),
+		foreiTable, dialect.QuoteIdent("brand_id"),
+	)
+
+	if AsProducts == "" {
+		return c.LeftJoin(dbr.I(JProductModel.Table()), on)
+	}
+	return c.LeftJoin(dbr.I(JProductModel.Table()).As(AsProducts), on)
+}
+
+// RightJoinProducts adds a Right JOIN to Brand.Products
+func (c *jBrandSelectBuilder) RightJoinProducts(
+	AsProducts string,
+) *jBrandSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JBrandModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JProductModel.Table())
+	if AsProducts != "" {
+		foreiTable = dialect.QuoteIdent(AsProducts)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("id"),
+		foreiTable, dialect.QuoteIdent("brand_id"),
+	)
+
+	if AsProducts == "" {
+		return c.RightJoin(dbr.I(JProductModel.Table()), on)
+	}
+	return c.RightJoin(dbr.I(JProductModel.Table()).As(AsProducts), on)
 }
 
 // Products2 returns a query builder to select Products2 linked to this Brand
 func (g *Brand) Products2(db dbr.SessionRunner,
-	AsProduct, AsBrand string,
+	AsBrand2, AsProducts2 string,
 ) *jProductSelectBuilder {
 
+	var query *jProductSelectBuilder
+
 	leftTable := JProductModel.Table()
-	if AsProduct != "" {
-		leftTable = AsProduct
+	if AsBrand2 != "" {
+		leftTable = AsBrand2
+		query = JProduct(db).As(AsBrand2).Select(leftTable + ".*")
+	} else {
+		query = JProduct(db).Select(leftTable + ".*")
 	}
 
-	query := JProduct(db).Select(leftTable + ".*")
-
 	rightTable := JBrandModel.Table()
-	rightWhat := rightTable
-	if AsBrand != "" {
-		rightWhat = fmt.Sprintf("%v as %v", rightTable, AsBrand)
+	if AsProducts2 != "" {
+		rightTable = AsProducts2
 	}
 
 	on := ""
-	if AsBrand != "" {
-		rightTable = AsBrand
-	}
 
 	on += fmt.Sprintf("%v.%v = %v.%v",
 		leftTable, "brand2_id",
 		rightTable, "id",
 	)
 
-	query = query.Join(rightWhat, on)
+	if AsProducts2 == "" {
+		return query.Join(dbr.I(JBrandModel.Table()), on)
+	}
+	return query.Join(dbr.I(JBrandModel.Table()).As(AsProducts2), on)
+}
 
-	return query
+// JoinProducts2 adds a JOIN to Brand.Products2
+func (c *jBrandSelectBuilder) JoinProducts2(
+	AsProducts2 string,
+) *jBrandSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JBrandModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JProductModel.Table())
+	if AsProducts2 != "" {
+		foreiTable = dialect.QuoteIdent(AsProducts2)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("id"),
+		foreiTable, dialect.QuoteIdent("brand2_id"),
+	)
+
+	if AsProducts2 == "" {
+		return c.Join(dbr.I(JProductModel.Table()), on)
+	}
+	return c.Join(dbr.I(JProductModel.Table()).As(AsProducts2), on)
+}
+
+// LeftJoinProducts2 adds a LEFT JOIN to Brand.Products2
+func (c *jBrandSelectBuilder) LeftJoinProducts2(
+	AsProducts2 string,
+) *jBrandSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JBrandModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JProductModel.Table())
+	if AsProducts2 != "" {
+		foreiTable = dialect.QuoteIdent(AsProducts2)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("id"),
+		foreiTable, dialect.QuoteIdent("brand2_id"),
+	)
+
+	if AsProducts2 == "" {
+		return c.LeftJoin(dbr.I(JProductModel.Table()), on)
+	}
+	return c.LeftJoin(dbr.I(JProductModel.Table()).As(AsProducts2), on)
+}
+
+// RightJoinProducts2 adds a Right JOIN to Brand.Products2
+func (c *jBrandSelectBuilder) RightJoinProducts2(
+	AsProducts2 string,
+) *jBrandSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JBrandModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JProductModel.Table())
+	if AsProducts2 != "" {
+		foreiTable = dialect.QuoteIdent(AsProducts2)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("id"),
+		foreiTable, dialect.QuoteIdent("brand2_id"),
+	)
+
+	if AsProducts2 == "" {
+		return c.RightJoin(dbr.I(JProductModel.Table()), on)
+	}
+	return c.RightJoin(dbr.I(JProductModel.Table()).As(AsProducts2), on)
 }
 
 type jCategoryproductsToProductcategoriesSetup struct {
@@ -2112,32 +2897,28 @@ type jCategoryproductsToProductcategoriesModel struct {
 func (j jCategoryproductsToProductcategoriesModel) Eq(s ...*CategoryproductsToProductcategories) dbr.Builder {
 	ors := []dbr.Builder{}
 	for _, t := range s {
-		ors = append(ors, dbr.Or(
-			dbr.And(
+		ors = append(ors, dbr.And(
 
-				dbr.Eq(`product_id`, t.ProductID),
+			JCategoryproductsToProductcategoriesModel.ProductID.Eq(t.ProductID),
 
-				dbr.Eq(`category_id`, t.CategoryID),
-			),
+			JCategoryproductsToProductcategoriesModel.CategoryID.Eq(t.CategoryID),
 		))
 	}
-	return dbr.And(ors...)
+	return dbr.Or(ors...)
 }
 
 // In provided items.
 func (j jCategoryproductsToProductcategoriesModel) In(s ...*CategoryproductsToProductcategories) dbr.Builder {
 	ors := []dbr.Builder{}
 	for _, t := range s {
-		ors = append(ors, dbr.Or(
-			dbr.And(
+		ors = append(ors, dbr.And(
 
-				dbr.Eq(`product_id`, t.ProductID),
+			JCategoryproductsToProductcategoriesModel.ProductID.Eq(t.ProductID),
 
-				dbr.Eq(`category_id`, t.CategoryID),
-			),
+			JCategoryproductsToProductcategoriesModel.CategoryID.Eq(t.CategoryID),
 		))
 	}
-	return dbr.And(ors...)
+	return dbr.Or(ors...)
 }
 
 // As returns a copy with an alias.
@@ -2279,6 +3060,54 @@ func (c *jCategoryproductsToProductcategoriesSelectBuilder) Where(query interfac
 	return c
 }
 
+//GroupBy returns a jCategoryproductsToProductcategoriesSelectBuilder instead of builder.SelectBuilder.
+func (c *jCategoryproductsToProductcategoriesSelectBuilder) GroupBy(col ...string) *jCategoryproductsToProductcategoriesSelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jCategoryproductsToProductcategoriesSelectBuilder instead of builder.SelectBuilder.
+func (c *jCategoryproductsToProductcategoriesSelectBuilder) Having(query interface{}, value ...interface{}) *jCategoryproductsToProductcategoriesSelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jCategoryproductsToProductcategoriesSelectBuilder instead of builder.SelectBuilder.
+func (c *jCategoryproductsToProductcategoriesSelectBuilder) Limit(n uint64) *jCategoryproductsToProductcategoriesSelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jCategoryproductsToProductcategoriesSelectBuilder instead of builder.SelectBuilder.
+func (c *jCategoryproductsToProductcategoriesSelectBuilder) Offset(n uint64) *jCategoryproductsToProductcategoriesSelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jCategoryproductsToProductcategoriesSelectBuilder instead of builder.SelectBuilder.
+func (c *jCategoryproductsToProductcategoriesSelectBuilder) OrderAsc(col string) *jCategoryproductsToProductcategoriesSelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jCategoryproductsToProductcategoriesSelectBuilder instead of builder.SelectBuilder.
+func (c *jCategoryproductsToProductcategoriesSelectBuilder) OrderDesc(col string) *jCategoryproductsToProductcategoriesSelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jCategoryproductsToProductcategoriesSelectBuilder instead of builder.SelectBuilder.
+func (c *jCategoryproductsToProductcategoriesSelectBuilder) OrderDir(col string, isAsc bool) *jCategoryproductsToProductcategoriesSelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jCategoryproductsToProductcategoriesSelectBuilder instead of builder.SelectBuilder.
+func (c *jCategoryproductsToProductcategoriesSelectBuilder) OrderBy(col string) *jCategoryproductsToProductcategoriesSelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
 //Join returns a jCategoryproductsToProductcategoriesSelectBuilder instead of builder.SelectBuilder.
 func (c *jCategoryproductsToProductcategoriesSelectBuilder) Join(table, on interface{}) *jCategoryproductsToProductcategoriesSelectBuilder {
 	c.SelectBuilder.Join(table, on)
@@ -2335,13 +3164,17 @@ func (c jCategoryproductsToProductcategoriesQuerier) Model() jCategoryproductsTo
 //Select returns a CategoryproductsToProductcategories Select Builder.
 func (c jCategoryproductsToProductcategoriesQuerier) Select(what ...string) *jCategoryproductsToProductcategoriesSelectBuilder {
 	m := c.Model()
-	if len(what) == 0 {
-		what = m.Fields("*")
-	}
 	dialect := runtime.GetDialect()
 	from := dialect.QuoteIdent(m.Table())
 	if m.Alias() != "" && m.Alias() != m.Table() {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias() != "" && m.Alias() != m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias + ".*")
 	}
 	return &jCategoryproductsToProductcategoriesSelectBuilder{
 		as: c.as,
@@ -2349,6 +3182,11 @@ func (c jCategoryproductsToProductcategoriesQuerier) Select(what ...string) *jCa
 			SelectBuilder: c.db.Select(what...).From(from),
 		},
 	}
+}
+
+//Where returns a CategoryproductsToProductcategories Select Builder.
+func (c jCategoryproductsToProductcategoriesQuerier) Where(query interface{}, value ...interface{}) *jCategoryproductsToProductcategoriesSelectBuilder {
+	return c.Select().Where(query, value...)
 }
 
 //Count returns a CategoryproductsToProductcategories Select Builder to count given expressions.
@@ -2408,19 +3246,9 @@ func (c jCategoryproductsToProductcategoriesQuerier) DeleteByPk(ProductID int64,
 
 // DeleteAll given CategoryproductsToProductcategories
 func (c jCategoryproductsToProductcategoriesQuerier) DeleteAll(items ...*CategoryproductsToProductcategories) (sql.Result, error) {
-	q := c.Delete()
-	for _, item := range items {
-		q = q.Where(
-			dbr.Or(
-				dbr.And(
-
-					JCategoryproductsToProductcategoriesModel.ProductID.Eq(item.ProductID),
-
-					JCategoryproductsToProductcategoriesModel.CategoryID.Eq(item.CategoryID),
-				),
-			),
-		)
-	}
+	q := c.Delete().Where(
+		JCategoryproductsToProductcategoriesModel.In(items...),
+	)
 	return q.Exec()
 }
 

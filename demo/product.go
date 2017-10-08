@@ -14,6 +14,7 @@ type Product struct {
 	Brand2ID   *int64      // in case of has_one, you declare the exported keys.
 	master     *Product    `jedi:"@has_one=Product.master"`
 	MasterID   *int64      // in case of has_one, you declare the exported keys.
+	variances  []*Product  `jedi:"@has_many=Product.master"`
 }
 
 //Category is a product category representation.

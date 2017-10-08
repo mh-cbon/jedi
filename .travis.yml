@@ -1,0 +1,24 @@
+language: go
+
+go:
+  - 1.9
+
+matrix:
+  env:
+    - JDRIVER="sqlite3" JDSN="db.sql"
+    - JDRIVER="mysql" JDSN="root:@/test?parseTime=true"
+    - JDRIVER="postgres" JDSN="user=postrges dbname=test"
+
+addons:
+  mariadb: '10.0'
+
+services:
+  - postgresql
+  - mysql
+
+before_install:
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
+before_script:
+  - psql -c 'create database travis_ci_test;' -U postgres
+
+script: go test demo/*.go

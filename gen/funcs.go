@@ -177,8 +177,10 @@ var funcs = map[string]interface{}{
 		}
 
 		ret = &model.Many2One{
-			Local:   aboutStruct,
-			Foreign: foreign,
+			Local:        aboutStruct,
+			Foreign:      foreign,
+			LocalField:   aboutField,
+			ForeignField: foreignProp,
 		}
 
 		for _, pk := range aboutStruct.Pks() {

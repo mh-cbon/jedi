@@ -274,7 +274,6 @@ func parseStructTypeSpec(ts *ast.TypeSpec, str *ast.StructType) (*model.Struct, 
 	for _, f := range str.Fields.List {
 
 		var tag string
-		// consider only fields with "jedi:" tag
 		if f.Tag != nil {
 			t := f.Tag.Value
 			t = t[1 : len(t)-1] // strip quotes
@@ -310,7 +309,6 @@ func parseStructTypeSpec(ts *ast.TypeSpec, str *ast.StructType) (*model.Struct, 
 		if props["has_one"] == "true" {
 			props["has_one"] = strGoItemType(f.Type)
 		}
-
 		res.Fields = append(res.Fields, &model.Field{
 			Name:       name.String(),
 			GoType:     typ,
@@ -420,6 +418,8 @@ func strSQLType(x ast.Expr) string {
 		case "int64", "int32", "int16", "int8", "int":
 			return "INTEGER"
 		case "uint64", "uint32", "uint16", "uint8", "byte", "uint":
+			return "INTEGER"
+		case "bool":
 			return "INTEGER"
 		case "float64", "float32":
 			return "FLOAT"

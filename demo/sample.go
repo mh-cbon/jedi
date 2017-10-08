@@ -14,10 +14,44 @@ type Sample struct {
 	RemovalDate *time.Time
 }
 
-//Sample2 is whatever else.
+//BasicTypes is a type with various possible basic type properties.
+//jedi:
+type BasicTypes struct {
+	ID       int64 `jedi:"@pk"`
+	String   string
+	StringP  *string
+	Int      int
+	IntP     *int
+	Int32    int32
+	Int32P   *int32
+	Int64    int64
+	Int64P   *int64
+	UInt     uint
+	UIntP    *uint
+	UInt32   uint32
+	UInt32P  *uint32
+	UInt64   uint64
+	UInt64P  *uint64
+	Bool     bool
+	BoolP    *bool
+	Float32  float32
+	Float32P *float32
+	Float64  float64
+	Float64P *float64
+}
+
+//TextPk have a text primary key column.
 //jedi:second_sample
-type Sample2 struct {
+type TextPk struct {
 	Name        string `jedi:"@pk"` // PK on non integer
+	Description string
+}
+
+//CompositePk have a text primary key column.
+//jedi:
+type CompositePk struct {
+	P           string `jedi:"@pk"`
+	K           string `jedi:"@pk"`
 	Description string
 }
 

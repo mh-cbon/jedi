@@ -11,6 +11,15 @@ import (
 // CurrentDriver user has setup at runtime.
 var CurrentDriver string
 
+// Open a connection, shorthand for dbr.Open
+func Open(driver, dsn string, log dbr.EventReceiver, force bool) (*dbr.Connection, error) {
+	conn, err := dbr.Open(driver, dsn, log)
+	if err != nil {
+		return conn, err
+	}
+	return conn, Setup(conn, force)
+}
+
 var toSetup []Setupable
 
 // Setup the current driver at runtime
@@ -51,6 +60,16 @@ func GetCurrentDriver() string {
 		panic("Did you configured jedi ? See drivers.Setup()")
 	}
 	return CurrentDriver
+}
+
+// Runs returns true if the current connection is of given type.
+func Runs(t ...string) bool {
+	for _, tt := range t {
+		if tt == CurrentDriver {
+			return true
+		}
+	}
+	return false
 }
 
 // GetDialect returns current dbr dialct

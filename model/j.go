@@ -12,9 +12,11 @@ type HasOne struct {
 }
 
 type Many2One struct {
-	Local   *Struct
-	Foreign *Struct
-	Fields  []*JoinFields
+	Local        *Struct
+	Foreign      *Struct
+	LocalField   *Field
+	ForeignField *Field
+	Fields       []*JoinFields
 }
 
 type Many2Many struct {
