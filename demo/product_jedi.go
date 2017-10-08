@@ -504,45 +504,33 @@ func (c jProductQuerier) Insert(items ...*Product) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
+		query := c.db.InsertInto(JProductModel.Table()).Columns(
+
+			`sku`,
+
+			`brand_id`,
+
+			`brand2_id`,
+
+			`master_id`,
+		).Record(data)
 		if runtime.Runs(drivers.Pgsql) {
-			query := c.db.InsertInto(JProductModel.Table()).Columns(
-
-				`id`,
-
-				`sku`,
-
-				`brand_id`,
-
-				`brand2_id`,
-
-				`master_id`,
-			).Record(data)
 
 			query = query.Returning(
 
 				`id`,
 			)
 
-			var auto0 int64
+			var auto0 sql.NullInt64
 
 			err = query.Load(
 
 				&auto0,
 			)
 
-			data.ID = auto0
+			data.ID = auto0.Int64
 
 		} else {
-			query := c.db.InsertInto(JProductModel.Table()).Columns(
-
-				`sku`,
-
-				`brand_id`,
-
-				`brand2_id`,
-
-				`master_id`,
-			).Record(data)
 			res, err = query.Exec()
 
 			if err == nil {
@@ -1821,33 +1809,27 @@ func (c jCategoryQuerier) Insert(items ...*Category) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
+		query := c.db.InsertInto(JCategoryModel.Table()).Columns(
+
+			`name`,
+		).Record(data)
 		if runtime.Runs(drivers.Pgsql) {
-			query := c.db.InsertInto(JCategoryModel.Table()).Columns(
-
-				`id`,
-
-				`name`,
-			).Record(data)
 
 			query = query.Returning(
 
 				`id`,
 			)
 
-			var auto0 int64
+			var auto0 sql.NullInt64
 
 			err = query.Load(
 
 				&auto0,
 			)
 
-			data.ID = auto0
+			data.ID = auto0.Int64
 
 		} else {
-			query := c.db.InsertInto(JCategoryModel.Table()).Columns(
-
-				`name`,
-			).Record(data)
 			res, err = query.Exec()
 
 			if err == nil {
@@ -2603,33 +2585,27 @@ func (c jBrandQuerier) Insert(items ...*Brand) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
+		query := c.db.InsertInto(JBrandModel.Table()).Columns(
+
+			`name`,
+		).Record(data)
 		if runtime.Runs(drivers.Pgsql) {
-			query := c.db.InsertInto(JBrandModel.Table()).Columns(
-
-				`id`,
-
-				`name`,
-			).Record(data)
 
 			query = query.Returning(
 
 				`id`,
 			)
 
-			var auto0 int64
+			var auto0 sql.NullInt64
 
 			err = query.Load(
 
 				&auto0,
 			)
 
-			data.ID = auto0
+			data.ID = auto0.Int64
 
 		} else {
-			query := c.db.InsertInto(JBrandModel.Table()).Columns(
-
-				`name`,
-			).Record(data)
 			res, err = query.Exec()
 
 			if err == nil {
@@ -3323,23 +3299,17 @@ func (c jCategoryproductsToProductcategoriesQuerier) Insert(items ...*Categorypr
 	var err error
 	for _, data := range items {
 
+		query := c.db.InsertInto(JCategoryproductsToProductcategoriesModel.Table()).Columns(
+
+			`product_id`,
+
+			`category_id`,
+		).Record(data)
 		if runtime.Runs(drivers.Pgsql) {
-			query := c.db.InsertInto(JCategoryproductsToProductcategoriesModel.Table()).Columns(
-
-				`product_id`,
-
-				`category_id`,
-			).Record(data)
 
 			res, err = query.Exec()
 
 		} else {
-			query := c.db.InsertInto(JCategoryproductsToProductcategoriesModel.Table()).Columns(
-
-				`product_id`,
-
-				`category_id`,
-			).Record(data)
 			res, err = query.Exec()
 
 		}

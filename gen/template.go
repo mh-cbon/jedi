@@ -439,12 +439,12 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 					{{end}}
 				{{end}}
 			{{end}}
+			query := c.db.InsertInto(J{{.current.Name}}Model.Table()).Columns(
+				{{range $i, $col := .current.Fields | notAI | withSQLType | withGoName}}
+				{{$col.SQLName | quote}},
+				{{end}}
+			).Record(data)
 			if runtime.Runs(drivers.Pgsql) {
-				query := c.db.InsertInto(J{{.current.Name}}Model.Table()).Columns(
-					{{range $i, $col := .current.Fields | withSQLType | withGoName}}
-					{{$col.SQLName | quote}},
-					{{end}}
-				).Record(data)
 				{{if .current.Fields | isAI}}
 					query = query.Returning(
 						{{range $i, $col := .current.Fields | isAI}}
@@ -452,7 +452,7 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 						{{end}}
 					)
 					{{range $i, $col := .current.Fields | isAI}}
-					var auto{{$i}} {{$col.GoType | itemGoType}}
+					var auto{{$i}} sql.Null{{$col.GoType | itemGoType | ucfirst}}
 					{{end}}
 					err = query.Load(
 						{{range $i, $col := .current.Fields | isAI}}
@@ -461,20 +461,15 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 					)
 					{{range $i, $col := .current.Fields | isAI}}
 						{{if $col.IsStar}}
-						data.{{$col.Name}} = &auto{{$i}}
+						data.{{$col.Name}} = &auto{{$i}}.{{$col.GoType | itemGoType | ucfirst}}
 						{{else}}
-						data.{{$col.Name}} = auto{{$i}}
+						data.{{$col.Name}} = auto{{$i}}.{{$col.GoType | itemGoType | ucfirst}}
 						{{end}}
 					{{end}}
 				{{else}}
 					res, err = query.Exec()
 				{{end}}
 			} else {
-				query := c.db.InsertInto(J{{.current.Name}}Model.Table()).Columns(
-					{{range $i, $col := .current.Fields | notAI | withSQLType | withGoName}}
-					{{$col.SQLName | quote}},
-					{{end}}
-				).Record(data)
 				res, err = query.Exec()
 				{{if notEmpty (.current.Fields | isAI | getPkFieldName)}}
 				if err == nil {

@@ -460,45 +460,33 @@ func (c jSampleQuerier) Insert(items ...*Sample) (sql.Result, error) {
 			data.RemovalDate = &x
 		}
 
+		query := c.db.InsertInto(JSampleModel.Table()).Columns(
+
+			`name`,
+
+			`description`,
+
+			`update_date`,
+
+			`removal_date`,
+		).Record(data)
 		if runtime.Runs(drivers.Pgsql) {
-			query := c.db.InsertInto(JSampleModel.Table()).Columns(
-
-				`id`,
-
-				`name`,
-
-				`description`,
-
-				`update_date`,
-
-				`removal_date`,
-			).Record(data)
 
 			query = query.Returning(
 
 				`id`,
 			)
 
-			var auto0 int64
+			var auto0 sql.NullInt64
 
 			err = query.Load(
 
 				&auto0,
 			)
 
-			data.ID = auto0
+			data.ID = auto0.Int64
 
 		} else {
-			query := c.db.InsertInto(JSampleModel.Table()).Columns(
-
-				`name`,
-
-				`description`,
-
-				`update_date`,
-
-				`removal_date`,
-			).Record(data)
 			res, err = query.Exec()
 
 			if err == nil {
@@ -1253,109 +1241,65 @@ func (c jBasicTypesQuerier) Insert(items ...*BasicTypes) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
+		query := c.db.InsertInto(JBasicTypesModel.Table()).Columns(
+
+			`string`,
+
+			`string_p`,
+
+			`intfield`,
+
+			`int_p`,
+
+			`int32`,
+
+			`int32_p`,
+
+			`int64`,
+
+			`int64_p`,
+
+			`u_int`,
+
+			`u_int_p`,
+
+			`u_int32`,
+
+			`u_int32_p`,
+
+			`u_int64`,
+
+			`u_int64_p`,
+
+			`bool`,
+
+			`bool_p`,
+
+			`float32`,
+
+			`float32_p`,
+
+			`float64`,
+
+			`float64_p`,
+		).Record(data)
 		if runtime.Runs(drivers.Pgsql) {
-			query := c.db.InsertInto(JBasicTypesModel.Table()).Columns(
-
-				`id`,
-
-				`string`,
-
-				`string_p`,
-
-				`intfield`,
-
-				`int_p`,
-
-				`int32`,
-
-				`int32_p`,
-
-				`int64`,
-
-				`int64_p`,
-
-				`u_int`,
-
-				`u_int_p`,
-
-				`u_int32`,
-
-				`u_int32_p`,
-
-				`u_int64`,
-
-				`u_int64_p`,
-
-				`bool`,
-
-				`bool_p`,
-
-				`float32`,
-
-				`float32_p`,
-
-				`float64`,
-
-				`float64_p`,
-			).Record(data)
 
 			query = query.Returning(
 
 				`id`,
 			)
 
-			var auto0 int64
+			var auto0 sql.NullInt64
 
 			err = query.Load(
 
 				&auto0,
 			)
 
-			data.ID = auto0
+			data.ID = auto0.Int64
 
 		} else {
-			query := c.db.InsertInto(JBasicTypesModel.Table()).Columns(
-
-				`string`,
-
-				`string_p`,
-
-				`intfield`,
-
-				`int_p`,
-
-				`int32`,
-
-				`int32_p`,
-
-				`int64`,
-
-				`int64_p`,
-
-				`u_int`,
-
-				`u_int_p`,
-
-				`u_int32`,
-
-				`u_int32_p`,
-
-				`u_int64`,
-
-				`u_int64_p`,
-
-				`bool`,
-
-				`bool_p`,
-
-				`float32`,
-
-				`float32_p`,
-
-				`float64`,
-
-				`float64_p`,
-			).Record(data)
 			res, err = query.Exec()
 
 			if err == nil {
@@ -1835,23 +1779,17 @@ func (c jTextPkQuerier) Insert(items ...*TextPk) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
+		query := c.db.InsertInto(JTextPkModel.Table()).Columns(
+
+			`name`,
+
+			`description`,
+		).Record(data)
 		if runtime.Runs(drivers.Pgsql) {
-			query := c.db.InsertInto(JTextPkModel.Table()).Columns(
-
-				`name`,
-
-				`description`,
-			).Record(data)
 
 			res, err = query.Exec()
 
 		} else {
-			query := c.db.InsertInto(JTextPkModel.Table()).Columns(
-
-				`name`,
-
-				`description`,
-			).Record(data)
 			res, err = query.Exec()
 
 		}
@@ -2323,27 +2261,19 @@ func (c jCompositePkQuerier) Insert(items ...*CompositePk) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
+		query := c.db.InsertInto(JCompositePkModel.Table()).Columns(
+
+			`p`,
+
+			`k`,
+
+			`description`,
+		).Record(data)
 		if runtime.Runs(drivers.Pgsql) {
-			query := c.db.InsertInto(JCompositePkModel.Table()).Columns(
-
-				`p`,
-
-				`k`,
-
-				`description`,
-			).Record(data)
 
 			res, err = query.Exec()
 
 		} else {
-			query := c.db.InsertInto(JCompositePkModel.Table()).Columns(
-
-				`p`,
-
-				`k`,
-
-				`description`,
-			).Record(data)
 			res, err = query.Exec()
 
 		}
@@ -2822,37 +2752,29 @@ func (c jDateTypeQuerier) Insert(items ...*DateType) (sql.Result, error) {
 			data.TP = &x
 		}
 
+		query := c.db.InsertInto(JDateTypeModel.Table()).Columns(
+
+			`t`,
+
+			`tp`,
+		).Record(data)
 		if runtime.Runs(drivers.Pgsql) {
-			query := c.db.InsertInto(JDateTypeModel.Table()).Columns(
-
-				`id`,
-
-				`t`,
-
-				`tp`,
-			).Record(data)
 
 			query = query.Returning(
 
 				`id`,
 			)
 
-			var auto0 int64
+			var auto0 sql.NullInt64
 
 			err = query.Load(
 
 				&auto0,
 			)
 
-			data.ID = auto0
+			data.ID = auto0.Int64
 
 		} else {
-			query := c.db.InsertInto(JDateTypeModel.Table()).Columns(
-
-				`t`,
-
-				`tp`,
-			).Record(data)
 			res, err = query.Exec()
 
 			if err == nil {
