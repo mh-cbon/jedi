@@ -89,21 +89,21 @@ func t2(sess *dbr.Session) {
 	_, err = JProduct(sess).Insert(p1, p2)
 	fail(err)
 	log.Println(
-		JBrand(sess).Select(JBrandModel.ID.Name()).Where(JBrandModel.Name.Like("r")).String(),
+		JBrand(sess).Select(JBrandModel.ID.Name()).Where(JBrandModel.Name.Like("%r")).String(),
 	)
-	x, err3 := JBrand(sess).Select(JBrandModel.ID.Name()).Where(JBrandModel.Name.Like("r")).ReturnInt64()
+	x, err3 := JBrand(sess).Select(JBrandModel.ID.Name()).Where(JBrandModel.Name.Like("%r")).ReturnInt64()
 	fail(err3)
 	log.Println(x)
 
 	log.Println(
 		qProduct.Select(m.Fields()...).
 			LeftJoinBrand(qBrand.Alias()).
-			Where(qBrand.Name.Like("r")).
+			Where(qBrand.Name.Like("%r")).
 			String(),
 	)
 	products, err2 := qProduct.Select(m.Fields()...).
 		LeftJoinBrand(qBrand.Alias()).
-		Where(qBrand.Name.Like("r")).
+		Where(qBrand.Name.Like("%r")).
 		ReadAll()
 	fail(err2)
 	log.Println(products[0].SKU)

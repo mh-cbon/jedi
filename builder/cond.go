@@ -13,7 +13,7 @@ func Like(column string, value interface{}) dbr.Builder {
 		buf.WriteString(" ")
 		buf.WriteString("LIKE")
 		buf.WriteString(" ")
-		buf.WriteString(fmt.Sprintf(`'%%%v%%'`, value)) //todo: make secure, add tests
+		buf.WriteString(fmt.Sprintf(`'%v'`, value)) //todo: make secure, add tests
 		return nil
 	})
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"testing"
 
@@ -129,7 +130,12 @@ func TestHasOne(t *testing.T) {
 		}
 	})
 	t.Run("handles self-referencing join", func(t *testing.T) {
-		res, err := JProduct(sess).Select().JoinMaster("m").Where(JProductModel.As("m").SKU.Like("mas")).ReadAll()
+		log.Println(
+			JProduct(sess).As("p").Select("p.*").
+				JoinMaster("m").Where(JProductModel.As("m").SKU.Like("Mas%")).String(),
+		)
+		res, err := JProduct(sess).As("p").Select("p.*").
+			JoinMaster("m").Where(JProductModel.As("m").SKU.Like("Mas%")).ReadAll()
 		if err != nil {
 			t.Fatal(err)
 		}
