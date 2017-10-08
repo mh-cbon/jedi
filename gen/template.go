@@ -122,7 +122,7 @@ func J{{.current.Name}}Setup() runtime.Setuper {
 		Name: {{.current.SQLName | quote}},
 		CreateStmt: create,
 		DropStmt: drop,
-		isView: {{empty .current.SQLViewSelect .current.SQLViewCreate}},
+		isView: !{{empty .current.SQLViewSelect .current.SQLViewCreate}},
 	}
 }
 

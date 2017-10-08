@@ -100,7 +100,7 @@ master_id INTEGER
 		Name:       `product`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     true,
+		isView:     !true,
 	}
 }
 
@@ -1466,7 +1466,7 @@ name TEXT
 		Name:       `category`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     true,
+		isView:     !true,
 	}
 }
 
@@ -2212,7 +2212,7 @@ name TEXT
 		Name:       `brand`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     true,
+		isView:     !true,
 	}
 }
 
@@ -2918,7 +2918,7 @@ category_id INTEGER
 		Name:       `category_productstoproduct_categories`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     true,
+		isView:     !true,
 	}
 }
 

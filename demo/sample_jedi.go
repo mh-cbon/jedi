@@ -104,7 +104,7 @@ removal_date timestamp
 		Name:       `sample`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     true,
+		isView:     !true,
 	}
 }
 
@@ -681,7 +681,7 @@ float64_p FLOAT
 		Name:       `basic_types`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     true,
+		isView:     !true,
 	}
 }
 
@@ -1428,7 +1428,7 @@ description TEXT
 		Name:       `second_sample`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     true,
+		isView:     !true,
 	}
 }
 
@@ -1887,7 +1887,7 @@ description TEXT
 		Name:       `composite_pk`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     true,
+		isView:     !true,
 	}
 }
 
@@ -2368,7 +2368,7 @@ tp timestamp
 		Name:       `date_type`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     true,
+		isView:     !true,
 	}
 }
 
@@ -2857,7 +2857,7 @@ func JSampleViewSetup() runtime.Setuper {
 		Name:       `sample_view`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     false,
+		isView:     !false,
 	}
 }
 
