@@ -2279,21 +2279,18 @@ func JSampleViewSetup() runtime.Setuper {
 	SELECT *
 	FROM sample
 	WHERE id > 1
-	-- comments finish on new empty line
 `
 	} else if driver == drivers.Mysql {
-		create = `CREATE VIEW IF NOT EXISTS sample_view AS 
+		create = `CREATE OR REPLACE VIEW sample_view AS 
 	SELECT *
 	FROM sample
 	WHERE id > 1
-	-- comments finish on new empty line
 `
 	} else if driver == drivers.Pgsql {
 		create = `CREATE VIEW IF NOT EXISTS sample_view AS 
 	SELECT *
 	FROM sample
 	WHERE id > 1
-	-- comments finish on new empty line
 `
 	}
 

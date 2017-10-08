@@ -575,31 +575,31 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 		return c.LeftJoin(dbr.I(J{{$hasOne.Foreign.Name}}Model.Table()).As(As{{$f.Name | ucfirst}}), on)
 	}
 
-	// RightJoin{{$f.Name | ucfirst}} adds a RIGHT JOIN to {{$hasOne.Local.Name}}.{{$f.Name | ucfirst}}
-	func (c *j{{$.current.Name}}SelectBuilder) RightJoin{{$f.Name | ucfirst}}(
-		As{{$f.Name | ucfirst}} string,
-	) *j{{$.current.Name}}SelectBuilder {
-		dialect := runtime.GetDialect()
-		on := ""
-		localTable := dialect.QuoteIdent(J{{$hasOne.Local.Name}}Model.Table())
-		if c.as != "" {
-			localTable = dialect.QuoteIdent(c.as)
-		}
-		foreiTable := dialect.QuoteIdent(J{{$hasOne.Foreign.Name}}Model.Table())
-		if As{{$f.Name | ucfirst}} != "" {
-			foreiTable = dialect.QuoteIdent(As{{$f.Name | ucfirst}})
-		}
-		{{range $i, $col := $hasOne.Fields}}
-		on += fmt.Sprintf("%v.%v = %v.%v",
-			localTable, dialect.QuoteIdent("{{$col.LocalField.SQLName}}"),
-			foreiTable, dialect.QuoteIdent("{{$col.ForeignField.SQLName}}"),
-		)
-		{{end}}
-		if As{{$f.Name | ucfirst}} == "" {
-			return c.RightJoin(dbr.I(J{{$hasOne.Foreign.Name}}Model.Table()), on)
-		}
-		return c.RightJoin(dbr.I(J{{$hasOne.Foreign.Name}}Model.Table()).As(As{{$f.Name | ucfirst}}), on)
-	}
+	// // RightJoin{{$f.Name | ucfirst}} adds a RIGHT JOIN to {{$hasOne.Local.Name}}.{{$f.Name | ucfirst}}
+	// func (c *j{{$.current.Name}}SelectBuilder) RightJoin{{$f.Name | ucfirst}}(
+	// 	As{{$f.Name | ucfirst}} string,
+	// ) *j{{$.current.Name}}SelectBuilder {
+	// 	dialect := runtime.GetDialect()
+	// 	on := ""
+	// 	localTable := dialect.QuoteIdent(J{{$hasOne.Local.Name}}Model.Table())
+	// 	if c.as != "" {
+	// 		localTable = dialect.QuoteIdent(c.as)
+	// 	}
+	// 	foreiTable := dialect.QuoteIdent(J{{$hasOne.Foreign.Name}}Model.Table())
+	// 	if As{{$f.Name | ucfirst}} != "" {
+	// 		foreiTable = dialect.QuoteIdent(As{{$f.Name | ucfirst}})
+	// 	}
+	// 	{{range $i, $col := $hasOne.Fields}}
+	// 	on += fmt.Sprintf("%v.%v = %v.%v",
+	// 		localTable, dialect.QuoteIdent("{{$col.LocalField.SQLName}}"),
+	// 		foreiTable, dialect.QuoteIdent("{{$col.ForeignField.SQLName}}"),
+	// 	)
+	// 	{{end}}
+	// 	if As{{$f.Name | ucfirst}} == "" {
+	// 		return c.RightJoin(dbr.I(J{{$hasOne.Foreign.Name}}Model.Table()), on)
+	// 	}
+	// 	return c.RightJoin(dbr.I(J{{$hasOne.Foreign.Name}}Model.Table()).As(As{{$f.Name | ucfirst}}), on)
+	// }
 
 	// FullJoin{{$f.Name | ucfirst}} adds a FULL JOIN to {{$hasOne.Local.Name}}.{{$f.Name | ucfirst}}
 	func (c *j{{$.current.Name}}SelectBuilder) FullJoin{{$f.Name | ucfirst}}(
@@ -920,61 +920,61 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 		return query
 	}
 
-	// RightJoin{{$f.Name | ucfirst}} adds a RIGHT JOIN to {{$m2m.Local.Name}}.{{$f.Name | ucfirst}}
-	func (c *j{{$.current.Name}}SelectBuilder) RightJoin{{$f.Name | ucfirst}}(
-		As{{$m2m.Middle.Name}}, As{{$m2m.Foreign.Name}} string,
-	) *j{{$m2m.Local.Name}}SelectBuilder {
-
-		query := c
-
-		leftTable := J{{$m2m.Local.Name}}Model.Table()
-		if c.as != "" {
-			leftTable = c.as
-		}
-
-		midTable := J{{$m2m.Middle.Name}}Model.Table()
-		if As{{$m2m.Middle.Name}} != "" {
-			midTable = As{{$m2m.Middle.Name}}
-		}
-
-		{
-			on := ""
-			{{range $i, $j := $m2m.LMFields}}
-			on += fmt.Sprintf("%v.%v = %v.%v",
-				midTable, "{{$j.ForeignField.SQLName}}",
-				leftTable, "{{$j.LocalField.SQLName}}",
-				)
-			{{end}}
-
-			if As{{$m2m.Middle.Name}} == "" {
-				query = query.RightJoin(dbr.I(J{{$m2m.Middle.Name}}Model.Table()), on)
-			} else {
-				query = query.RightJoin(dbr.I(J{{$m2m.Middle.Name}}Model.Table()).As(As{{$m2m.Middle.Name}}), on)
-			}
-		}
-
-		{
-			rightTable := J{{$m2m.Foreign.Name}}Model.Table()
-			if As{{$m2m.Foreign.Name}} != "" {
-				rightTable = As{{$m2m.Foreign.Name}}
-			}
-			on := ""
-			{{range $i, $j := $m2m.FMFields}}
-			on += fmt.Sprintf("%v.%v = %v.%v",
-				midTable, "{{$j.ForeignField.SQLName}}",
-				rightTable, "{{$j.LocalField.SQLName}}",
-				)
-			{{end}}
-
-			if As{{$m2m.Foreign.Name}} == "" {
-				query = query.RightJoin(dbr.I(J{{$m2m.Foreign.Name}}Model.Table()), on)
-			} else {
-				query = query.RightJoin(dbr.I(J{{$m2m.Foreign.Name}}Model.Table()).As(As{{$m2m.Foreign.Name}}), on)
-			}
-		}
-
-		return query
-	}
+	// // RightJoin{{$f.Name | ucfirst}} adds a RIGHT JOIN to {{$m2m.Local.Name}}.{{$f.Name | ucfirst}}
+	// func (c *j{{$.current.Name}}SelectBuilder) RightJoin{{$f.Name | ucfirst}}(
+	// 	As{{$m2m.Middle.Name}}, As{{$m2m.Foreign.Name}} string,
+	// ) *j{{$m2m.Local.Name}}SelectBuilder {
+	//
+	// 	query := c
+	//
+	// 	leftTable := J{{$m2m.Local.Name}}Model.Table()
+	// 	if c.as != "" {
+	// 		leftTable = c.as
+	// 	}
+	//
+	// 	midTable := J{{$m2m.Middle.Name}}Model.Table()
+	// 	if As{{$m2m.Middle.Name}} != "" {
+	// 		midTable = As{{$m2m.Middle.Name}}
+	// 	}
+	//
+	// 	{
+	// 		on := ""
+	// 		{{range $i, $j := $m2m.LMFields}}
+	// 		on += fmt.Sprintf("%v.%v = %v.%v",
+	// 			midTable, "{{$j.ForeignField.SQLName}}",
+	// 			leftTable, "{{$j.LocalField.SQLName}}",
+	// 			)
+	// 		{{end}}
+	//
+	// 		if As{{$m2m.Middle.Name}} == "" {
+	// 			query = query.RightJoin(dbr.I(J{{$m2m.Middle.Name}}Model.Table()), on)
+	// 		} else {
+	// 			query = query.RightJoin(dbr.I(J{{$m2m.Middle.Name}}Model.Table()).As(As{{$m2m.Middle.Name}}), on)
+	// 		}
+	// 	}
+	//
+	// 	{
+	// 		rightTable := J{{$m2m.Foreign.Name}}Model.Table()
+	// 		if As{{$m2m.Foreign.Name}} != "" {
+	// 			rightTable = As{{$m2m.Foreign.Name}}
+	// 		}
+	// 		on := ""
+	// 		{{range $i, $j := $m2m.FMFields}}
+	// 		on += fmt.Sprintf("%v.%v = %v.%v",
+	// 			midTable, "{{$j.ForeignField.SQLName}}",
+	// 			rightTable, "{{$j.LocalField.SQLName}}",
+	// 			)
+	// 		{{end}}
+	//
+	// 		if As{{$m2m.Foreign.Name}} == "" {
+	// 			query = query.RightJoin(dbr.I(J{{$m2m.Foreign.Name}}Model.Table()), on)
+	// 		} else {
+	// 			query = query.RightJoin(dbr.I(J{{$m2m.Foreign.Name}}Model.Table()).As(As{{$m2m.Foreign.Name}}), on)
+	// 		}
+	// 	}
+	//
+	// 	return query
+	// }
 
 {{end}}
 
@@ -1069,31 +1069,31 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 		return c.LeftJoin(dbr.I(J{{$m2o.Foreign.Name}}Model.Table()).As(As{{$f.Name | ucfirst}}), on)
 	}
 
-	// RightJoin{{$f.Name | ucfirst}} adds a Right JOIN to {{$m2o.Local.Name}}.{{$f.Name | ucfirst}}
-	func (c *j{{$.current.Name}}SelectBuilder) RightJoin{{$f.Name | ucfirst}}(
-		As{{$f.Name | ucfirst}} string,
-	) *j{{$.current.Name}}SelectBuilder {
-		dialect := runtime.GetDialect()
-		on := ""
-		localTable := dialect.QuoteIdent(J{{$m2o.Local.Name}}Model.Table())
-		if c.as != "" {
-			localTable = dialect.QuoteIdent(c.as)
-		}
-		foreiTable := dialect.QuoteIdent(J{{$m2o.Foreign.Name}}Model.Table())
-		if As{{$f.Name | ucfirst}} != "" {
-			foreiTable = dialect.QuoteIdent(As{{$f.Name | ucfirst}})
-		}
-		{{range $i, $col := $m2o.Fields}}
-		on += fmt.Sprintf("%v.%v = %v.%v",
-			localTable, dialect.QuoteIdent("{{$col.LocalField.SQLName}}"),
-			foreiTable, dialect.QuoteIdent("{{$col.ForeignField.SQLName}}"),
-		)
-		{{end}}
-		if As{{$f.Name | ucfirst}} == "" {
-			return c.RightJoin(dbr.I(J{{$m2o.Foreign.Name}}Model.Table()), on)
-		}
-		return c.RightJoin(dbr.I(J{{$m2o.Foreign.Name}}Model.Table()).As(As{{$f.Name | ucfirst}}), on)
-	}
+	// // RightJoin{{$f.Name | ucfirst}} adds a Right JOIN to {{$m2o.Local.Name}}.{{$f.Name | ucfirst}}
+	// func (c *j{{$.current.Name}}SelectBuilder) RightJoin{{$f.Name | ucfirst}}(
+	// 	As{{$f.Name | ucfirst}} string,
+	// ) *j{{$.current.Name}}SelectBuilder {
+	// 	dialect := runtime.GetDialect()
+	// 	on := ""
+	// 	localTable := dialect.QuoteIdent(J{{$m2o.Local.Name}}Model.Table())
+	// 	if c.as != "" {
+	// 		localTable = dialect.QuoteIdent(c.as)
+	// 	}
+	// 	foreiTable := dialect.QuoteIdent(J{{$m2o.Foreign.Name}}Model.Table())
+	// 	if As{{$f.Name | ucfirst}} != "" {
+	// 		foreiTable = dialect.QuoteIdent(As{{$f.Name | ucfirst}})
+	// 	}
+	// 	{{range $i, $col := $m2o.Fields}}
+	// 	on += fmt.Sprintf("%v.%v = %v.%v",
+	// 		localTable, dialect.QuoteIdent("{{$col.LocalField.SQLName}}"),
+	// 		foreiTable, dialect.QuoteIdent("{{$col.ForeignField.SQLName}}"),
+	// 	)
+	// 	{{end}}
+	// 	if As{{$f.Name | ucfirst}} == "" {
+	// 		return c.RightJoin(dbr.I(J{{$m2o.Foreign.Name}}Model.Table()), on)
+	// 	}
+	// 	return c.RightJoin(dbr.I(J{{$m2o.Foreign.Name}}Model.Table()).As(As{{$f.Name | ucfirst}}), on)
+	// }
 
 {{end}}
 `))

@@ -55,26 +55,26 @@ func TestHasOne(t *testing.T) {
 			t.Fatalf("inavlid object, wanted=%#v got=%#v", p, res[0])
 		}
 	})
-	t.Run("provides Right Join helper", func(t *testing.T) {
-		if jedi.Runs(drivers.Mysql, drivers.Pgsql) {
-			// This does not run on sqlite at all
-			res, err := JProduct(sess).As("p").Select("p.*").RightJoinBrand("b").ReadAll()
-			if err != nil {
-				t.Fatal(err)
-			}
-			if len(res) != 1 {
-				t.Fatalf("invalid length wanted=%v, got=%v", 1, len(res))
-			}
-			if res[0].SKU != p.SKU {
-				t.Fatalf("inavlid object, wanted=%#v got=%#v", p, res[0])
-			}
-			if res[0].ID != p.ID {
-				t.Fatalf("inavlid object, wanted=%#v got=%#v", p, res[0])
-			}
-		} else {
-			t.Skip("sqlite can t do that")
-		}
-	})
+	// t.Run("provides Right Join helper", func(t *testing.T) {
+	// 	if jedi.Runs(drivers.Mysql, drivers.Pgsql) {
+	// 		// This does not run on sqlite at all
+	// 		res, err := JProduct(sess).As("p").Select("p.*").RightJoinBrand("b").ReadAll()
+	// 		if err != nil {
+	// 			t.Fatal(err)
+	// 		}
+	// 		if len(res) != 1 {
+	// 			t.Fatalf("invalid length wanted=%v, got=%v", 1, len(res))
+	// 		}
+	// 		if res[0].SKU != p.SKU {
+	// 			t.Fatalf("inavlid object, wanted=%#v got=%#v", p, res[0])
+	// 		}
+	// 		if res[0].ID != p.ID {
+	// 			t.Fatalf("inavlid object, wanted=%#v got=%#v", p, res[0])
+	// 		}
+	// 	} else {
+	// 		t.Skip("sqlite can t do that")
+	// 	}
+	// })
 	t.Run("provides Set method to update imported primary keys", func(t *testing.T) {
 		b1 := &Brand{Name: "adidas"}
 		if _, err := JBrand(sess).Insert(b1); err != nil {

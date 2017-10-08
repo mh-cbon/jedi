@@ -640,31 +640,31 @@ func (c *jProductSelectBuilder) LeftJoinBrand(
 	return c.LeftJoin(dbr.I(JBrandModel.Table()).As(AsBrand), on)
 }
 
-// RightJoinBrand adds a RIGHT JOIN to Product.Brand
-func (c *jProductSelectBuilder) RightJoinBrand(
-	AsBrand string,
-) *jProductSelectBuilder {
-	dialect := runtime.GetDialect()
-	on := ""
-	localTable := dialect.QuoteIdent(JProductModel.Table())
-	if c.as != "" {
-		localTable = dialect.QuoteIdent(c.as)
-	}
-	foreiTable := dialect.QuoteIdent(JBrandModel.Table())
-	if AsBrand != "" {
-		foreiTable = dialect.QuoteIdent(AsBrand)
-	}
-
-	on += fmt.Sprintf("%v.%v = %v.%v",
-		localTable, dialect.QuoteIdent("brand_id"),
-		foreiTable, dialect.QuoteIdent("id"),
-	)
-
-	if AsBrand == "" {
-		return c.RightJoin(dbr.I(JBrandModel.Table()), on)
-	}
-	return c.RightJoin(dbr.I(JBrandModel.Table()).As(AsBrand), on)
-}
+// // RightJoinBrand adds a RIGHT JOIN to Product.Brand
+// func (c *jProductSelectBuilder) RightJoinBrand(
+// 	AsBrand string,
+// ) *jProductSelectBuilder {
+// 	dialect := runtime.GetDialect()
+// 	on := ""
+// 	localTable := dialect.QuoteIdent(JProductModel.Table())
+// 	if c.as != "" {
+// 		localTable = dialect.QuoteIdent(c.as)
+// 	}
+// 	foreiTable := dialect.QuoteIdent(JBrandModel.Table())
+// 	if AsBrand != "" {
+// 		foreiTable = dialect.QuoteIdent(AsBrand)
+// 	}
+//
+// 	on += fmt.Sprintf("%v.%v = %v.%v",
+// 		localTable, dialect.QuoteIdent("brand_id"),
+// 		foreiTable, dialect.QuoteIdent("id"),
+// 	)
+//
+// 	if AsBrand == "" {
+// 		return c.RightJoin(dbr.I(JBrandModel.Table()), on)
+// 	}
+// 	return c.RightJoin(dbr.I(JBrandModel.Table()).As(AsBrand), on)
+// }
 
 // FullJoinBrand adds a FULL JOIN to Product.Brand
 func (c *jProductSelectBuilder) FullJoinBrand(
@@ -780,31 +780,31 @@ func (c *jProductSelectBuilder) LeftJoinBrand2(
 	return c.LeftJoin(dbr.I(JBrandModel.Table()).As(AsBrand2), on)
 }
 
-// RightJoinBrand2 adds a RIGHT JOIN to Product.Brand2
-func (c *jProductSelectBuilder) RightJoinBrand2(
-	AsBrand2 string,
-) *jProductSelectBuilder {
-	dialect := runtime.GetDialect()
-	on := ""
-	localTable := dialect.QuoteIdent(JProductModel.Table())
-	if c.as != "" {
-		localTable = dialect.QuoteIdent(c.as)
-	}
-	foreiTable := dialect.QuoteIdent(JBrandModel.Table())
-	if AsBrand2 != "" {
-		foreiTable = dialect.QuoteIdent(AsBrand2)
-	}
-
-	on += fmt.Sprintf("%v.%v = %v.%v",
-		localTable, dialect.QuoteIdent("brand2_id"),
-		foreiTable, dialect.QuoteIdent("id"),
-	)
-
-	if AsBrand2 == "" {
-		return c.RightJoin(dbr.I(JBrandModel.Table()), on)
-	}
-	return c.RightJoin(dbr.I(JBrandModel.Table()).As(AsBrand2), on)
-}
+// // RightJoinBrand2 adds a RIGHT JOIN to Product.Brand2
+// func (c *jProductSelectBuilder) RightJoinBrand2(
+// 	AsBrand2 string,
+// ) *jProductSelectBuilder {
+// 	dialect := runtime.GetDialect()
+// 	on := ""
+// 	localTable := dialect.QuoteIdent(JProductModel.Table())
+// 	if c.as != "" {
+// 		localTable = dialect.QuoteIdent(c.as)
+// 	}
+// 	foreiTable := dialect.QuoteIdent(JBrandModel.Table())
+// 	if AsBrand2 != "" {
+// 		foreiTable = dialect.QuoteIdent(AsBrand2)
+// 	}
+//
+// 	on += fmt.Sprintf("%v.%v = %v.%v",
+// 		localTable, dialect.QuoteIdent("brand2_id"),
+// 		foreiTable, dialect.QuoteIdent("id"),
+// 	)
+//
+// 	if AsBrand2 == "" {
+// 		return c.RightJoin(dbr.I(JBrandModel.Table()), on)
+// 	}
+// 	return c.RightJoin(dbr.I(JBrandModel.Table()).As(AsBrand2), on)
+// }
 
 // FullJoinBrand2 adds a FULL JOIN to Product.Brand2
 func (c *jProductSelectBuilder) FullJoinBrand2(
@@ -920,31 +920,31 @@ func (c *jProductSelectBuilder) LeftJoinMaster(
 	return c.LeftJoin(dbr.I(JProductModel.Table()).As(AsMaster), on)
 }
 
-// RightJoinMaster adds a RIGHT JOIN to Product.Master
-func (c *jProductSelectBuilder) RightJoinMaster(
-	AsMaster string,
-) *jProductSelectBuilder {
-	dialect := runtime.GetDialect()
-	on := ""
-	localTable := dialect.QuoteIdent(JProductModel.Table())
-	if c.as != "" {
-		localTable = dialect.QuoteIdent(c.as)
-	}
-	foreiTable := dialect.QuoteIdent(JProductModel.Table())
-	if AsMaster != "" {
-		foreiTable = dialect.QuoteIdent(AsMaster)
-	}
-
-	on += fmt.Sprintf("%v.%v = %v.%v",
-		localTable, dialect.QuoteIdent("master_id"),
-		foreiTable, dialect.QuoteIdent("id"),
-	)
-
-	if AsMaster == "" {
-		return c.RightJoin(dbr.I(JProductModel.Table()), on)
-	}
-	return c.RightJoin(dbr.I(JProductModel.Table()).As(AsMaster), on)
-}
+// // RightJoinMaster adds a RIGHT JOIN to Product.Master
+// func (c *jProductSelectBuilder) RightJoinMaster(
+// 	AsMaster string,
+// ) *jProductSelectBuilder {
+// 	dialect := runtime.GetDialect()
+// 	on := ""
+// 	localTable := dialect.QuoteIdent(JProductModel.Table())
+// 	if c.as != "" {
+// 		localTable = dialect.QuoteIdent(c.as)
+// 	}
+// 	foreiTable := dialect.QuoteIdent(JProductModel.Table())
+// 	if AsMaster != "" {
+// 		foreiTable = dialect.QuoteIdent(AsMaster)
+// 	}
+//
+// 	on += fmt.Sprintf("%v.%v = %v.%v",
+// 		localTable, dialect.QuoteIdent("master_id"),
+// 		foreiTable, dialect.QuoteIdent("id"),
+// 	)
+//
+// 	if AsMaster == "" {
+// 		return c.RightJoin(dbr.I(JProductModel.Table()), on)
+// 	}
+// 	return c.RightJoin(dbr.I(JProductModel.Table()).As(AsMaster), on)
+// }
 
 // FullJoinMaster adds a FULL JOIN to Product.Master
 func (c *jProductSelectBuilder) FullJoinMaster(
@@ -1226,59 +1226,61 @@ func (c *jProductSelectBuilder) LeftJoinCategories(
 	return query
 }
 
-// RightJoinCategories adds a RIGHT JOIN to Product.Categories
-func (c *jProductSelectBuilder) RightJoinCategories(
-	AsCategoryproductsToProductcategories, AsCategory string,
-) *jProductSelectBuilder {
-
-	query := c
-
-	leftTable := JProductModel.Table()
-	if c.as != "" {
-		leftTable = c.as
-	}
-
-	midTable := JCategoryproductsToProductcategoriesModel.Table()
-	if AsCategoryproductsToProductcategories != "" {
-		midTable = AsCategoryproductsToProductcategories
-	}
-
-	{
-		on := ""
-
-		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "product_id",
-			leftTable, "id",
-		)
-
-		if AsCategoryproductsToProductcategories == "" {
-			query = query.RightJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()), on)
-		} else {
-			query = query.RightJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()).As(AsCategoryproductsToProductcategories), on)
-		}
-	}
-
-	{
-		rightTable := JCategoryModel.Table()
-		if AsCategory != "" {
-			rightTable = AsCategory
-		}
-		on := ""
-
-		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "category_id",
-			rightTable, "id",
-		)
-
-		if AsCategory == "" {
-			query = query.RightJoin(dbr.I(JCategoryModel.Table()), on)
-		} else {
-			query = query.RightJoin(dbr.I(JCategoryModel.Table()).As(AsCategory), on)
-		}
-	}
-
-	return query
-}
+// // RightJoinCategories adds a RIGHT JOIN to Product.Categories
+// func (c *jProductSelectBuilder) RightJoinCategories(
+// 	AsCategoryproductsToProductcategories, AsCategory string,
+// ) *jProductSelectBuilder {
+//
+// 	query := c
+//
+// 	leftTable := JProductModel.Table()
+// 	if c.as != "" {
+// 		leftTable = c.as
+// 	}
+//
+// 	midTable := JCategoryproductsToProductcategoriesModel.Table()
+// 	if AsCategoryproductsToProductcategories != "" {
+// 		midTable = AsCategoryproductsToProductcategories
+// 	}
+//
+// 	{
+// 		on := ""
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "product_id",
+// 			leftTable, "id",
+// 			)
+//
+//
+// 		if AsCategoryproductsToProductcategories == "" {
+// 			query = query.RightJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()), on)
+// 		} else {
+// 			query = query.RightJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()).As(AsCategoryproductsToProductcategories), on)
+// 		}
+// 	}
+//
+// 	{
+// 		rightTable := JCategoryModel.Table()
+// 		if AsCategory != "" {
+// 			rightTable = AsCategory
+// 		}
+// 		on := ""
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "category_id",
+// 			rightTable, "id",
+// 			)
+//
+//
+// 		if AsCategory == "" {
+// 			query = query.RightJoin(dbr.I(JCategoryModel.Table()), on)
+// 		} else {
+// 			query = query.RightJoin(dbr.I(JCategoryModel.Table()).As(AsCategory), on)
+// 		}
+// 	}
+//
+// 	return query
+// }
 
 // Variances returns a query builder to select Variances linked to this Product
 func (g *Product) Variances(db dbr.SessionRunner,
@@ -1365,31 +1367,31 @@ func (c *jProductSelectBuilder) LeftJoinVariances(
 	return c.LeftJoin(dbr.I(JProductModel.Table()).As(AsVariances), on)
 }
 
-// RightJoinVariances adds a Right JOIN to Product.Variances
-func (c *jProductSelectBuilder) RightJoinVariances(
-	AsVariances string,
-) *jProductSelectBuilder {
-	dialect := runtime.GetDialect()
-	on := ""
-	localTable := dialect.QuoteIdent(JProductModel.Table())
-	if c.as != "" {
-		localTable = dialect.QuoteIdent(c.as)
-	}
-	foreiTable := dialect.QuoteIdent(JProductModel.Table())
-	if AsVariances != "" {
-		foreiTable = dialect.QuoteIdent(AsVariances)
-	}
-
-	on += fmt.Sprintf("%v.%v = %v.%v",
-		localTable, dialect.QuoteIdent("id"),
-		foreiTable, dialect.QuoteIdent("master_id"),
-	)
-
-	if AsVariances == "" {
-		return c.RightJoin(dbr.I(JProductModel.Table()), on)
-	}
-	return c.RightJoin(dbr.I(JProductModel.Table()).As(AsVariances), on)
-}
+// // RightJoinVariances adds a Right JOIN to Product.Variances
+// func (c *jProductSelectBuilder) RightJoinVariances(
+// 	AsVariances string,
+// ) *jProductSelectBuilder {
+// 	dialect := runtime.GetDialect()
+// 	on := ""
+// 	localTable := dialect.QuoteIdent(JProductModel.Table())
+// 	if c.as != "" {
+// 		localTable = dialect.QuoteIdent(c.as)
+// 	}
+// 	foreiTable := dialect.QuoteIdent(JProductModel.Table())
+// 	if AsVariances != "" {
+// 		foreiTable = dialect.QuoteIdent(AsVariances)
+// 	}
+//
+// 	on += fmt.Sprintf("%v.%v = %v.%v",
+// 		localTable, dialect.QuoteIdent("id"),
+// 		foreiTable, dialect.QuoteIdent("master_id"),
+// 	)
+//
+// 	if AsVariances == "" {
+// 		return c.RightJoin(dbr.I(JProductModel.Table()), on)
+// 	}
+// 	return c.RightJoin(dbr.I(JProductModel.Table()).As(AsVariances), on)
+// }
 
 type jCategorySetup struct {
 	Name       string
@@ -2072,59 +2074,61 @@ func (c *jCategorySelectBuilder) LeftJoinProducts(
 	return query
 }
 
-// RightJoinProducts adds a RIGHT JOIN to Category.Products
-func (c *jCategorySelectBuilder) RightJoinProducts(
-	AsCategoryproductsToProductcategories, AsProduct string,
-) *jCategorySelectBuilder {
-
-	query := c
-
-	leftTable := JCategoryModel.Table()
-	if c.as != "" {
-		leftTable = c.as
-	}
-
-	midTable := JCategoryproductsToProductcategoriesModel.Table()
-	if AsCategoryproductsToProductcategories != "" {
-		midTable = AsCategoryproductsToProductcategories
-	}
-
-	{
-		on := ""
-
-		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "category_id",
-			leftTable, "id",
-		)
-
-		if AsCategoryproductsToProductcategories == "" {
-			query = query.RightJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()), on)
-		} else {
-			query = query.RightJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()).As(AsCategoryproductsToProductcategories), on)
-		}
-	}
-
-	{
-		rightTable := JProductModel.Table()
-		if AsProduct != "" {
-			rightTable = AsProduct
-		}
-		on := ""
-
-		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "product_id",
-			rightTable, "id",
-		)
-
-		if AsProduct == "" {
-			query = query.RightJoin(dbr.I(JProductModel.Table()), on)
-		} else {
-			query = query.RightJoin(dbr.I(JProductModel.Table()).As(AsProduct), on)
-		}
-	}
-
-	return query
-}
+// // RightJoinProducts adds a RIGHT JOIN to Category.Products
+// func (c *jCategorySelectBuilder) RightJoinProducts(
+// 	AsCategoryproductsToProductcategories, AsProduct string,
+// ) *jCategorySelectBuilder {
+//
+// 	query := c
+//
+// 	leftTable := JCategoryModel.Table()
+// 	if c.as != "" {
+// 		leftTable = c.as
+// 	}
+//
+// 	midTable := JCategoryproductsToProductcategoriesModel.Table()
+// 	if AsCategoryproductsToProductcategories != "" {
+// 		midTable = AsCategoryproductsToProductcategories
+// 	}
+//
+// 	{
+// 		on := ""
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "category_id",
+// 			leftTable, "id",
+// 			)
+//
+//
+// 		if AsCategoryproductsToProductcategories == "" {
+// 			query = query.RightJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()), on)
+// 		} else {
+// 			query = query.RightJoin(dbr.I(JCategoryproductsToProductcategoriesModel.Table()).As(AsCategoryproductsToProductcategories), on)
+// 		}
+// 	}
+//
+// 	{
+// 		rightTable := JProductModel.Table()
+// 		if AsProduct != "" {
+// 			rightTable = AsProduct
+// 		}
+// 		on := ""
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "product_id",
+// 			rightTable, "id",
+// 			)
+//
+//
+// 		if AsProduct == "" {
+// 			query = query.RightJoin(dbr.I(JProductModel.Table()), on)
+// 		} else {
+// 			query = query.RightJoin(dbr.I(JProductModel.Table()).As(AsProduct), on)
+// 		}
+// 	}
+//
+// 	return query
+// }
 
 type jBrandSetup struct {
 	Name       string
@@ -2685,31 +2689,31 @@ func (c *jBrandSelectBuilder) LeftJoinProducts(
 	return c.LeftJoin(dbr.I(JProductModel.Table()).As(AsProducts), on)
 }
 
-// RightJoinProducts adds a Right JOIN to Brand.Products
-func (c *jBrandSelectBuilder) RightJoinProducts(
-	AsProducts string,
-) *jBrandSelectBuilder {
-	dialect := runtime.GetDialect()
-	on := ""
-	localTable := dialect.QuoteIdent(JBrandModel.Table())
-	if c.as != "" {
-		localTable = dialect.QuoteIdent(c.as)
-	}
-	foreiTable := dialect.QuoteIdent(JProductModel.Table())
-	if AsProducts != "" {
-		foreiTable = dialect.QuoteIdent(AsProducts)
-	}
-
-	on += fmt.Sprintf("%v.%v = %v.%v",
-		localTable, dialect.QuoteIdent("id"),
-		foreiTable, dialect.QuoteIdent("brand_id"),
-	)
-
-	if AsProducts == "" {
-		return c.RightJoin(dbr.I(JProductModel.Table()), on)
-	}
-	return c.RightJoin(dbr.I(JProductModel.Table()).As(AsProducts), on)
-}
+// // RightJoinProducts adds a Right JOIN to Brand.Products
+// func (c *jBrandSelectBuilder) RightJoinProducts(
+// 	AsProducts string,
+// ) *jBrandSelectBuilder {
+// 	dialect := runtime.GetDialect()
+// 	on := ""
+// 	localTable := dialect.QuoteIdent(JBrandModel.Table())
+// 	if c.as != "" {
+// 		localTable = dialect.QuoteIdent(c.as)
+// 	}
+// 	foreiTable := dialect.QuoteIdent(JProductModel.Table())
+// 	if AsProducts != "" {
+// 		foreiTable = dialect.QuoteIdent(AsProducts)
+// 	}
+//
+// 	on += fmt.Sprintf("%v.%v = %v.%v",
+// 		localTable, dialect.QuoteIdent("id"),
+// 		foreiTable, dialect.QuoteIdent("brand_id"),
+// 	)
+//
+// 	if AsProducts == "" {
+// 		return c.RightJoin(dbr.I(JProductModel.Table()), on)
+// 	}
+// 	return c.RightJoin(dbr.I(JProductModel.Table()).As(AsProducts), on)
+// }
 
 // Products2 returns a query builder to select Products2 linked to this Brand
 func (g *Brand) Products2(db dbr.SessionRunner,
@@ -2796,31 +2800,31 @@ func (c *jBrandSelectBuilder) LeftJoinProducts2(
 	return c.LeftJoin(dbr.I(JProductModel.Table()).As(AsProducts2), on)
 }
 
-// RightJoinProducts2 adds a Right JOIN to Brand.Products2
-func (c *jBrandSelectBuilder) RightJoinProducts2(
-	AsProducts2 string,
-) *jBrandSelectBuilder {
-	dialect := runtime.GetDialect()
-	on := ""
-	localTable := dialect.QuoteIdent(JBrandModel.Table())
-	if c.as != "" {
-		localTable = dialect.QuoteIdent(c.as)
-	}
-	foreiTable := dialect.QuoteIdent(JProductModel.Table())
-	if AsProducts2 != "" {
-		foreiTable = dialect.QuoteIdent(AsProducts2)
-	}
-
-	on += fmt.Sprintf("%v.%v = %v.%v",
-		localTable, dialect.QuoteIdent("id"),
-		foreiTable, dialect.QuoteIdent("brand2_id"),
-	)
-
-	if AsProducts2 == "" {
-		return c.RightJoin(dbr.I(JProductModel.Table()), on)
-	}
-	return c.RightJoin(dbr.I(JProductModel.Table()).As(AsProducts2), on)
-}
+// // RightJoinProducts2 adds a Right JOIN to Brand.Products2
+// func (c *jBrandSelectBuilder) RightJoinProducts2(
+// 	AsProducts2 string,
+// ) *jBrandSelectBuilder {
+// 	dialect := runtime.GetDialect()
+// 	on := ""
+// 	localTable := dialect.QuoteIdent(JBrandModel.Table())
+// 	if c.as != "" {
+// 		localTable = dialect.QuoteIdent(c.as)
+// 	}
+// 	foreiTable := dialect.QuoteIdent(JProductModel.Table())
+// 	if AsProducts2 != "" {
+// 		foreiTable = dialect.QuoteIdent(AsProducts2)
+// 	}
+//
+// 	on += fmt.Sprintf("%v.%v = %v.%v",
+// 		localTable, dialect.QuoteIdent("id"),
+// 		foreiTable, dialect.QuoteIdent("brand2_id"),
+// 	)
+//
+// 	if AsProducts2 == "" {
+// 		return c.RightJoin(dbr.I(JProductModel.Table()), on)
+// 	}
+// 	return c.RightJoin(dbr.I(JProductModel.Table()).As(AsProducts2), on)
+// }
 
 type jCategoryproductsToProductcategoriesSetup struct {
 	Name       string

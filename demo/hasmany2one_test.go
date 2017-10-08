@@ -56,22 +56,22 @@ func TestHasMany2One(t *testing.T) {
 			t.Fatal("invalid brand Name expected=", b.Name, "got", brands[0].Name)
 		}
 	})
-	t.Run("provides RightJoin helper", func(t *testing.T) {
-		if jedi.Runs(drivers.Mysql, drivers.Pgsql) {
-			brands, err := JBrand(sess).Select().RightJoinProducts("p").Where(JProductModel.As("p").SKU.Like("A")).ReadAll()
-			if err != nil {
-				t.Fatal(err)
-			}
-			if len(brands) != 1 {
-				t.Fatal("invalid res length, wanted=1 got", len(brands))
-			}
-			if brands[0].Name != b.Name {
-				t.Fatal("invalid brand Name expected=", b.Name, "got", brands[0].Name)
-			}
-		} else {
-			t.Skip("sqlite can t do that")
-		}
-	})
+	// t.Run("provides RightJoin helper", func(t *testing.T) {
+	// 	if jedi.Runs(drivers.Mysql, drivers.Pgsql) {
+	// 		brands, err := JBrand(sess).Select().RightJoinProducts("p").Where(JProductModel.As("p").SKU.Like("A")).ReadAll()
+	// 		if err != nil {
+	// 			t.Fatal(err)
+	// 		}
+	// 		if len(brands) != 1 {
+	// 			t.Fatal("invalid res length, wanted=1 got", len(brands))
+	// 		}
+	// 		if brands[0].Name != b.Name {
+	// 			t.Fatal("invalid brand Name expected=", b.Name, "got", brands[0].Name)
+	// 		}
+	// 	} else {
+	// 		t.Skip("sqlite can t do that")
+	// 	}
+	// })
 	t.Run("provides Read method to get related instances", func(t *testing.T) {
 		products, err := b.Products(sess, "p", "b").ReadAll()
 		if err != nil {
