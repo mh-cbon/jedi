@@ -86,7 +86,7 @@ func TestHasMany2Many(t *testing.T) {
 	})
 	t.Run("provides Right Join helper", func(t *testing.T) {
 		if jedi.Runs(drivers.Mysql, drivers.Pgsql) {
-			cats, err := JCategory(sess).Select().RightJoinProducts("", "p").ReadAll()
+			cats, err := JCategory(sess).As("p").Select("p.*").RightJoinProducts("", "p").ReadAll()
 			if err != nil {
 				t.Fatal(err)
 			}

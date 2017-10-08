@@ -62,7 +62,7 @@ func TestHasOne(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(res) != 2 {
+			if len(res) != 1 {
 				t.Fatalf("invalid length wanted=%v, got=%v", 1, len(res))
 			}
 			if res[0].SKU != "A" {
