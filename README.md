@@ -46,8 +46,20 @@ __"✔/-"__ are items in progress, check the [CI](https://travis-ci.org/mh-cbon/
 - [Working with Dates](#working-with-dates)
 - [Working with Relations](#working-with-relations)
   - [Has One](#has-one)
+    - [Set](#set)
+    - [Unset](#unset)
+    - [Read](#read)
+    - [Join](#join)
   - [Has Many 2 One](#has-many-2-one)
+    - [Set](#set-1)
+    - [Unset](#unset-1)
+    - [Read](#read-1)
+    - [Join](#join-1)
   - [Has Many 2 Many](#has-many-2-many)
+    - [Link](#link)
+    - [Unlink](#unlink)
+    - [Read](#read-2)
+    - [Join](#join-2)
 - [cli](#cli)
   - [$ jedi -help](#-jedi--help)
 - [credits](#credits)
@@ -460,6 +472,11 @@ type Brand struct {
 }
 ```
 
+#### Set
+#### Unset
+#### Read
+#### Join
+
 ## Has Many 2 One
 
 The `@has_many` tag attribute defines a `one to many` relationship.
@@ -486,6 +503,11 @@ type Product struct {
 	Brand2ID    *int64      // the imported primary key of Brand.ID on Product.brand2
 }
 ```
+
+#### Set
+#### Unset
+#### Read
+#### Join
 
 ## Has Many 2 Many
 
@@ -545,6 +567,11 @@ type Category struct {
 	Name     string
 }
 ```
+
+#### Link
+#### Unlink
+#### Read
+#### Join
 
 # cli
 

@@ -438,6 +438,11 @@ type Brand struct {
 }
 ```
 
+#### Set
+#### Unset
+#### Read
+#### Join
+
 ## Has Many 2 One
 
 The `@has_many` tag attribute defines a `one to many` relationship.
@@ -464,6 +469,11 @@ type Product struct {
 	Brand2ID    *int64      // the imported primary key of Brand.ID on Product.brand2
 }
 ```
+
+#### Set
+#### Unset
+#### Read
+#### Join
 
 ## Has Many 2 Many
 
@@ -523,6 +533,11 @@ type Category struct {
 	Name     string
 }
 ```
+
+#### Link
+#### Unlink
+#### Read
+#### Join
 
 # cli
 
