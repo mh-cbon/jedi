@@ -25,6 +25,8 @@ func init() {
 
 		JCompositePkSetup,
 
+		JDateTypeSetup,
+
 		JSampleViewSetup,
 	)
 }
@@ -443,6 +445,14 @@ func (c jSampleQuerier) Insert(items ...*Sample) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
+		data.UpdateDate = data.UpdateDate.UTC()
+
+		{
+			x := data.RemovalDate.UTC()
+			data.RemovalDate = &x
+		}
+
 		res, err = c.db.InsertInto(JSampleModel.Table()).Columns(
 
 			`name`,
@@ -481,6 +491,14 @@ func (c jSampleQuerier) Update(items ...*Sample) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
+		data.UpdateDate = data.UpdateDate.UTC()
+
+		{
+			x := data.RemovalDate.UTC()
+			data.RemovalDate = &x
+		}
+
 		res, err = c.db.Update(JSampleModel.Table()).
 			Set(`name`, data.Name).
 			Set(`description`, data.Description).
@@ -1189,6 +1207,7 @@ func (c jBasicTypesQuerier) Insert(items ...*BasicTypes) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
 		res, err = c.db.InsertInto(JBasicTypesModel.Table()).Columns(
 
 			`string`,
@@ -1259,6 +1278,7 @@ func (c jBasicTypesQuerier) Update(items ...*BasicTypes) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
 		res, err = c.db.Update(JBasicTypesModel.Table()).
 			Set(`string`, data.String).
 			Set(`string_p`, data.StringP).
@@ -1370,7 +1390,7 @@ PRIMARY KEY (name)
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS second_sample (
-name VARCHAR(255),
+name TEXT,
 description TEXT
 
 )`
@@ -1481,7 +1501,7 @@ func (j jTextPkModel) Fields(ins ...string) []string {
 var JTextPkModel = jTextPkModel{
 
 	Name: builder.NewValueMeta(
-		`name`, `VARCHAR(255)`,
+		`name`, `TEXT`,
 		`Name`, `string`,
 		true, false,
 	),
@@ -1699,6 +1719,7 @@ func (c jTextPkQuerier) Insert(items ...*TextPk) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
 		res, err = c.db.InsertInto(JTextPkModel.Table()).Columns(
 
 			`name`,
@@ -1725,6 +1746,7 @@ func (c jTextPkQuerier) Update(items ...*TextPk) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
 		res, err = c.db.Update(JTextPkModel.Table()).
 			Set(`description`, data.Description).
 			Where("name = ?", data.Name).
@@ -1819,8 +1841,8 @@ PRIMARY KEY (p,k)
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS composite_pk (
-p VARCHAR(255),
-k VARCHAR(255),
+p TEXT,
+k TEXT,
 description TEXT
 
 )`
@@ -1941,13 +1963,13 @@ func (j jCompositePkModel) Fields(ins ...string) []string {
 var JCompositePkModel = jCompositePkModel{
 
 	P: builder.NewValueMeta(
-		`p`, `VARCHAR(255)`,
+		`p`, `TEXT`,
 		`P`, `string`,
 		true, false,
 	),
 
 	K: builder.NewValueMeta(
-		`k`, `VARCHAR(255)`,
+		`k`, `TEXT`,
 		`K`, `string`,
 		true, false,
 	),
@@ -2165,6 +2187,7 @@ func (c jCompositePkQuerier) Insert(items ...*CompositePk) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
 		res, err = c.db.InsertInto(JCompositePkModel.Table()).Columns(
 
 			`p`,
@@ -2193,6 +2216,7 @@ func (c jCompositePkQuerier) Update(items ...*CompositePk) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
 		res, err = c.db.Update(JCompositePkModel.Table()).
 			Set(`description`, data.Description).
 			Where("p = ?", data.P).
@@ -2246,6 +2270,492 @@ func (c jCompositePkQuerier) Find(P string, K string) (*CompositePk, error) {
 		JCompositePkModel.P.Eq(P),
 
 		JCompositePkModel.K.Eq(K),
+	).Read()
+}
+
+type jDateTypeSetup struct {
+	Name       string
+	CreateStmt string
+	DropStmt   string
+}
+
+//Create applies the create table command to te underlying connection.
+func (c jDateTypeSetup) Create(db *dbr.Connection) error {
+	_, err := db.Exec(c.CreateStmt)
+	return err
+}
+
+//Drop applies the drop table command to te underlying connection.
+func (c jDateTypeSetup) Drop(db *dbr.Connection) error {
+	_, err := db.Exec(c.DropStmt)
+	return err
+}
+
+// JDateTypeSetup helps to create/drop the schema
+func JDateTypeSetup() runtime.Setuper {
+	driver := runtime.GetCurrentDriver()
+
+	var create string
+	var drop string
+
+	if driver == drivers.Sqlite {
+		create = `CREATE TABLE IF NOT EXISTS date_type (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+t datetime,
+tp datetime
+
+)`
+	} else if driver == drivers.Mysql {
+		create = `CREATE TABLE IF NOT EXISTS date_type (
+id INTEGER NOT NULL AUTO_INCREMENT,
+t datetime,
+tp datetime,
+PRIMARY KEY (id) 
+
+)`
+	} else if driver == drivers.Pgsql {
+		create = `CREATE TABLE IF NOT EXISTS date_type (
+id INTEGER,
+t datetime,
+tp datetime
+
+)`
+	}
+
+	if driver == drivers.Sqlite {
+		drop = `DROP TABLE IF EXISTS date_type`
+	} else if driver == drivers.Mysql {
+		drop = `DROP TABLE IF EXISTS date_type`
+	} else if driver == drivers.Pgsql {
+		drop = `DROP TABLE IF EXISTS date_type`
+	}
+
+	return jDateTypeSetup{
+		Name:       `date_type`,
+		CreateStmt: create,
+		DropStmt:   drop,
+	}
+}
+
+// jDateTypeModel provides helper to work with DateType data provider
+type jDateTypeModel struct {
+	as string
+
+	ID builder.ValuePropertyMeta
+
+	T builder.ValuePropertyMeta
+
+	TP builder.ValuePropertyMeta
+}
+
+// Eq provided items.
+func (j jDateTypeModel) Eq(s ...*DateType) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JDateTypeModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// In provided items.
+func (j jDateTypeModel) In(s ...*DateType) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JDateTypeModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// As returns a copy with an alias.
+func (j jDateTypeModel) As(as string) jDateTypeModel {
+	j.as = as
+
+	j.ID.TableAlias = as
+
+	j.T.TableAlias = as
+
+	j.TP.TableAlias = as
+
+	return j
+}
+
+// Table returns the sql table name
+func (j jDateTypeModel) Table() string {
+	return "date_type"
+}
+
+// Alias returns the current alias
+func (j jDateTypeModel) Alias() string {
+	if j.as == "" {
+		return j.Table()
+	}
+	return j.as
+}
+
+// Properties returns a map of property name => meta
+func (j jDateTypeModel) Properties() map[string]builder.MetaProvider {
+	ret := map[string]builder.MetaProvider{}
+
+	ret["ID"] = j.ID
+
+	ret["T"] = j.T
+
+	ret["TP"] = j.TP
+
+	return ret
+}
+
+// Fields returns given sql fields with appropriate aliasing.
+func (j jDateTypeModel) Fields(ins ...string) []string {
+	dialect := runtime.GetDialect()
+	if len(ins) == 0 {
+		ins = append(ins, "*")
+	}
+	for i, in := range ins {
+		if j.as != "" {
+			if in == "*" {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
+			} else {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
+			}
+		}
+	}
+	return ins
+}
+
+// JDateTypeModel provides helper to work with DateType data provider
+var JDateTypeModel = jDateTypeModel{
+
+	ID: builder.NewValueMeta(
+		`id`, `INTEGER`,
+		`ID`, `int64`,
+		true, true,
+	),
+
+	T: builder.NewValueMeta(
+		`t`, `datetime`,
+		`T`, `time.Time`,
+		false, false,
+	),
+
+	TP: builder.NewValueMeta(
+		`tp`, `datetime`,
+		`TP`, `*time.Time`,
+		false, false,
+	),
+}
+
+type jDateTypeDeleteBuilder struct {
+	*builder.DeleteBuilder
+}
+
+//Build builds the sql string using current dialect into given bufer
+func (c *jDateTypeDeleteBuilder) Build(b dbr.Buffer) error {
+	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+}
+
+//String returns the sql string for current dialect. It returns empty string if the build returns an error.
+func (c *jDateTypeDeleteBuilder) String() string {
+	b := dbr.NewBuffer()
+	if err := c.Build(b); err != nil {
+		return ""
+	}
+	return b.String()
+}
+
+//Where returns a jDateTypeDeleteBuilder instead of builder.DeleteBuilder.
+func (c *jDateTypeDeleteBuilder) Where(query interface{}, value ...interface{}) *jDateTypeDeleteBuilder {
+	c.DeleteBuilder.Where(query, value...)
+	return c
+}
+
+type jDateTypeSelectBuilder struct {
+	as string
+	*builder.SelectBuilder
+}
+
+//Build builds the sql string using current dialect into given bufer
+func (c *jDateTypeSelectBuilder) Build(b dbr.Buffer) error {
+	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+}
+
+//String returns the sql string for current dialect. It returns empty string if the build returns an error.
+func (c *jDateTypeSelectBuilder) String() string {
+	b := dbr.NewBuffer()
+	if err := c.Build(b); err != nil {
+		return ""
+	}
+	return b.String()
+}
+
+//Read evaluates current select query and load the results into a DateType
+func (c *jDateTypeSelectBuilder) Read() (*DateType, error) {
+	var one DateType
+	err := c.LoadStruct(&one)
+	return &one, err
+}
+
+//ReadAll evaluates current select query and load the results into a slice of DateType
+func (c *jDateTypeSelectBuilder) ReadAll() ([]*DateType, error) {
+	var all []*DateType
+	_, err := c.LoadStructs(&all)
+	return all, err
+}
+
+//Where returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) Where(query interface{}, value ...interface{}) *jDateTypeSelectBuilder {
+	c.SelectBuilder.Where(query, value...)
+	return c
+}
+
+//GroupBy returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) GroupBy(col ...string) *jDateTypeSelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) Having(query interface{}, value ...interface{}) *jDateTypeSelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) Limit(n uint64) *jDateTypeSelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) Offset(n uint64) *jDateTypeSelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) OrderAsc(col string) *jDateTypeSelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) OrderDesc(col string) *jDateTypeSelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) OrderDir(col string, isAsc bool) *jDateTypeSelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) OrderBy(col string) *jDateTypeSelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Join returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) Join(table, on interface{}) *jDateTypeSelectBuilder {
+	c.SelectBuilder.Join(table, on)
+	return c
+}
+
+//LeftJoin returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) LeftJoin(table, on interface{}) *jDateTypeSelectBuilder {
+	c.SelectBuilder.LeftJoin(table, on)
+	return c
+}
+
+//RightJoin returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) RightJoin(table, on interface{}) *jDateTypeSelectBuilder {
+	c.SelectBuilder.RightJoin(table, on)
+	return c
+}
+
+//FullJoin returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) FullJoin(table, on interface{}) *jDateTypeSelectBuilder {
+	c.SelectBuilder.FullJoin(table, on)
+	return c
+}
+
+//Distinct returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) Distinct() *jDateTypeSelectBuilder {
+	c.SelectBuilder.Distinct()
+	return c
+}
+
+// JDateType provides a basic querier
+func JDateType(db dbr.SessionRunner) jDateTypeQuerier {
+	return jDateTypeQuerier{
+		db: db,
+	}
+}
+
+type jDateTypeQuerier struct {
+	db dbr.SessionRunner
+	as string
+}
+
+//As set alias prior building.
+func (c jDateTypeQuerier) As(as string) jDateTypeQuerier {
+	c.as = as
+	return c
+}
+
+//Model returns a model with appropriate aliasing.
+func (c jDateTypeQuerier) Model() jDateTypeModel {
+	return JDateTypeModel.As(c.as)
+}
+
+//Select returns a DateType Select Builder.
+func (c jDateTypeQuerier) Select(what ...string) *jDateTypeSelectBuilder {
+	m := c.Model()
+	dialect := runtime.GetDialect()
+	from := dialect.QuoteIdent(m.Table())
+	if m.Alias() != "" && m.Alias() != m.Table() {
+		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias() != "" && m.Alias() != m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias + ".*")
+	}
+	return &jDateTypeSelectBuilder{
+		as: c.as,
+		SelectBuilder: &builder.SelectBuilder{
+			SelectBuilder: c.db.Select(what...).From(from),
+		},
+	}
+}
+
+//Where returns a DateType Select Builder.
+func (c jDateTypeQuerier) Where(query interface{}, value ...interface{}) *jDateTypeSelectBuilder {
+	return c.Select().Where(query, value...)
+}
+
+//Count returns a DateType Select Builder to count given expressions.
+func (c jDateTypeQuerier) Count(what ...string) *jDateTypeSelectBuilder {
+	if len(what) == 0 {
+		what = append(what, "*")
+	}
+	return c.Select("COUNT(" + strings.Join(what, ",") + ")")
+}
+
+// Insert a new DateType, if it has autoincrement primary key, the value will be set.
+// It stops on first error.
+func (c jDateTypeQuerier) Insert(items ...*DateType) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		data.T = data.T.UTC()
+
+		{
+			x := data.TP.UTC()
+			data.TP = &x
+		}
+
+		res, err = c.db.InsertInto(JDateTypeModel.Table()).Columns(
+
+			`t`,
+
+			`tp`,
+		).Record(data).Exec()
+
+		if err == nil {
+			id, err2 := res.LastInsertId()
+			if err2 != nil {
+				return res, err2
+			}
+			data.ID = id
+		}
+
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// InsertBulk inserts multiple items into the database.
+// It does not post update any auto increment field.
+// It builds an insert query of multiple rows and send it on the underlying connection.
+func (c jDateTypeQuerier) InsertBulk(items ...*DateType) error {
+	panic("todo")
+}
+
+// Update a DateType. It stops on first error.
+func (c jDateTypeQuerier) Update(items ...*DateType) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		data.T = data.T.UTC()
+
+		{
+			x := data.TP.UTC()
+			data.TP = &x
+		}
+
+		res, err = c.db.Update(JDateTypeModel.Table()).
+			Set(`t`, data.T).
+			Set(`tp`, data.TP).
+			Where("id = ?", data.ID).
+			Exec()
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// UpdateBulk updates multiple items into the database.
+// It builds an update query of multiple rows and send it on the underlying connection.
+func (c jDateTypeQuerier) UpdateBulk(items ...*DateType) error {
+	panic("todo")
+}
+
+//Delete returns a delete builder
+func (c jDateTypeQuerier) Delete() *jDateTypeDeleteBuilder {
+	return &jDateTypeDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JDateTypeModel.Table()),
+		},
+	}
+}
+
+//DeleteByPk deletes one DateType by its PKs
+func (c jDateTypeQuerier) DeleteByPk(ID int64) error {
+	_, err := c.Delete().Where(
+
+		JDateTypeModel.ID.Eq(ID),
+	).Exec()
+	return err
+}
+
+// DeleteAll given DateType
+func (c jDateTypeQuerier) DeleteAll(items ...*DateType) (sql.Result, error) {
+	q := c.Delete().Where(
+		JDateTypeModel.In(items...),
+	)
+	return q.Exec()
+}
+
+//Find one DateType using its PKs
+func (c jDateTypeQuerier) Find(ID int64) (*DateType, error) {
+	return c.Select().Where(
+
+		JDateTypeModel.ID.Eq(ID),
 	).Read()
 }
 

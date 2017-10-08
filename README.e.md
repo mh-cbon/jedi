@@ -1,6 +1,11 @@
-# jedi
+---
+License: MIT
+LicenseFile: LICENSE
+LicenseColor: yellow
+---
+# {{.Name}}
 
-[![travis Status](https://travis-ci.org/mh-cbon/jedi.svg?branch=master)](https://travis-ci.org/mh-cbon/jedi) [![Go Report Card](https://goreportcard.com/badge/github.com/mh-cbon/jedi)](https://goreportcard.com/report/github.com/mh-cbon/jedi) [![GoDoc](https://godoc.org/github.com/mh-cbon/jedi?status.svg)](http://godoc.org/github.com/mh-cbon/jedi) [![MIT License](http://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+{{template "badge/travis" .}} {{template "badge/goreport" .}} {{template "badge/godoc" .}} {{template "license/shields" .}}
 
 A golang database generator on top of [dbr](https://github.com/gocraft/dbr)
 
@@ -24,37 +29,11 @@ __"✔/-"__ are items in progress, check the [CI](https://travis-ci.org/mh-cbon/
 
 `jedi` is a go generator, read more about [go generate](https://blog.golang.org/generate)
 
-# TOC
-- [Install](#install)
-- [Implementing a model](#implementing-a-model)
-  - [Declaration](#declaration)
-  - [Schema](#schema)
-- [Jedi setup](#jedi-setup)
-- [Jedi model](#jedi-model)
-- [Jedi crud](#jedi-crud)
-  - [Find](#find)
-  - [Insert](#insert)
-  - [Update](#update)
-  - [DeleteByPk](#deletebypk)
-  - [DeleteAll](#deleteall)
-- [query builder](#query-builder)
-  - [Select](#select)
-  - [Where](#where)
-  - [Delete](#delete)
-- [Wotking with Basic types](#wotking-with-basic-types)
-- [Wotking with Dates](#wotking-with-dates)
-- [Wotking with Relations](#wotking-with-relations)
-  - [Has One](#has-one)
-  - [Has Many 2 One](#has-many-2-one)
-  - [Has Many 2 Many](#has-many-2-many)
-- [cli](#cli)
-- [credits](#credits)
+# {{toc 5}}
 
 # Install
 
-```sh
-go get github.com/mh-cbon/jedi
-```
+{{template "go/install" .}}
 
 # Implementing a model
 

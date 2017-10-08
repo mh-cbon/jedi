@@ -421,6 +421,18 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 		var res sql.Result
 		var err error
 		for _, data := range items {
+			{{range $i, $col := .current.Fields | dateTypes}}
+				{{if $col.UTC}}
+					{{if $col.IsStar}}
+					{
+						x := data.{{$col.Name}}.UTC()
+						data.{{$col.Name}} = &x
+					}
+					{{else}}
+					data.{{$col.Name}} = data.{{$col.Name}}.UTC()
+					{{end}}
+				{{end}}
+			{{end}}
 			res, err = c.db.InsertInto(J{{.current.Name}}Model.Table()).Columns(
 				{{range $i, $col := .current.Fields | notAI | withSQLType | withGoName}}
 				{{$col.SQLName | quote}},
@@ -455,6 +467,18 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 			var res sql.Result
 			var err error
 			for _, data := range items {
+				{{range $i, $col := .current.Fields | dateTypes}}
+					{{if $col.UTC}}
+						{{if $col.IsStar}}
+						{
+							x := data.{{$col.Name}}.UTC()
+							data.{{$col.Name}} = &x
+						}
+						{{else}}
+						data.{{$col.Name}} = data.{{$col.Name}}.UTC()
+						{{end}}
+					{{end}}
+				{{end}}
 				res, err = c.db.Update(J{{.current.Name}}Model.Table()).
 					{{range $i, $col := .current.Fields | notPk | withSQLType | withGoName}}
 						Set({{.SQLName | quote}}, data.{{.Name}}).

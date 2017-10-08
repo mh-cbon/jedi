@@ -320,6 +320,7 @@ func parseStructTypeSpec(ts *ast.TypeSpec, str *ast.StructType) (*model.Struct, 
 			HasMany:    props["has_many"],
 			HasOne:     props["has_one"],
 			IsNullable: strSQLNullable(f.Type),
+			UTC:        props["utc"] == "true",
 		})
 		n++
 	}
@@ -338,6 +339,7 @@ func parseStructFieldTag(tag string) (sqlName string, props map[string]string) {
 		"has_many": "",
 		"has_one":  "",
 		"on":       "",
+		"utc":      "true",
 	}
 
 	parts := strings.Split(tag, ",")

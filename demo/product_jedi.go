@@ -496,6 +496,7 @@ func (c jProductQuerier) Insert(items ...*Product) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
 		res, err = c.db.InsertInto(JProductModel.Table()).Columns(
 
 			`sku`,
@@ -534,6 +535,7 @@ func (c jProductQuerier) Update(items ...*Product) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
 		res, err = c.db.Update(JProductModel.Table()).
 			Set(`sku`, data.SKU).
 			Set(`brand_id`, data.BrandID).
@@ -1773,6 +1775,7 @@ func (c jCategoryQuerier) Insert(items ...*Category) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
 		res, err = c.db.InsertInto(JCategoryModel.Table()).Columns(
 
 			`name`,
@@ -1805,6 +1808,7 @@ func (c jCategoryQuerier) Update(items ...*Category) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
 		res, err = c.db.Update(JCategoryModel.Table()).
 			Set(`name`, data.Name).
 			Where("id = ?", data.ID).
@@ -2521,6 +2525,7 @@ func (c jBrandQuerier) Insert(items ...*Brand) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
 		res, err = c.db.InsertInto(JBrandModel.Table()).Columns(
 
 			`name`,
@@ -2553,6 +2558,7 @@ func (c jBrandQuerier) Update(items ...*Brand) (sql.Result, error) {
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
 		res, err = c.db.Update(JBrandModel.Table()).
 			Set(`name`, data.Name).
 			Where("id = ?", data.ID).
@@ -3207,6 +3213,7 @@ func (c jCategoryproductsToProductcategoriesQuerier) Insert(items ...*Categorypr
 	var res sql.Result
 	var err error
 	for _, data := range items {
+
 		res, err = c.db.InsertInto(JCategoryproductsToProductcategoriesModel.Table()).Columns(
 
 			`product_id`,

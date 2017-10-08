@@ -55,6 +55,14 @@ type CompositePk struct {
 	Description string
 }
 
+//DateType have dates properties.
+//jedi:
+type DateType struct {
+	ID int64 `jedi:"@pk"`
+	T  time.Time
+	TP *time.Time
+}
+
 //SampleView is view of samples.
 //jedi:
 //view-select:

@@ -44,12 +44,13 @@ type Field struct {
 	SQLName    string
 	SQLType    string
 	GoType     string
-	On         string
-	HasMany    string
-	HasOne     string
-	IsPk       bool
-	IsAI       bool
-	IsNullable bool
+	On         string // for has many 2 many, define the middle table
+	HasMany    string // for has many, define the target property
+	HasOne     string // for has one, define the target property
+	IsPk       bool   // the field is part of the primary key
+	IsAI       bool   // the field is auto incremented.
+	IsNullable bool   // the field is nullable because its go type is nilable.
+	UTC        bool   // for datetime it will automatically turn it into UTC before Insert / Update.
 }
 
 // IsStar returns true if the go type is pointer

@@ -257,6 +257,15 @@ var funcs = map[string]interface{}{
 		}
 		return ret
 	},
+	"dateTypes": func(fields []*model.Field) []*model.Field {
+		var ret []*model.Field
+		for _, c := range fields {
+			if c.GoType == "time.Time" || c.GoType == "*time.Time" {
+				ret = append(ret, c)
+			}
+		}
+		return ret
+	},
 	"hasNonPkField": func(fields []*model.Field) bool {
 		for _, c := range fields {
 			if !c.IsPk {
@@ -330,9 +339,12 @@ var funcs = map[string]interface{}{
 			if f.SQLType != "" {
 				cols += f.SQLName
 				if f.IsPk && driver == drivers.Mysql && f.SQLType == "TEXT" {
-					f.SQLType = "VARCHAR(255)"
+					cols += " VARCHAR(255)"
+				} else if f.GoType == "time.Time" && driver == drivers.Pgsql {
+					cols += " timestamp"
+				} else {
+					cols += " " + f.SQLType
 				}
-				cols += " " + f.SQLType
 				if f.IsPk {
 					if driver == drivers.Sqlite {
 						if f.IsAI && f.IsPk {
