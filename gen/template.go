@@ -51,12 +51,12 @@ type j{{.current.Name}}Setup struct {
 //Create applies the create table command to te underlying connection.
 func (c j{{.current.Name}}Setup) Create(db *dbr.Connection) error {
 	_, err := db.Exec(c.CreateStmt)
-	return err
+	return runtime.NewSQLError(err, c.CreateStmt)
 }
 //Drop applies the drop table command to te underlying connection.
 func (c j{{.current.Name}}Setup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
-	return err
+	return runtime.NewSQLError(err, c.DropStmt)
 }
 
 // J{{.current.Name}}Setup helps to create/drop the schema

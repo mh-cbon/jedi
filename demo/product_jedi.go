@@ -36,13 +36,13 @@ type jProductSetup struct {
 //Create applies the create table command to te underlying connection.
 func (c jProductSetup) Create(db *dbr.Connection) error {
 	_, err := db.Exec(c.CreateStmt)
-	return err
+	return runtime.NewSQLError(err, c.CreateStmt)
 }
 
 //Drop applies the drop table command to te underlying connection.
 func (c jProductSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
-	return err
+	return runtime.NewSQLError(err, c.DropStmt)
 }
 
 // JProductSetup helps to create/drop the schema
@@ -1404,13 +1404,13 @@ type jCategorySetup struct {
 //Create applies the create table command to te underlying connection.
 func (c jCategorySetup) Create(db *dbr.Connection) error {
 	_, err := db.Exec(c.CreateStmt)
-	return err
+	return runtime.NewSQLError(err, c.CreateStmt)
 }
 
 //Drop applies the drop table command to te underlying connection.
 func (c jCategorySetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
-	return err
+	return runtime.NewSQLError(err, c.DropStmt)
 }
 
 // JCategorySetup helps to create/drop the schema
@@ -2143,13 +2143,13 @@ type jBrandSetup struct {
 //Create applies the create table command to te underlying connection.
 func (c jBrandSetup) Create(db *dbr.Connection) error {
 	_, err := db.Exec(c.CreateStmt)
-	return err
+	return runtime.NewSQLError(err, c.CreateStmt)
 }
 
 //Drop applies the drop table command to te underlying connection.
 func (c jBrandSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
-	return err
+	return runtime.NewSQLError(err, c.DropStmt)
 }
 
 // JBrandSetup helps to create/drop the schema
@@ -2841,13 +2841,13 @@ type jCategoryproductsToProductcategoriesSetup struct {
 //Create applies the create table command to te underlying connection.
 func (c jCategoryproductsToProductcategoriesSetup) Create(db *dbr.Connection) error {
 	_, err := db.Exec(c.CreateStmt)
-	return err
+	return runtime.NewSQLError(err, c.CreateStmt)
 }
 
 //Drop applies the drop table command to te underlying connection.
 func (c jCategoryproductsToProductcategoriesSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
-	return err
+	return runtime.NewSQLError(err, c.DropStmt)
 }
 
 // JCategoryproductsToProductcategoriesSetup helps to create/drop the schema

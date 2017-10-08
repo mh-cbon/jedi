@@ -40,13 +40,13 @@ type jSampleSetup struct {
 //Create applies the create table command to te underlying connection.
 func (c jSampleSetup) Create(db *dbr.Connection) error {
 	_, err := db.Exec(c.CreateStmt)
-	return err
+	return runtime.NewSQLError(err, c.CreateStmt)
 }
 
 //Drop applies the drop table command to te underlying connection.
 func (c jSampleSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
-	return err
+	return runtime.NewSQLError(err, c.DropStmt)
 }
 
 // JSampleSetup helps to create/drop the schema
@@ -562,13 +562,13 @@ type jBasicTypesSetup struct {
 //Create applies the create table command to te underlying connection.
 func (c jBasicTypesSetup) Create(db *dbr.Connection) error {
 	_, err := db.Exec(c.CreateStmt)
-	return err
+	return runtime.NewSQLError(err, c.CreateStmt)
 }
 
 //Drop applies the drop table command to te underlying connection.
 func (c jBasicTypesSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
-	return err
+	return runtime.NewSQLError(err, c.DropStmt)
 }
 
 // JBasicTypesSetup helps to create/drop the schema
@@ -1358,13 +1358,13 @@ type jTextPkSetup struct {
 //Create applies the create table command to te underlying connection.
 func (c jTextPkSetup) Create(db *dbr.Connection) error {
 	_, err := db.Exec(c.CreateStmt)
-	return err
+	return runtime.NewSQLError(err, c.CreateStmt)
 }
 
 //Drop applies the drop table command to te underlying connection.
 func (c jTextPkSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
-	return err
+	return runtime.NewSQLError(err, c.DropStmt)
 }
 
 // JTextPkSetup helps to create/drop the schema
@@ -1807,13 +1807,13 @@ type jCompositePkSetup struct {
 //Create applies the create table command to te underlying connection.
 func (c jCompositePkSetup) Create(db *dbr.Connection) error {
 	_, err := db.Exec(c.CreateStmt)
-	return err
+	return runtime.NewSQLError(err, c.CreateStmt)
 }
 
 //Drop applies the drop table command to te underlying connection.
 func (c jCompositePkSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
-	return err
+	return runtime.NewSQLError(err, c.DropStmt)
 }
 
 // JCompositePkSetup helps to create/drop the schema
@@ -2282,13 +2282,13 @@ type jDateTypeSetup struct {
 //Create applies the create table command to te underlying connection.
 func (c jDateTypeSetup) Create(db *dbr.Connection) error {
 	_, err := db.Exec(c.CreateStmt)
-	return err
+	return runtime.NewSQLError(err, c.CreateStmt)
 }
 
 //Drop applies the drop table command to te underlying connection.
 func (c jDateTypeSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
-	return err
+	return runtime.NewSQLError(err, c.DropStmt)
 }
 
 // JDateTypeSetup helps to create/drop the schema
@@ -2768,13 +2768,13 @@ type jSampleViewSetup struct {
 //Create applies the create table command to te underlying connection.
 func (c jSampleViewSetup) Create(db *dbr.Connection) error {
 	_, err := db.Exec(c.CreateStmt)
-	return err
+	return runtime.NewSQLError(err, c.CreateStmt)
 }
 
 //Drop applies the drop table command to te underlying connection.
 func (c jSampleViewSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
-	return err
+	return runtime.NewSQLError(err, c.DropStmt)
 }
 
 // JSampleViewSetup helps to create/drop the schema
