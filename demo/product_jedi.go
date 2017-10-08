@@ -64,18 +64,18 @@ func JProductSetup() runtime.Setuper {
 		create = `CREATE TABLE IF NOT EXISTS product (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 sku TEXT,
-brand_id INTEGER,
-brand2_id INTEGER,
-master_id INTEGER
+brand_id INTEGER NULL,
+brand2_id INTEGER NULL,
+master_id INTEGER NULL
 
 )`
 	} else if driver == drivers.Mysql {
 		create = `CREATE TABLE IF NOT EXISTS product (
 id INTEGER NOT NULL AUTO_INCREMENT,
 sku TEXT,
-brand_id INTEGER,
-brand2_id INTEGER,
-master_id INTEGER,
+brand_id INTEGER NULL,
+brand2_id INTEGER NULL,
+master_id INTEGER NULL,
 PRIMARY KEY (id) 
 
 )`
@@ -83,9 +83,9 @@ PRIMARY KEY (id)
 		create = `CREATE TABLE IF NOT EXISTS product (
 id INTEGER,
 sku TEXT,
-brand_id INTEGER,
-brand2_id INTEGER,
-master_id INTEGER
+brand_id INTEGER NULL,
+brand2_id INTEGER NULL,
+master_id INTEGER NULL
 
 )`
 	}

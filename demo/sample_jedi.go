@@ -72,7 +72,7 @@ id INTEGER PRIMARY KEY AUTOINCREMENT,
 name TEXT,
 description TEXT,
 update_date datetime,
-removal_date datetime
+removal_date datetime NULL
 
 )`
 	} else if driver == drivers.Mysql {
@@ -81,7 +81,7 @@ id INTEGER NOT NULL AUTO_INCREMENT,
 name TEXT,
 description TEXT,
 update_date datetime,
-removal_date datetime,
+removal_date datetime NULL,
 PRIMARY KEY (id) 
 
 )`
@@ -91,7 +91,7 @@ id INTEGER,
 name TEXT,
 description TEXT,
 update_date timestamp,
-removal_date timestamp
+removal_date timestamp NULL
 
 )`
 	}
@@ -1108,50 +1108,50 @@ func JBasicTypesSetup() runtime.Setuper {
 		create = `CREATE TABLE IF NOT EXISTS basic_types (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 string TEXT,
-string_p TEXT,
+string_p TEXT NULL,
 intfield INTEGER,
-int_p INTEGER,
+int_p INTEGER NULL,
 int32 INTEGER,
-int32_p INTEGER,
+int32_p INTEGER NULL,
 int64 INTEGER,
-int64_p INTEGER,
+int64_p INTEGER NULL,
 u_int INTEGER,
-u_int_p INTEGER,
+u_int_p INTEGER NULL,
 u_int32 INTEGER,
-u_int32_p INTEGER,
+u_int32_p INTEGER NULL,
 u_int64 INTEGER,
-u_int64_p INTEGER,
+u_int64_p INTEGER NULL,
 bool INTEGER,
-bool_p INTEGER,
+bool_p INTEGER NULL,
 float32 FLOAT,
-float32_p FLOAT,
+float32_p FLOAT NULL,
 float64 FLOAT,
-float64_p FLOAT
+float64_p FLOAT NULL
 
 )`
 	} else if driver == drivers.Mysql {
 		create = `CREATE TABLE IF NOT EXISTS basic_types (
 id INTEGER NOT NULL AUTO_INCREMENT,
 string TEXT,
-string_p TEXT,
+string_p TEXT NULL,
 intfield INTEGER,
-int_p INTEGER,
+int_p INTEGER NULL,
 int32 INTEGER,
-int32_p INTEGER,
+int32_p INTEGER NULL,
 int64 INTEGER,
-int64_p INTEGER,
+int64_p INTEGER NULL,
 u_int INTEGER,
-u_int_p INTEGER,
+u_int_p INTEGER NULL,
 u_int32 INTEGER,
-u_int32_p INTEGER,
+u_int32_p INTEGER NULL,
 u_int64 INTEGER,
-u_int64_p INTEGER,
+u_int64_p INTEGER NULL,
 bool INTEGER,
-bool_p INTEGER,
+bool_p INTEGER NULL,
 float32 FLOAT,
-float32_p FLOAT,
+float32_p FLOAT NULL,
 float64 FLOAT,
-float64_p FLOAT,
+float64_p FLOAT NULL,
 PRIMARY KEY (id) 
 
 )`
@@ -1159,25 +1159,25 @@ PRIMARY KEY (id)
 		create = `CREATE TABLE IF NOT EXISTS basic_types (
 id INTEGER,
 string TEXT,
-string_p TEXT,
+string_p TEXT NULL,
 intfield INTEGER,
-int_p INTEGER,
+int_p INTEGER NULL,
 int32 INTEGER,
-int32_p INTEGER,
+int32_p INTEGER NULL,
 int64 INTEGER,
-int64_p INTEGER,
+int64_p INTEGER NULL,
 u_int INTEGER,
-u_int_p INTEGER,
+u_int_p INTEGER NULL,
 u_int32 INTEGER,
-u_int32_p INTEGER,
+u_int32_p INTEGER NULL,
 u_int64 INTEGER,
-u_int64_p INTEGER,
+u_int64_p INTEGER NULL,
 bool INTEGER,
-bool_p INTEGER,
+bool_p INTEGER NULL,
 float32 FLOAT,
-float32_p FLOAT,
+float32_p FLOAT NULL,
 float64 FLOAT,
-float64_p FLOAT
+float64_p FLOAT NULL
 
 )`
 	}
@@ -2887,14 +2887,14 @@ func JDateTypeSetup() runtime.Setuper {
 		create = `CREATE TABLE IF NOT EXISTS date_type (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 t datetime,
-tp datetime
+tp datetime NULL
 
 )`
 	} else if driver == drivers.Mysql {
 		create = `CREATE TABLE IF NOT EXISTS date_type (
 id INTEGER NOT NULL AUTO_INCREMENT,
 t datetime,
-tp datetime,
+tp datetime NULL,
 PRIMARY KEY (id) 
 
 )`
@@ -2902,7 +2902,7 @@ PRIMARY KEY (id)
 		create = `CREATE TABLE IF NOT EXISTS date_type (
 id INTEGER,
 t timestamp,
-tp timestamp
+tp timestamp NULL
 
 )`
 	}

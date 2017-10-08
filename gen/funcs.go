@@ -347,6 +347,9 @@ var funcs = map[string]interface{}{
 				} else {
 					cols += " " + f.SQLType
 				}
+				if !f.IsPk && f.IsStar() {
+					cols += " NULL"
+				}
 				if f.IsPk {
 					if driver == drivers.Sqlite {
 						if f.IsAI && f.IsPk {
