@@ -58,7 +58,7 @@ __"✔/-"__ are items in progress, check the [CI](https://travis-ci.org/mh-cbon/
     - [Unlink](#unlink)
     - [Read](#read-2)
     - [Join](#join-2)
-  - [working with views](#working-with-views)
+- [Working with views](#working-with-views)
 - [cli](#cli)
   - [$ jedi -help](#-jedi--help)
 - [credits](#credits)
@@ -573,7 +573,7 @@ type Category struct {
 #### Read
 #### Join
 
-## working with views
+# Working with views
 
 # cli
 
