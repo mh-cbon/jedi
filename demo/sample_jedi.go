@@ -565,7 +565,7 @@ func JBasicTypesSetup() runtime.Setuper {
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 string TEXT,
 string_p TEXT,
-int INTEGER,
+intfield INTEGER,
 int_p INTEGER,
 int32 INTEGER,
 int32_p INTEGER,
@@ -590,7 +590,7 @@ float64_p FLOAT
 id INTEGER NOT NULL AUTO_INCREMENT,
 string TEXT,
 string_p TEXT,
-int INTEGER,
+intfield INTEGER,
 int_p INTEGER,
 int32 INTEGER,
 int32_p INTEGER,
@@ -616,7 +616,7 @@ PRIMARY KEY (id)
 id INTEGER,
 string TEXT,
 string_p TEXT,
-int INTEGER,
+intfield INTEGER,
 int_p INTEGER,
 int32 INTEGER,
 int32_p INTEGER,
@@ -875,7 +875,7 @@ var JBasicTypesModel = jBasicTypesModel{
 	),
 
 	Int: builder.NewValueMeta(
-		`int`, `INTEGER`,
+		`intfield`, `INTEGER`,
 		`Int`, `int`,
 		false, false,
 	),
@@ -1195,7 +1195,7 @@ func (c jBasicTypesQuerier) Insert(items ...*BasicTypes) (sql.Result, error) {
 
 			`string_p`,
 
-			`int`,
+			`intfield`,
 
 			`int_p`,
 
@@ -1262,7 +1262,7 @@ func (c jBasicTypesQuerier) Update(items ...*BasicTypes) (sql.Result, error) {
 		res, err = c.db.Update(JBasicTypesModel.Table()).
 			Set(`string`, data.String).
 			Set(`string_p`, data.StringP).
-			Set(`int`, data.Int).
+			Set(`intfield`, data.Int).
 			Set(`int_p`, data.IntP).
 			Set(`int32`, data.Int32).
 			Set(`int32_p`, data.Int32P).

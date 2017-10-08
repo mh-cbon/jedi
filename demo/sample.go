@@ -20,7 +20,7 @@ type BasicTypes struct {
 	ID       int64 `jedi:"@pk"`
 	String   string
 	StringP  *string
-	Int      int
+	Int      int `jedi:"intfield"` // in mysql int is reserved kw
 	IntP     *int
 	Int32    int32
 	Int32P   *int32

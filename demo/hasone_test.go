@@ -10,7 +10,6 @@ import (
 
 func TestHasOne(t *testing.T) {
 
-	os.Setenv("JDSN", "has_one.db")
 	conn := getConnFromEnv(t, true)
 	defer conn.Close()
 	defer func() {

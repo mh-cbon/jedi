@@ -70,7 +70,7 @@ func TestModel(t *testing.T) {
 		if f, ok := props[pName]; ok == false {
 			t.Fatalf("property %v must exist", pName)
 		} else {
-			checkProperty(t, f, pName, "int", "int", "INTEGER", false, false)
+			checkProperty(t, f, pName, "int", "intfield", "INTEGER", false, false)
 		}
 		pName = "Int32"
 		if f, ok := props[pName]; ok == false {
