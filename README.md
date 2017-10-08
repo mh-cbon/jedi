@@ -14,6 +14,7 @@ Features
 - ‎✔ View create / drop
 - ‎✔ CRUD operations
 - ‎‎✔ auto increment support
+- ‎‎✔ Always UTC date
 - ‎‎✔/‎- text pk
 - ‎‎✔/‎- composite pk
 - ‎✔ hasOne relation helper
@@ -41,13 +42,14 @@ __"✔/-"__ are items in progress, check the [CI](https://travis-ci.org/mh-cbon/
   - [Select](#select)
   - [Where](#where)
   - [Delete](#delete)
-- [Wotking with Basic types](#wotking-with-basic-types)
-- [Wotking with Dates](#wotking-with-dates)
-- [Wotking with Relations](#wotking-with-relations)
+- [Working with Basic types](#working-with-basic-types)
+- [Working with Dates](#working-with-dates)
+- [Working with Relations](#working-with-relations)
   - [Has One](#has-one)
   - [Has Many 2 One](#has-many-2-one)
   - [Has Many 2 Many](#has-many-2-many)
 - [cli](#cli)
+  - [$ jedi -help](#-jedi--help)
 - [credits](#credits)
 
 # Install
@@ -397,7 +399,7 @@ func main () {
 }
 ```
 
-# Wotking with Basic types
+# Working with Basic types
 
 You can work with those basic types, they might be pointer too,
 
@@ -407,22 +409,159 @@ You can work with those basic types, they might be pointer too,
 - float32 / float64
 - time.Time
 
-# Wotking with Dates
+# Working with Dates
 
 `jedi` recognizes fields of type `time.Time` or `*time.Time`.
 
 Unless its tags defines `jedi:"@utc=false"`, it will automatically be turned into UTC before `Insert` and `Update` queries.
 
-# Wotking with Relations
+# Working with Relations
+
+`jedi` supports `@has_one` and `@has_many` property tags to implement `oneToMany`, `manyToOne` and `manyToMany` relationships.
+
+Those attributes (`@has_one`/`@has_many`) takes a value, the foreign reverse property.
+
+Whe you declare a relationship, you must do it on a `private/unexported` property.
+
+The type might be a `pointer`, or a `value`.
+
+```go
+//Product is a sku representation.
+//jedi:
+type Product struct {
+	ID         int64       `jedi:"@pk"`
+	brand      *Brand      `jedi:"@has_one=Brand.products"`
+	categories []*Category `jedi:"@has_many=Category.products"`
+}
+```
 
 ## Has One
 
+The `@has_one` tag attribute defines a `one to one` relationship.
+
+The type declaring the `@has_one` attribute must also declare the
+imported primary keys respecting the convention `<local property name | ucfirst><foreign primary key name>`
+
+```go
+//Product is a sku representation.
+//jedi:
+type Product struct {
+	ID         int64       `jedi:"@pk"`
+	brand2      *Brand      `jedi:"@has_one=Brand.products"`
+	Brand2ID    *int64      // the imported primary key of Brand.ID on Product.brand2
+}
+
+//Brand is a product brand representation.
+//jedi:
+type Brand struct {
+	ID        int64      `jedi:"@pk"`
+	products  []*Product `jedi:"@has_many=Product.brand"`
+	Name      string
+}
+```
+
 ## Has Many 2 One
+
+The `@has_many` tag attribute defines a `one to many` relationship.
+
+If the foreign reverse property defines an `@has_one` tag,
+then this property become a specific `has_many_to_one` relationship.
+
+Unlike `@has_one` attribute, it does not require additional properties.
+
+```go
+//Brand is a product brand representation.
+//jedi:
+type Brand struct {
+	ID        int64      `jedi:"@pk"`
+	products  []*Product `jedi:"@has_many=Product.brand"`
+	Name      string
+}
+
+//Product is a sku representation.
+//jedi:
+type Product struct {
+	ID         int64       `jedi:"@pk"`
+	brand2      *Brand      `jedi:"@has_one=Brand.products"`
+	Brand2ID    *int64      // the imported primary key of Brand.ID on Product.brand2
+}
+```
 
 ## Has Many 2 Many
 
+If the foreign reverse property of an `@has_many` also defines an `@has_many` tag,
+then this property become a specific `has_many_to_many` relationship.
+
+Such relationship are handled by a middle table.
+
+The middle table is automatically deduced and registered at runtime.
+
+```go
+//Product is a sku representation.
+//jedi:
+type Product struct {
+	ID         int64       `jedi:"@pk"`
+	SKU        string      //todo: see if can be pk (string not int)
+	categories []*Category `jedi:"@has_many=Category.products"`
+}
+
+//Category is a product category representation.
+//jedi:
+type Category struct {
+	ID       int64      `jedi:"@pk"`
+	products []*Product `jedi:"@has_many=Product.categories"`
+	Name     string
+}
+```
+
+Alternatively, you can define a specific middle type by defining an `@on=<type>` extra tag attribute on one of the side.
+
+That table must declare appropriate properties refering to the primary keys of each table involved.
+
+It can declare additionnal properties.
+
+```go
+//Product is a sku representation.
+//jedi:
+type Product struct {
+	ID         int64       `jedi:"@pk"`
+	SKU        string      //todo: see if can be pk (string not int)
+	categories []*Category `jedi:"@has_many=Category.products, @on=CategoryToProduct"`
+}
+
+//CategoryToProduct is a product to category relationship.
+//jedi:
+type CategoryToProduct struct {
+	CategoriesID int64
+	ProductsID int64
+	ProductOrder int
+}
+
+//Category is a product category representation.
+//jedi:
+type Category struct {
+	ID       int64      `jedi:"@pk"`
+	products []*Product `jedi:"@has_many=Product.categories"`
+	Name     string
+}
+```
+
 # cli
+
+#### $ jedi -help
+```sh
+jedi - 0.0.0
+
+A golang database generator to work with dbr (https://github.com/gocraft/dbr)
+
+Usage
+	jedi [import packages]
+
+	As a go generator, it looks for environment variables, namely:
+		GOFILE: the path to the file containing the //jedi: comments
+		GOPACKAGE: the package path related to the GOFILE
+```
 
 # credits
 
-inspiration from reform, dbr.
+inspiration from [reform](https://github.com/go-reform/reform), [dbr](https://github.com/gocraft/dbr).
