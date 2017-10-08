@@ -82,7 +82,7 @@ name TEXT,
 description TEXT,
 update_date datetime,
 removal_date datetime NULL,
-PRIMARY KEY (id) 
+PRIMARY KEY (id)
 
 )`
 	} else if driver == drivers.Pgsql {
@@ -480,20 +480,15 @@ func (c jSampleQuerier) Insert(items ...*Sample) (sql.Result, error) {
 
 				`id`,
 			)
-			b := dbr.NewBuffer()
-			if err := query.Build(dbrdialect.PostgreSQL, b); err != nil {
-				panic(err)
-			}
-			fmt.Println("     ", b.String())
 
-			var auto0 *int64
+			var auto0 int64
 
 			err = query.Load(
 
 				&auto0,
 			)
 
-			data.ID = *auto0
+			data.ID = auto0
 
 		} else {
 			res, err = query.Exec()
@@ -629,7 +624,7 @@ whatever TEXT
 		create = `CREATE TABLE IF NOT EXISTS basic_pk (
 id INTEGER NOT NULL AUTO_INCREMENT,
 whatever TEXT,
-PRIMARY KEY (id) 
+PRIMARY KEY (id)
 
 )`
 	} else if driver == drivers.Pgsql {
@@ -975,20 +970,15 @@ func (c jBasicPKQuerier) Insert(items ...*BasicPK) (sql.Result, error) {
 
 				`id`,
 			)
-			b := dbr.NewBuffer()
-			if err := query.Build(dbrdialect.PostgreSQL, b); err != nil {
-				panic(err)
-			}
-			fmt.Println("     ", b.String())
 
-			var auto0 *int64
+			var auto0 int64
 
 			err = query.Load(
 
 				&auto0,
 			)
 
-			data.ID = *auto0
+			data.ID = auto0
 
 		} else {
 			res, err = query.Exec()
@@ -1152,7 +1142,7 @@ float32 FLOAT,
 float32_p FLOAT NULL,
 float64 FLOAT,
 float64_p FLOAT NULL,
-PRIMARY KEY (id) 
+PRIMARY KEY (id)
 
 )`
 	} else if driver == drivers.Pgsql {
@@ -1783,20 +1773,15 @@ func (c jBasicTypesQuerier) Insert(items ...*BasicTypes) (sql.Result, error) {
 
 				`id`,
 			)
-			b := dbr.NewBuffer()
-			if err := query.Build(dbrdialect.PostgreSQL, b); err != nil {
-				panic(err)
-			}
-			fmt.Println("     ", b.String())
 
-			var auto0 *int64
+			var auto0 int64
 
 			err = query.Load(
 
 				&auto0,
 			)
 
-			data.ID = *auto0
+			data.ID = auto0
 
 		} else {
 			res, err = query.Exec()
@@ -1935,20 +1920,21 @@ func JTextPkSetup() runtime.Setuper {
 		create = `CREATE TABLE IF NOT EXISTS second_sample (
 name TEXT,
 description TEXT,
-PRIMARY KEY (name) 
+PRIMARY KEY (name)
 
 )`
 	} else if driver == drivers.Mysql {
 		create = `CREATE TABLE IF NOT EXISTS second_sample (
 name VARCHAR(255) NOT NULL,
 description TEXT,
-PRIMARY KEY (name) 
+PRIMARY KEY (name)
 
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS second_sample (
 name TEXT,
-description TEXT
+description TEXT,
+PRIMARY KEY (name)
 
 )`
 	}
@@ -2399,7 +2385,7 @@ func JCompositePkSetup() runtime.Setuper {
 p TEXT,
 k TEXT,
 description TEXT,
-PRIMARY KEY (p,k) 
+PRIMARY KEY (p,k)
 
 )`
 	} else if driver == drivers.Mysql {
@@ -2414,7 +2400,8 @@ PRIMARY KEY (p,k)
 		create = `CREATE TABLE IF NOT EXISTS composite_pk (
 p TEXT,
 k TEXT,
-description TEXT
+description TEXT,
+PRIMARY KEY (p,k)
 
 )`
 	}
@@ -2895,7 +2882,7 @@ tp datetime NULL
 id INTEGER NOT NULL AUTO_INCREMENT,
 t datetime,
 tp datetime NULL,
-PRIMARY KEY (id) 
+PRIMARY KEY (id)
 
 )`
 	} else if driver == drivers.Pgsql {
@@ -3263,20 +3250,15 @@ func (c jDateTypeQuerier) Insert(items ...*DateType) (sql.Result, error) {
 
 				`id`,
 			)
-			b := dbr.NewBuffer()
-			if err := query.Build(dbrdialect.PostgreSQL, b); err != nil {
-				panic(err)
-			}
-			fmt.Println("     ", b.String())
 
-			var auto0 *int64
+			var auto0 int64
 
 			err = query.Load(
 
 				&auto0,
 			)
 
-			data.ID = *auto0
+			data.ID = auto0
 
 		} else {
 			res, err = query.Exec()
@@ -3401,19 +3383,19 @@ func JSampleViewSetup() runtime.Setuper {
 	var drop string
 
 	if driver == drivers.Sqlite {
-		create = `CREATE VIEW IF NOT EXISTS sample_view AS 
+		create = `CREATE VIEW IF NOT EXISTS sample_view AS
 	SELECT *
 	FROM sample
 	WHERE id > 1
 `
 	} else if driver == drivers.Mysql {
-		create = `CREATE OR REPLACE VIEW sample_view AS 
+		create = `CREATE OR REPLACE VIEW sample_view AS
 	SELECT *
 	FROM sample
 	WHERE id > 1
 `
 	} else if driver == drivers.Pgsql {
-		create = `CREATE OR REPLACE VIEW sample_view AS 
+		create = `CREATE OR REPLACE VIEW sample_view AS
 	SELECT *
 	FROM sample
 	WHERE id > 1

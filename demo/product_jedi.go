@@ -522,20 +522,15 @@ func (c jProductQuerier) Insert(items ...*Product) (sql.Result, error) {
 
 				`id`,
 			)
-			b := dbr.NewBuffer()
-			if err := query.Build(dbrdialect.PostgreSQL, b); err != nil {
-				panic(err)
-			}
-			fmt.Println("     ", b.String())
 
-			var auto0 *int64
+			var auto0 int64
 
 			err = query.Load(
 
 				&auto0,
 			)
 
-			data.ID = *auto0
+			data.ID = auto0
 
 		} else {
 			res, err = query.Exec()
@@ -1826,20 +1821,15 @@ func (c jCategoryQuerier) Insert(items ...*Category) (sql.Result, error) {
 
 				`id`,
 			)
-			b := dbr.NewBuffer()
-			if err := query.Build(dbrdialect.PostgreSQL, b); err != nil {
-				panic(err)
-			}
-			fmt.Println("     ", b.String())
 
-			var auto0 *int64
+			var auto0 int64
 
 			err = query.Load(
 
 				&auto0,
 			)
 
-			data.ID = *auto0
+			data.ID = auto0
 
 		} else {
 			res, err = query.Exec()
@@ -2607,20 +2597,15 @@ func (c jBrandQuerier) Insert(items ...*Brand) (sql.Result, error) {
 
 				`id`,
 			)
-			b := dbr.NewBuffer()
-			if err := query.Build(dbrdialect.PostgreSQL, b); err != nil {
-				panic(err)
-			}
-			fmt.Println("     ", b.String())
 
-			var auto0 *int64
+			var auto0 int64
 
 			err = query.Load(
 
 				&auto0,
 			)
 
-			data.ID = *auto0
+			data.ID = auto0
 
 		} else {
 			res, err = query.Exec()
@@ -2975,7 +2960,8 @@ PRIMARY KEY (product_id,category_id)
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS category_productstoproduct_categories (
 product_id INTEGER,
-category_id INTEGER
+category_id INTEGER,
+PRIMARY KEY (product_id,category_id) 
 
 )`
 	}

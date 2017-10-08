@@ -19,7 +19,7 @@ func TestCompositePk(t *testing.T) {
 		}
 	}()
 
-	sess := conn.NewSession(nil)
+	sess := conn.NewSession(&jedi.EventReceiver{W: os.Stderr})
 
 	t.Run("can create the schema", func(t *testing.T) {
 		if err := JCompositePkSetup().Create(conn); err != nil {

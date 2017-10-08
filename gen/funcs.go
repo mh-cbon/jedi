@@ -372,15 +372,15 @@ var funcs = map[string]interface{}{
 						// cols += " NOT NULL"
 						if f.IsAI {
 							cols += " PRIMARY KEY"
+						} else {
+							hasPk = append(hasPk, f.SQLName)
 						}
 					}
 				}
 				cols += ",\n"
 			}
 		}
-		if driver == drivers.Mysql && len(hasPk) > 0 {
-			cols += "PRIMARY KEY (" + strings.Join(hasPk, ",") + ") ,\n"
-		} else if driver == "sqlite3" && len(hasPk) > 0 {
+		if len(hasPk) > 0 {
 			cols += "PRIMARY KEY (" + strings.Join(hasPk, ",") + ") ,\n"
 		}
 		if len(cols) > 1 {

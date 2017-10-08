@@ -18,7 +18,7 @@ func TestHasMany2Many(t *testing.T) {
 		}
 	}()
 
-	sess := conn.NewSession(nil)
+	sess := conn.NewSession(&jedi.EventReceiver{W: os.Stderr})
 
 	pz := &Product{SKU: "Prodz"}
 	JProduct(sess).Insert(pz)

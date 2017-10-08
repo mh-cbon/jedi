@@ -18,7 +18,7 @@ func TestHasOne(t *testing.T) {
 		}
 	}()
 
-	sess := conn.NewSession(nil)
+	sess := conn.NewSession(&jedi.EventReceiver{W: os.Stderr})
 
 	//Prepare some data
 	b := &Brand{Name: "z"}

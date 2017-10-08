@@ -453,13 +453,8 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 						{{$col.SQLName | quote}},
 						{{end}}
 					)
-					b := dbr.NewBuffer()
-					if err := query.Build(dbrdialect.PostgreSQL, b); err != nil {
-						panic(err)
-					}
-					fmt.Println("     ", b.String())
 					{{range $i, $col := .current.Fields | isAI}}
-					var auto{{$i}} *{{$col.GoType | itemGoType}}
+					var auto{{$i}} {{$col.GoType | itemGoType}}
 					{{end}}
 					err = query.Load(
 						{{range $i, $col := .current.Fields | isAI}}
@@ -468,9 +463,9 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 					)
 					{{range $i, $col := .current.Fields | isAI}}
 						{{if $col.IsStar}}
-						data.{{$col.Name}} = auto{{$i}}
+						data.{{$col.Name}} = &auto{{$i}}
 						{{else}}
-						data.{{$col.Name}} = *auto{{$i}}
+						data.{{$col.Name}} = auto{{$i}}
 						{{end}}
 					{{end}}
 				{{else}}
