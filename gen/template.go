@@ -452,7 +452,7 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 						{{end}}
 					)
 					{{range $i, $col := .current.Fields | isAI}}
-					var auto{{$i}} sql.Null{{$col.GoType | itemGoType | ucfirst}}
+					var auto{{$i}} int
 					{{end}}
 					err = query.Load(
 						{{range $i, $col := .current.Fields | isAI}}
@@ -461,9 +461,9 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 					)
 					{{range $i, $col := .current.Fields | isAI}}
 						{{if $col.IsStar}}
-						data.{{$col.Name}} = &auto{{$i}}.{{$col.GoType | itemGoType | ucfirst}}
+						data.{{$col.Name}} = &auto{{$i}}
 						{{else}}
-						data.{{$col.Name}} = auto{{$i}}.{{$col.GoType | itemGoType | ucfirst}}
+						data.{{$col.Name}} = auto{{$i}}
 						{{end}}
 					{{end}}
 				{{else}}
