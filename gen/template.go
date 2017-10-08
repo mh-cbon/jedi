@@ -461,9 +461,9 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 					)
 					{{range $i, $col := .current.Fields | isAI}}
 						{{if $col.IsStar}}
-						data.{{$col.Name}} = &auto{{$i}}
+						data.{{$col.Name}} = &{{$col.GoType | itemGoType}}(auto{{$i}})
 						{{else}}
-						data.{{$col.Name}} = auto{{$i}}
+						data.{{$col.Name}} = {{$col.GoType | itemGoType}}(auto{{$i}})
 						{{end}}
 					{{end}}
 				{{else}}

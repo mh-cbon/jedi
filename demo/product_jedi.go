@@ -528,7 +528,7 @@ func (c jProductQuerier) Insert(items ...*Product) (sql.Result, error) {
 				&auto0,
 			)
 
-			data.ID = auto0
+			data.ID = int64(auto0)
 
 		} else {
 			res, err = query.Exec()
@@ -1827,7 +1827,7 @@ func (c jCategoryQuerier) Insert(items ...*Category) (sql.Result, error) {
 				&auto0,
 			)
 
-			data.ID = auto0
+			data.ID = int64(auto0)
 
 		} else {
 			res, err = query.Exec()
@@ -2603,7 +2603,7 @@ func (c jBrandQuerier) Insert(items ...*Brand) (sql.Result, error) {
 				&auto0,
 			)
 
-			data.ID = auto0
+			data.ID = int64(auto0)
 
 		} else {
 			res, err = query.Exec()

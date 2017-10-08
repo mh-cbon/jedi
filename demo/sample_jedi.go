@@ -484,7 +484,7 @@ func (c jSampleQuerier) Insert(items ...*Sample) (sql.Result, error) {
 				&auto0,
 			)
 
-			data.ID = auto0
+			data.ID = int64(auto0)
 
 		} else {
 			res, err = query.Exec()
@@ -1297,7 +1297,7 @@ func (c jBasicTypesQuerier) Insert(items ...*BasicTypes) (sql.Result, error) {
 				&auto0,
 			)
 
-			data.ID = auto0
+			data.ID = int64(auto0)
 
 		} else {
 			res, err = query.Exec()
@@ -2772,7 +2772,7 @@ func (c jDateTypeQuerier) Insert(items ...*DateType) (sql.Result, error) {
 				&auto0,
 			)
 
-			data.ID = auto0
+			data.ID = int64(auto0)
 
 		} else {
 			res, err = query.Exec()
