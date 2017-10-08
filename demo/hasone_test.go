@@ -65,7 +65,10 @@ func TestHasOne(t *testing.T) {
 			if len(res) != 1 {
 				t.Fatalf("invalid length wanted=%v, got=%v", 1, len(res))
 			}
-			if res[0].SKU != "A" {
+			if res[0].SKU != p.SKU {
+				t.Fatalf("inavlid object, wanted=%#v got=%#v", p, res[0])
+			}
+			if res[0].ID != p.ID {
 				t.Fatalf("inavlid object, wanted=%#v got=%#v", p, res[0])
 			}
 		} else {
