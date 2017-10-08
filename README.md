@@ -51,8 +51,6 @@ __"✔/-"__ are items in progress, check the [CI](https://travis-ci.org/mh-cbon/
     - [Read](#read)
     - [Join](#join)
   - [Has Many 2 One](#has-many-2-one)
-    - [Set](#set-1)
-    - [Unset](#unset-1)
     - [Read](#read-1)
     - [Join](#join-1)
   - [Has Many 2 Many](#has-many-2-many)
@@ -60,6 +58,7 @@ __"✔/-"__ are items in progress, check the [CI](https://travis-ci.org/mh-cbon/
     - [Unlink](#unlink)
     - [Read](#read-2)
     - [Join](#join-2)
+  - [working with views](#working-with-views)
 - [cli](#cli)
   - [$ jedi -help](#-jedi--help)
 - [credits](#credits)
@@ -193,7 +192,7 @@ var JTodoModel = jProductModel{
 }
 ```
 
-Models are useful to create condition without using wihtout raw text.
+Models are useful to create condition without using raw text identifiers.
 
 ```go
 JTodoModel.ID.Eq(1)
@@ -274,6 +273,8 @@ The `Insert(obj type) (sql.Result, error)` method attempts to write given object
 
 If the object has declared an `AUTO INCREMENT` field, the property is updated.
 
+An `interger primary key` field is `AUTO INCREMENT`.
+
 ```go
 func main () {
 	// ...
@@ -292,7 +293,7 @@ func main () {
 
 To update data in the database, the type declared must have primary keys.
 
-The `Update(obj type) (sql.Result, error)` method attempts to write given object into the database.
+The `Update(obj type) (sql.Result, error)` method attempts to write existing object into the database.
 
 ```go
 func main () {
@@ -367,7 +368,7 @@ See also dbr documentation for `Load`/`LoadStructs` etc.
 func main () {
 	// ...
 	todo, err := JTodo(sess).
-		Select("task"). // input sql values.
+		Select("task.*"). // input sql values.
 		Where(JTodoModel.Task.Like("%whatever%")). // set some conditions
 		Read() // get all results found
 	if err != nil {
@@ -468,7 +469,7 @@ type Product struct {
 //jedi:
 type Brand struct {
 	ID        int64      `jedi:"@pk"`
-	products  []*Product `jedi:"@has_many=Product.brand"`
+	products  []*Product `jedi:"@has_many=Product.brand2"`
 	Name      string
 }
 ```
@@ -500,13 +501,11 @@ type Brand struct {
 //jedi:
 type Product struct {
 	ID         int64       `jedi:"@pk"`
-	brand2      *Brand      `jedi:"@has_one=Brand.products"`
-	Brand2ID    *int64      // the imported primary key of Brand.ID on Product.brand2
+	brand      *Brand      `jedi:"@has_one=Brand.products"`
+	BrandID    *int64      // the imported primary key of Brand.ID on Product.brand2
 }
 ```
 
-#### Set
-#### Unset
 #### Read
 #### Join
 
@@ -573,6 +572,8 @@ type Category struct {
 #### Unlink
 #### Read
 #### Join
+
+## working with views
 
 # cli
 
