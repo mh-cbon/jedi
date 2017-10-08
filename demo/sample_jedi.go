@@ -87,7 +87,7 @@ PRIMARY KEY (id)
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS sample (
-id INTEGER,
+id SERIAL PRIMARY KEY,
 name TEXT,
 description TEXT,
 update_date timestamp,
@@ -634,7 +634,7 @@ PRIMARY KEY (id)
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS basic_pk (
-id INTEGER,
+id SERIAL PRIMARY KEY,
 whatever TEXT
 
 )`
@@ -1157,7 +1157,7 @@ PRIMARY KEY (id)
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS basic_types (
-id INTEGER,
+id SERIAL PRIMARY KEY,
 string TEXT,
 string_p TEXT NULL,
 intfield INTEGER,
@@ -2900,7 +2900,7 @@ PRIMARY KEY (id)
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS date_type (
-id INTEGER,
+id SERIAL PRIMARY KEY,
 t timestamp,
 tp timestamp NULL
 

@@ -81,7 +81,7 @@ PRIMARY KEY (id)
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS product (
-id INTEGER,
+id SERIAL PRIMARY KEY,
 sku TEXT,
 brand_id INTEGER NULL,
 brand2_id INTEGER NULL,
@@ -1474,7 +1474,7 @@ PRIMARY KEY (id)
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS category (
-id INTEGER,
+id SERIAL PRIMARY KEY,
 name TEXT
 
 )`
@@ -2244,7 +2244,7 @@ PRIMARY KEY (id)
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS brand (
-id INTEGER,
+id SERIAL PRIMARY KEY,
 name TEXT
 
 )`

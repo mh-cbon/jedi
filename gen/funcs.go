@@ -344,6 +344,8 @@ var funcs = map[string]interface{}{
 					cols += " timestamp"
 				} else if f.GoType == "*time.Time" && driver == drivers.Pgsql {
 					cols += " timestamp"
+				} else if f.IsAI && f.SQLType == "INTEGER" && driver == drivers.Pgsql {
+					cols += " SERIAL"
 				} else {
 					cols += " " + f.SQLType
 				}
@@ -365,6 +367,11 @@ var funcs = map[string]interface{}{
 						cols += " NOT NULL"
 						if f.IsAI {
 							cols += " AUTO_INCREMENT"
+						}
+					} else if driver == drivers.Pgsql {
+						// cols += " NOT NULL"
+						if f.IsAI {
+							cols += " PRIMARY KEY"
 						}
 					}
 				}
