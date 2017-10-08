@@ -16,6 +16,7 @@ before_script:
   - psql -c 'create database travis_ci_test;' -U postgres
 
 script:
+  - go install && go generate demo/*.go
   - JDRIVER="sqlite3" JDSN="db.sql" go test -v demo/*.go
   - JDRIVER="mysql" JDSN="root:@/test?parseTime=true" go test -v demo/*.go
   - JDRIVER="postgres" JDSN="user=postrges dbname=test" go test -v demo/*.go

@@ -61,7 +61,6 @@ type CompositePk struct {
 //	SELECT *
 //	FROM sample
 //	WHERE id > 1
-//	-- comments finish on new empty line
 //
 // regular commets can restart.
 type SampleView struct {
