@@ -14,6 +14,14 @@ type Sample struct {
 	RemovalDate *time.Time
 }
 
+//BasicPK is a type with onlya primary interger auto increment key.
+// useful to test vendors.
+//jedi:
+type BasicPK struct {
+	ID       int64 `jedi:"@pk"`
+	Whatever string
+}
+
 //BasicTypes is a type with various possible basic type properties.
 //jedi:
 type BasicTypes struct {

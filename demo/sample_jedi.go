@@ -21,6 +21,8 @@ func init() {
 
 		JSampleSetup,
 
+		JBasicPKSetup,
+
 		JBasicTypesSetup,
 
 		JTextPkSetup,
@@ -583,6 +585,491 @@ func (c jSampleQuerier) Find(ID int64) (*Sample, error) {
 	return c.Select().Where(
 
 		JSampleModel.ID.Eq(ID),
+	).Read()
+}
+
+type jBasicPKSetup struct {
+	Name       string
+	CreateStmt string
+	DropStmt   string
+	isView     bool
+}
+
+//Create applies the create table command to te underlying connection.
+func (c jBasicPKSetup) Create(db *dbr.Connection) error {
+	_, err := db.Exec(c.CreateStmt)
+	return runtime.NewSQLError(err, c.CreateStmt)
+}
+
+//Drop applies the drop table command to te underlying connection.
+func (c jBasicPKSetup) Drop(db *dbr.Connection) error {
+	_, err := db.Exec(c.DropStmt)
+	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jBasicPKSetup) IsView() bool {
+	return c.isView
+}
+
+// JBasicPKSetup helps to create/drop the schema
+func JBasicPKSetup() runtime.Setuper {
+	driver := runtime.GetCurrentDriver()
+
+	var create string
+	var drop string
+
+	if driver == drivers.Sqlite {
+		create = `CREATE TABLE IF NOT EXISTS basic_pk (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+whatever TEXT
+
+)`
+	} else if driver == drivers.Mysql {
+		create = `CREATE TABLE IF NOT EXISTS basic_pk (
+id INTEGER NOT NULL AUTO_INCREMENT,
+whatever TEXT,
+PRIMARY KEY (id) 
+
+)`
+	} else if driver == drivers.Pgsql {
+		create = `CREATE TABLE IF NOT EXISTS basic_pk (
+id INTEGER,
+whatever TEXT
+
+)`
+	}
+
+	if driver == drivers.Sqlite {
+		drop = `DROP TABLE IF EXISTS basic_pk`
+	} else if driver == drivers.Mysql {
+		drop = `DROP TABLE IF EXISTS basic_pk`
+	} else if driver == drivers.Pgsql {
+		drop = `DROP TABLE IF EXISTS basic_pk`
+	}
+
+	return jBasicPKSetup{
+		Name:       `basic_pk`,
+		CreateStmt: create,
+		DropStmt:   drop,
+		isView:     !true,
+	}
+}
+
+// jBasicPKModel provides helper to work with BasicPK data provider
+type jBasicPKModel struct {
+	as string
+
+	ID builder.ValuePropertyMeta
+
+	Whatever builder.ValuePropertyMeta
+}
+
+// Eq provided items.
+func (j jBasicPKModel) Eq(s ...*BasicPK) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JBasicPKModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// In provided items.
+func (j jBasicPKModel) In(s ...*BasicPK) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JBasicPKModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// As returns a copy with an alias.
+func (j jBasicPKModel) As(as string) jBasicPKModel {
+	j.as = as
+
+	j.ID.TableAlias = as
+
+	j.Whatever.TableAlias = as
+
+	return j
+}
+
+// Table returns the sql table name
+func (j jBasicPKModel) Table() string {
+	return "basic_pk"
+}
+
+// Alias returns the current alias
+func (j jBasicPKModel) Alias() string {
+	if j.as == "" {
+		return j.Table()
+	}
+	return j.as
+}
+
+// Properties returns a map of property name => meta
+func (j jBasicPKModel) Properties() map[string]builder.MetaProvider {
+	ret := map[string]builder.MetaProvider{}
+
+	ret["ID"] = j.ID
+
+	ret["Whatever"] = j.Whatever
+
+	return ret
+}
+
+// Fields returns given sql fields with appropriate aliasing.
+func (j jBasicPKModel) Fields(ins ...string) []string {
+	dialect := runtime.GetDialect()
+	if len(ins) == 0 {
+		ins = append(ins, "*")
+	}
+	for i, in := range ins {
+		if j.as != "" {
+			if in == "*" {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
+			} else {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
+			}
+		}
+	}
+	return ins
+}
+
+// JBasicPKModel provides helper to work with BasicPK data provider
+var JBasicPKModel = jBasicPKModel{
+
+	ID: builder.NewValueMeta(
+		`id`, `INTEGER`,
+		`ID`, `int64`,
+		true, true,
+	),
+
+	Whatever: builder.NewValueMeta(
+		`whatever`, `TEXT`,
+		`Whatever`, `string`,
+		false, false,
+	),
+}
+
+type jBasicPKDeleteBuilder struct {
+	*builder.DeleteBuilder
+}
+
+//Build builds the sql string into given buffer using current dialect
+func (c *jBasicPKDeleteBuilder) Build(b dbr.Buffer) error {
+	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+}
+
+//String returns the sql string for current dialect. It returns empty string if the build returns an error.
+func (c *jBasicPKDeleteBuilder) String() string {
+	b := dbr.NewBuffer()
+	if err := c.Build(b); err != nil {
+		return ""
+	}
+	return b.String()
+}
+
+//Where returns a jBasicPKDeleteBuilder instead of builder.DeleteBuilder.
+func (c *jBasicPKDeleteBuilder) Where(query interface{}, value ...interface{}) *jBasicPKDeleteBuilder {
+	c.DeleteBuilder.Where(query, value...)
+	return c
+}
+
+type jBasicPKSelectBuilder struct {
+	as string
+	*builder.SelectBuilder
+}
+
+//Build builds the sql string using current dialect into given bufer
+func (c *jBasicPKSelectBuilder) Build(b dbr.Buffer) error {
+	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+}
+
+//String returns the sql string for current dialect. It returns empty string if the build returns an error.
+func (c *jBasicPKSelectBuilder) String() string {
+	b := dbr.NewBuffer()
+	if err := c.Build(b); err != nil {
+		return ""
+	}
+	return b.String()
+}
+
+//Read evaluates current select query and load the results into a BasicPK
+func (c *jBasicPKSelectBuilder) Read() (*BasicPK, error) {
+	var one BasicPK
+	err := c.LoadStruct(&one)
+	return &one, err
+}
+
+//ReadAll evaluates current select query and load the results into a slice of BasicPK
+func (c *jBasicPKSelectBuilder) ReadAll() ([]*BasicPK, error) {
+	var all []*BasicPK
+	_, err := c.LoadStructs(&all)
+	return all, err
+}
+
+//Where returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) Where(query interface{}, value ...interface{}) *jBasicPKSelectBuilder {
+	c.SelectBuilder.Where(query, value...)
+	return c
+}
+
+//GroupBy returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) GroupBy(col ...string) *jBasicPKSelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) Having(query interface{}, value ...interface{}) *jBasicPKSelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) Limit(n uint64) *jBasicPKSelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) Offset(n uint64) *jBasicPKSelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) OrderAsc(col string) *jBasicPKSelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) OrderDesc(col string) *jBasicPKSelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) OrderDir(col string, isAsc bool) *jBasicPKSelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) OrderBy(col string) *jBasicPKSelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Join returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) Join(table, on interface{}) *jBasicPKSelectBuilder {
+	c.SelectBuilder.Join(table, on)
+	return c
+}
+
+//LeftJoin returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) LeftJoin(table, on interface{}) *jBasicPKSelectBuilder {
+	c.SelectBuilder.LeftJoin(table, on)
+	return c
+}
+
+//RightJoin returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) RightJoin(table, on interface{}) *jBasicPKSelectBuilder {
+	c.SelectBuilder.RightJoin(table, on)
+	return c
+}
+
+//FullJoin returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) FullJoin(table, on interface{}) *jBasicPKSelectBuilder {
+	c.SelectBuilder.FullJoin(table, on)
+	return c
+}
+
+//Distinct returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) Distinct() *jBasicPKSelectBuilder {
+	c.SelectBuilder.Distinct()
+	return c
+}
+
+// JBasicPK provides a basic querier
+func JBasicPK(db dbr.SessionRunner) jBasicPKQuerier {
+	return jBasicPKQuerier{
+		db: db,
+	}
+}
+
+type jBasicPKQuerier struct {
+	db dbr.SessionRunner
+	as string
+}
+
+//As set alias prior building.
+func (c jBasicPKQuerier) As(as string) jBasicPKQuerier {
+	c.as = as
+	return c
+}
+
+//Model returns a model with appropriate aliasing.
+func (c jBasicPKQuerier) Model() jBasicPKModel {
+	return JBasicPKModel.As(c.as)
+}
+
+//Select returns a BasicPK Select Builder.
+func (c jBasicPKQuerier) Select(what ...string) *jBasicPKSelectBuilder {
+	m := c.Model()
+	dialect := runtime.GetDialect()
+	from := dialect.QuoteIdent(m.Table())
+	if m.Alias() != "" && m.Alias() != m.Table() {
+		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias() != "" && m.Alias() != m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias + ".*")
+	}
+	return &jBasicPKSelectBuilder{
+		as: c.as,
+		SelectBuilder: &builder.SelectBuilder{
+			SelectBuilder: c.db.Select(what...).From(from),
+		},
+	}
+}
+
+//Where returns a BasicPK Select Builder.
+func (c jBasicPKQuerier) Where(query interface{}, value ...interface{}) *jBasicPKSelectBuilder {
+	return c.Select().Where(query, value...)
+}
+
+//Count returns a BasicPK Select Builder to count given expressions.
+func (c jBasicPKQuerier) Count(what ...string) *jBasicPKSelectBuilder {
+	if len(what) == 0 {
+		what = append(what, "*")
+	}
+	return c.Select("COUNT(" + strings.Join(what, ",") + ")")
+}
+
+// Insert a new BasicPK, if it has autoincrement primary key, the value will be set.
+// It stops on first error.
+func (c jBasicPKQuerier) Insert(items ...*BasicPK) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		query := c.db.InsertInto(JBasicPKModel.Table()).Columns(
+
+			`whatever`,
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
+
+			query = query.Returning(
+
+				`id`,
+			)
+			b := dbr.NewBuffer()
+			if err := query.Build(dbrdialect.PostgreSQL, b); err != nil {
+				panic(err)
+			}
+			fmt.Println("     ", b.String())
+
+			var auto0 *int64
+
+			err = query.Load(
+
+				&auto0,
+			)
+
+			data.ID = *auto0
+
+		} else {
+			res, err = query.Exec()
+
+			if err == nil {
+				id, err2 := res.LastInsertId()
+				if err2 != nil {
+					return res, err2
+				}
+				data.ID = id
+			}
+
+		}
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// InsertBulk inserts multiple items into the database.
+// It does not post update any auto increment field.
+// It builds an insert query of multiple rows and send it on the underlying connection.
+func (c jBasicPKQuerier) InsertBulk(items ...*BasicPK) error {
+	panic("todo")
+}
+
+// Update a BasicPK. It stops on first error.
+func (c jBasicPKQuerier) Update(items ...*BasicPK) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		res, err = c.db.Update(JBasicPKModel.Table()).
+			Set(`whatever`, data.Whatever).
+			Where("id = ?", data.ID).
+			Exec()
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// UpdateBulk updates multiple items into the database.
+// It builds an update query of multiple rows and send it on the underlying connection.
+func (c jBasicPKQuerier) UpdateBulk(items ...*BasicPK) error {
+	panic("todo")
+}
+
+//Delete returns a delete builder
+func (c jBasicPKQuerier) Delete() *jBasicPKDeleteBuilder {
+	return &jBasicPKDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JBasicPKModel.Table()),
+		},
+	}
+}
+
+//DeleteByPk deletes one BasicPK by its PKs
+func (c jBasicPKQuerier) DeleteByPk(ID int64) error {
+	_, err := c.Delete().Where(
+
+		JBasicPKModel.ID.Eq(ID),
+	).Exec()
+	return err
+}
+
+// DeleteAll given BasicPK
+func (c jBasicPKQuerier) DeleteAll(items ...*BasicPK) (sql.Result, error) {
+	q := c.Delete().Where(
+		JBasicPKModel.In(items...),
+	)
+	return q.Exec()
+}
+
+//Find one BasicPK using its PKs
+func (c jBasicPKQuerier) Find(ID int64) (*BasicPK, error) {
+	return c.Select().Where(
+
+		JBasicPKModel.ID.Eq(ID),
 	).Read()
 }
 
