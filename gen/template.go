@@ -439,20 +439,48 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 					{{end}}
 				{{end}}
 			{{end}}
-			res, err = c.db.InsertInto(J{{.current.Name}}Model.Table()).Columns(
+			query := c.db.InsertInto(J{{.current.Name}}Model.Table()).Columns(
 				{{range $i, $col := .current.Fields | notAI | withSQLType | withGoName}}
 				{{$col.SQLName | quote}},
 				{{end}}
-			).Record(data).Exec()
-			{{if notEmpty (.current.Fields | isAI | getPkFieldName)}}
-			if err == nil {
-				id, err2 := res.LastInsertId()
-				if err2 != nil {
-					return res, err2
+			).Record(data)
+			if runtime.Runs(drivers.Pgsql) {
+				{{if .current.Fields | isAI}}
+					query = query.Returning(
+						{{range $i, $col := .current.Fields | isAI}}
+						{{$col.SQLName | quote}},
+						{{end}}
+					)
+					{{range $i, $col := .current.Fields | isAI}}
+					var auto{{$i}} {{$col.GoType | itemGoType}}
+					{{end}}
+					err = query.Load(
+						{{range $i, $col := .current.Fields | isAI}}
+						&auto{{$i}},
+						{{end}}
+					)
+					{{range $i, $col := .current.Fields | isAI}}
+						{{if $col.IsStar}}
+						data.{{$col.Name}} = &auto{{$i}}
+						{{else}}
+						data.{{$col.Name}} = auto{{$i}}
+						{{end}}
+					{{end}}
+				{{else}}
+					res, err = query.Exec()
+				{{end}}
+			} else {
+				res, err = query.Exec()
+				{{if notEmpty (.current.Fields | isAI | getPkFieldName)}}
+				if err == nil {
+					id, err2 := res.LastInsertId()
+					if err2 != nil {
+						return res, err2
+					}
+					data.{{.current.Fields | isAI | getPkFieldName}} = id
 				}
-				data.{{.current.Fields | isAI | getPkFieldName}} = id
+				{{end}}
 			}
-			{{end}}
 			if err != nil {
 				return res, err
 			}

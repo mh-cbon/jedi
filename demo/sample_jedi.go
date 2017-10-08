@@ -460,7 +460,7 @@ func (c jSampleQuerier) Insert(items ...*Sample) (sql.Result, error) {
 			data.RemovalDate = &x
 		}
 
-		res, err = c.db.InsertInto(JSampleModel.Table()).Columns(
+		query := c.db.InsertInto(JSampleModel.Table()).Columns(
 
 			`name`,
 
@@ -469,16 +469,35 @@ func (c jSampleQuerier) Insert(items ...*Sample) (sql.Result, error) {
 			`update_date`,
 
 			`removal_date`,
-		).Record(data).Exec()
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
 
-		if err == nil {
-			id, err2 := res.LastInsertId()
-			if err2 != nil {
-				return res, err2
+			query = query.Returning(
+
+				`id`,
+			)
+
+			var auto0 int64
+
+			err = query.Load(
+
+				&auto0,
+			)
+
+			data.ID = auto0
+
+		} else {
+			res, err = query.Exec()
+
+			if err == nil {
+				id, err2 := res.LastInsertId()
+				if err2 != nil {
+					return res, err2
+				}
+				data.ID = id
 			}
-			data.ID = id
-		}
 
+		}
 		if err != nil {
 			return res, err
 		}
@@ -1222,7 +1241,7 @@ func (c jBasicTypesQuerier) Insert(items ...*BasicTypes) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.db.InsertInto(JBasicTypesModel.Table()).Columns(
+		query := c.db.InsertInto(JBasicTypesModel.Table()).Columns(
 
 			`string`,
 
@@ -1263,16 +1282,35 @@ func (c jBasicTypesQuerier) Insert(items ...*BasicTypes) (sql.Result, error) {
 			`float64`,
 
 			`float64_p`,
-		).Record(data).Exec()
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
 
-		if err == nil {
-			id, err2 := res.LastInsertId()
-			if err2 != nil {
-				return res, err2
+			query = query.Returning(
+
+				`id`,
+			)
+
+			var auto0 int64
+
+			err = query.Load(
+
+				&auto0,
+			)
+
+			data.ID = auto0
+
+		} else {
+			res, err = query.Exec()
+
+			if err == nil {
+				id, err2 := res.LastInsertId()
+				if err2 != nil {
+					return res, err2
+				}
+				data.ID = id
 			}
-			data.ID = id
-		}
 
+		}
 		if err != nil {
 			return res, err
 		}
@@ -1741,13 +1779,20 @@ func (c jTextPkQuerier) Insert(items ...*TextPk) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.db.InsertInto(JTextPkModel.Table()).Columns(
+		query := c.db.InsertInto(JTextPkModel.Table()).Columns(
 
 			`name`,
 
 			`description`,
-		).Record(data).Exec()
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
 
+			res, err = query.Exec()
+
+		} else {
+			res, err = query.Exec()
+
+		}
 		if err != nil {
 			return res, err
 		}
@@ -2216,15 +2261,22 @@ func (c jCompositePkQuerier) Insert(items ...*CompositePk) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.db.InsertInto(JCompositePkModel.Table()).Columns(
+		query := c.db.InsertInto(JCompositePkModel.Table()).Columns(
 
 			`p`,
 
 			`k`,
 
 			`description`,
-		).Record(data).Exec()
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
 
+			res, err = query.Exec()
+
+		} else {
+			res, err = query.Exec()
+
+		}
 		if err != nil {
 			return res, err
 		}
@@ -2700,21 +2752,40 @@ func (c jDateTypeQuerier) Insert(items ...*DateType) (sql.Result, error) {
 			data.TP = &x
 		}
 
-		res, err = c.db.InsertInto(JDateTypeModel.Table()).Columns(
+		query := c.db.InsertInto(JDateTypeModel.Table()).Columns(
 
 			`t`,
 
 			`tp`,
-		).Record(data).Exec()
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
 
-		if err == nil {
-			id, err2 := res.LastInsertId()
-			if err2 != nil {
-				return res, err2
+			query = query.Returning(
+
+				`id`,
+			)
+
+			var auto0 int64
+
+			err = query.Load(
+
+				&auto0,
+			)
+
+			data.ID = auto0
+
+		} else {
+			res, err = query.Exec()
+
+			if err == nil {
+				id, err2 := res.LastInsertId()
+				if err2 != nil {
+					return res, err2
+				}
+				data.ID = id
 			}
-			data.ID = id
-		}
 
+		}
 		if err != nil {
 			return res, err
 		}
