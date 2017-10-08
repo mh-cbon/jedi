@@ -35,6 +35,7 @@ type jSampleSetup struct {
 	Name       string
 	CreateStmt string
 	DropStmt   string
+	isView     bool
 }
 
 //Create applies the create table command to te underlying connection.
@@ -47,6 +48,11 @@ func (c jSampleSetup) Create(db *dbr.Connection) error {
 func (c jSampleSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
 	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jSampleSetup) IsView() bool {
+	return c.isView
 }
 
 // JSampleSetup helps to create/drop the schema
@@ -98,6 +104,7 @@ removal_date timestamp
 		Name:       `sample`,
 		CreateStmt: create,
 		DropStmt:   drop,
+		isView:     true,
 	}
 }
 
@@ -243,7 +250,7 @@ type jSampleDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
+//Build builds the sql string into given buffer using current dialect
 func (c *jSampleDeleteBuilder) Build(b dbr.Buffer) error {
 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
 }
@@ -557,6 +564,7 @@ type jBasicTypesSetup struct {
 	Name       string
 	CreateStmt string
 	DropStmt   string
+	isView     bool
 }
 
 //Create applies the create table command to te underlying connection.
@@ -569,6 +577,11 @@ func (c jBasicTypesSetup) Create(db *dbr.Connection) error {
 func (c jBasicTypesSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
 	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jBasicTypesSetup) IsView() bool {
+	return c.isView
 }
 
 // JBasicTypesSetup helps to create/drop the schema
@@ -668,6 +681,7 @@ float64_p FLOAT
 		Name:       `basic_types`,
 		CreateStmt: create,
 		DropStmt:   drop,
+		isView:     true,
 	}
 }
 
@@ -1005,7 +1019,7 @@ type jBasicTypesDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
+//Build builds the sql string into given buffer using current dialect
 func (c *jBasicTypesDeleteBuilder) Build(b dbr.Buffer) error {
 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
 }
@@ -1353,6 +1367,7 @@ type jTextPkSetup struct {
 	Name       string
 	CreateStmt string
 	DropStmt   string
+	isView     bool
 }
 
 //Create applies the create table command to te underlying connection.
@@ -1365,6 +1380,11 @@ func (c jTextPkSetup) Create(db *dbr.Connection) error {
 func (c jTextPkSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
 	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jTextPkSetup) IsView() bool {
+	return c.isView
 }
 
 // JTextPkSetup helps to create/drop the schema
@@ -1408,6 +1428,7 @@ description TEXT
 		Name:       `second_sample`,
 		CreateStmt: create,
 		DropStmt:   drop,
+		isView:     true,
 	}
 }
 
@@ -1517,7 +1538,7 @@ type jTextPkDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
+//Build builds the sql string into given buffer using current dialect
 func (c *jTextPkDeleteBuilder) Build(b dbr.Buffer) error {
 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
 }
@@ -1802,6 +1823,7 @@ type jCompositePkSetup struct {
 	Name       string
 	CreateStmt string
 	DropStmt   string
+	isView     bool
 }
 
 //Create applies the create table command to te underlying connection.
@@ -1814,6 +1836,11 @@ func (c jCompositePkSetup) Create(db *dbr.Connection) error {
 func (c jCompositePkSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
 	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jCompositePkSetup) IsView() bool {
+	return c.isView
 }
 
 // JCompositePkSetup helps to create/drop the schema
@@ -1860,6 +1887,7 @@ description TEXT
 		Name:       `composite_pk`,
 		CreateStmt: create,
 		DropStmt:   drop,
+		isView:     true,
 	}
 }
 
@@ -1985,7 +2013,7 @@ type jCompositePkDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
+//Build builds the sql string into given buffer using current dialect
 func (c *jCompositePkDeleteBuilder) Build(b dbr.Buffer) error {
 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
 }
@@ -2277,6 +2305,7 @@ type jDateTypeSetup struct {
 	Name       string
 	CreateStmt string
 	DropStmt   string
+	isView     bool
 }
 
 //Create applies the create table command to te underlying connection.
@@ -2289,6 +2318,11 @@ func (c jDateTypeSetup) Create(db *dbr.Connection) error {
 func (c jDateTypeSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
 	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jDateTypeSetup) IsView() bool {
+	return c.isView
 }
 
 // JDateTypeSetup helps to create/drop the schema
@@ -2334,6 +2368,7 @@ tp timestamp
 		Name:       `date_type`,
 		CreateStmt: create,
 		DropStmt:   drop,
+		isView:     true,
 	}
 }
 
@@ -2455,7 +2490,7 @@ type jDateTypeDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
+//Build builds the sql string into given buffer using current dialect
 func (c *jDateTypeDeleteBuilder) Build(b dbr.Buffer) error {
 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
 }
@@ -2763,6 +2798,7 @@ type jSampleViewSetup struct {
 	Name       string
 	CreateStmt string
 	DropStmt   string
+	isView     bool
 }
 
 //Create applies the create table command to te underlying connection.
@@ -2775,6 +2811,11 @@ func (c jSampleViewSetup) Create(db *dbr.Connection) error {
 func (c jSampleViewSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
 	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jSampleViewSetup) IsView() bool {
+	return c.isView
 }
 
 // JSampleViewSetup helps to create/drop the schema
@@ -2797,7 +2838,7 @@ func JSampleViewSetup() runtime.Setuper {
 	WHERE id > 1
 `
 	} else if driver == drivers.Pgsql {
-		create = `CREATE VIEW IF NOT EXISTS sample_view AS 
+		create = `CREATE OR REPLACE VIEW sample_view AS 
 	SELECT *
 	FROM sample
 	WHERE id > 1
@@ -2816,6 +2857,7 @@ func JSampleViewSetup() runtime.Setuper {
 		Name:       `sample_view`,
 		CreateStmt: create,
 		DropStmt:   drop,
+		isView:     false,
 	}
 }
 
@@ -2937,7 +2979,7 @@ type jSampleViewDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
+//Build builds the sql string into given buffer using current dialect
 func (c *jSampleViewDeleteBuilder) Build(b dbr.Buffer) error {
 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
 }

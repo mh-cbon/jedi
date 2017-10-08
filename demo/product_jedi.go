@@ -31,6 +31,7 @@ type jProductSetup struct {
 	Name       string
 	CreateStmt string
 	DropStmt   string
+	isView     bool
 }
 
 //Create applies the create table command to te underlying connection.
@@ -43,6 +44,11 @@ func (c jProductSetup) Create(db *dbr.Connection) error {
 func (c jProductSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
 	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jProductSetup) IsView() bool {
+	return c.isView
 }
 
 // JProductSetup helps to create/drop the schema
@@ -94,6 +100,7 @@ master_id INTEGER
 		Name:       `product`,
 		CreateStmt: create,
 		DropStmt:   drop,
+		isView:     true,
 	}
 }
 
@@ -294,7 +301,7 @@ type jProductDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
+//Build builds the sql string into given buffer using current dialect
 func (c *jProductDeleteBuilder) Build(b dbr.Buffer) error {
 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
 }
@@ -1399,6 +1406,7 @@ type jCategorySetup struct {
 	Name       string
 	CreateStmt string
 	DropStmt   string
+	isView     bool
 }
 
 //Create applies the create table command to te underlying connection.
@@ -1411,6 +1419,11 @@ func (c jCategorySetup) Create(db *dbr.Connection) error {
 func (c jCategorySetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
 	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jCategorySetup) IsView() bool {
+	return c.isView
 }
 
 // JCategorySetup helps to create/drop the schema
@@ -1453,6 +1466,7 @@ name TEXT
 		Name:       `category`,
 		CreateStmt: create,
 		DropStmt:   drop,
+		isView:     true,
 	}
 }
 
@@ -1573,7 +1587,7 @@ type jCategoryDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
+//Build builds the sql string into given buffer using current dialect
 func (c *jCategoryDeleteBuilder) Build(b dbr.Buffer) error {
 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
 }
@@ -2138,6 +2152,7 @@ type jBrandSetup struct {
 	Name       string
 	CreateStmt string
 	DropStmt   string
+	isView     bool
 }
 
 //Create applies the create table command to te underlying connection.
@@ -2150,6 +2165,11 @@ func (c jBrandSetup) Create(db *dbr.Connection) error {
 func (c jBrandSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
 	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jBrandSetup) IsView() bool {
+	return c.isView
 }
 
 // JBrandSetup helps to create/drop the schema
@@ -2192,6 +2212,7 @@ name TEXT
 		Name:       `brand`,
 		CreateStmt: create,
 		DropStmt:   drop,
+		isView:     true,
 	}
 }
 
@@ -2323,7 +2344,7 @@ type jBrandDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
+//Build builds the sql string into given buffer using current dialect
 func (c *jBrandDeleteBuilder) Build(b dbr.Buffer) error {
 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
 }
@@ -2836,6 +2857,7 @@ type jCategoryproductsToProductcategoriesSetup struct {
 	Name       string
 	CreateStmt string
 	DropStmt   string
+	isView     bool
 }
 
 //Create applies the create table command to te underlying connection.
@@ -2848,6 +2870,11 @@ func (c jCategoryproductsToProductcategoriesSetup) Create(db *dbr.Connection) er
 func (c jCategoryproductsToProductcategoriesSetup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
 	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jCategoryproductsToProductcategoriesSetup) IsView() bool {
+	return c.isView
 }
 
 // JCategoryproductsToProductcategoriesSetup helps to create/drop the schema
@@ -2891,6 +2918,7 @@ category_id INTEGER
 		Name:       `category_productstoproduct_categories`,
 		CreateStmt: create,
 		DropStmt:   drop,
+		isView:     true,
 	}
 }
 
@@ -3011,7 +3039,7 @@ type jCategoryproductsToProductcategoriesDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
+//Build builds the sql string into given buffer using current dialect
 func (c *jCategoryproductsToProductcategoriesDeleteBuilder) Build(b dbr.Buffer) error {
 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
 }

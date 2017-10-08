@@ -46,6 +46,7 @@ type j{{.current.Name}}Setup struct {
 	Name string
 	CreateStmt string
 	DropStmt string
+	isView bool
 }
 
 //Create applies the create table command to te underlying connection.
@@ -57,6 +58,10 @@ func (c j{{.current.Name}}Setup) Create(db *dbr.Connection) error {
 func (c j{{.current.Name}}Setup) Drop(db *dbr.Connection) error {
 	_, err := db.Exec(c.DropStmt)
 	return runtime.NewSQLError(err, c.DropStmt)
+}
+//IsView returns true if it is a view.
+func (c j{{.current.Name}}Setup) IsView() bool {
+	return c.isView
 }
 
 // J{{.current.Name}}Setup helps to create/drop the schema
@@ -117,6 +122,7 @@ func J{{.current.Name}}Setup() runtime.Setuper {
 		Name: {{.current.SQLName | quote}},
 		CreateStmt: create,
 		DropStmt: drop,
+		isView: {{empty .current.SQLViewSelect .current.SQLViewCreate}},
 	}
 }
 

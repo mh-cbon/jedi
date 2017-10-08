@@ -29,11 +29,29 @@ func Setup(conn *dbr.Connection, force bool) error {
 	if force {
 		for _, t := range toSetup {
 			k := t()
-			if err := k.Drop(conn); err != nil {
-				return err
+			if k.IsView() {
+				if err := k.Drop(conn); err != nil {
+					return err
+				}
 			}
-			if err := k.Create(conn); err != nil {
-				return err
+		}
+		for _, t := range toSetup {
+			k := t()
+			if !k.IsView() {
+				if err := k.Drop(conn); err != nil {
+					return err
+				}
+				if err := k.Create(conn); err != nil {
+					return err
+				}
+			}
+		}
+		for _, t := range toSetup {
+			k := t()
+			if k.IsView() {
+				if err := k.Create(conn); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -42,6 +60,7 @@ func Setup(conn *dbr.Connection, force bool) error {
 
 // Setuper can create/drop tables.
 type Setuper interface {
+	IsView() bool
 	Create(db *dbr.Connection) error
 	Drop(db *dbr.Connection) error
 }
