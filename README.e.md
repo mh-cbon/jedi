@@ -534,10 +534,31 @@ type Brand struct {
 }
 ```
 
-#### Set
-#### Unset
-#### Read
+#### Set / Unset / Read
+
+Because `Product` has a property `has_one` of type `Brand`, `jedi` automatically adds
+approperiate methods to `Set<PropertyName>` / `Unset<Property name>`, such as:
+
+```go
+func (p *Product) SetBrand(o *Brand) *Product {}
+func (p *Product) UnsetBrand() *Product {}
+```
+
+It also creates a method to `read` the related object from the database:
+
+```go
+func (p *Product) Brand(db dbr.SessionRunner) (*Brand, error)  {}
+```
+
 #### Join
+
+For every `has_one` properties the related querier gets
+new `Join<PropertyName>` / `LeftJoin<Property name>` methods:
+
+```go
+func (c *jProductSelectBuilder) JoinBrand( AsBrand string) *jProductSelectBuilder { }
+func (c *jProductSelectBuilder) LeftJoinBrand( AsBrand string) *jProductSelectBuilder { }
+```
 
 ## Has Many 2 One
 
@@ -549,16 +570,12 @@ then this property become a specific `has_many_to_one` relationship.
 Unlike `@has_one` attribute, it does not require additional properties.
 
 ```go
-//Brand is a product brand representation.
-//jedi:
 type Brand struct {
 	ID        int64      `jedi:"@pk"`
 	products  []*Product `jedi:"@has_many=Product.brand"`
 	Name      string
 }
 
-//Product is a sku representation.
-//jedi:
 type Product struct {
 	ID         int64       `jedi:"@pk"`
 	brand      *Brand      `jedi:"@has_one=Brand.products"`
@@ -567,7 +584,25 @@ type Product struct {
 ```
 
 #### Read
+
+For every `@has_many` properties `jedi` adds method to select related objects
+
+```go
+func (b *Brand) Products(db dbr.SessionRunner, AsBrand, AsProducts string) *jProductSelectBuilder {}
+```
+
 #### Join
+
+The querier also gets
+new `Join<PropertyName>` / `LeftJoin<Property name>` methods:
+
+```go
+func (c *jBrandSelectBuilder) JoinProducts(AsProducts string) *jBrandSelectBuilder {}
+func (c *jBrandSelectBuilder) LeftJoinProducts(AsProducts string) *jBrandSelectBuilder {}
+
+func (c *jProductSelectBuilder) JoinBrand(AsBrand string) *jProductSelectBuilder {}
+func (c *jProductSelectBuilder) LeftJoinBrand(AsBrand string) *jProductSelectBuilder {}
+```
 
 ## Has Many 2 Many
 
@@ -628,12 +663,160 @@ type Category struct {
 }
 ```
 
-#### Link
-#### Unlink
-#### Read
+#### LinkWith / UnlinkWith
+
+For every `many2many` relations, `jedi` will create appropriatem methods on the jedified type to
+`LinkWith<PropertyName>` / `UnlinkWith<PropertyName>` related object.
+
+```go
+func (p *Product) LinkWithCategories(db dbr.SessionRunner, items ...*Category) (sql.Result, error) {}
+func (p *Product) UnlinkWithCategories(db dbr.SessionRunner, items ...*Category) (sql.Result, error) {}
+
+func (c *Category) LinkWithProducts(db dbr.SessionRunner, items ...*Product) (sql.Result, error) {}
+func (c *Category) UnlinkWithProducts(db dbr.SessionRunner, items ...*Product) (sql.Result, error) {}
+```
+
+#### Select
+
+For every `many2many` relations, `jedi` will create appropriatem methods on the jedified type to
+get related related objects.
+
+```go
+func (g *Product) Categories(
+	db dbr.SessionRunner,
+	AsCategory,
+	AsCategoryproductsToProductcategories,
+	AsProduct string,
+) *jCategorySelectBuilder {}
+
+func (c *Category) Products(
+	db dbr.SessionRunner,
+	AsProduct,
+	AsCategoryproductsToProductcategories,
+	AsCategory string,
+	) *jProductSelectBuilder {}
+```
+
 #### Join
 
+The querier also gets
+new `Join<PropertyName>` / `LeftJoin<Property name>` methods:
+
+```go
+func (p *jProductSelectBuilder) JoinCategories(
+	AsCategoryproductsToProductcategories, AsCategory string,
+) *jProductSelectBuilder {}
+
+func (p *jProductSelectBuilder) LeftJoinCategories(
+	AsCategoryproductsToProductcategories, AsCategory string,
+) *jProductSelectBuilder {}
+
+
+
+func (c *jCategorySelectBuilder) JoinProducts(
+	AsCategoryproductsToProductcategories, AsProduct string,
+) *jCategorySelectBuilder {}
+
+func (c *jCategorySelectBuilder) LeftJoinProducts(
+	AsCategoryproductsToProductcategories, AsProduct string,
+) *jCategorySelectBuilder {}
+```
+
 # Working with views
+
+Tow ork with views, or define the `CREATE` and `DROP` queries,
+it is possible to define multiples attributes on the `jedi` types.
+
+### view-select
+The `view-select` let you define the `SELECT` query to generate the data related to the type,
+
+```go
+//SampleView is view of samples.
+//jedi:
+//view-select:
+//	SELECT *
+//	FROM sample
+//	WHERE id > 1
+//
+// regular commets can restart here.
+type SampleView struct {
+	ID          int64 `jedi:"@pk"` //you can configure the ok on the view, it adds some methods.
+	Name        string
+	Description string
+}
+```
+
+The `SELECT` query is automatically wrapped with `CREATE VIEW IF NOT EXISTS...`
+
+### view-create
+
+The `view-create` let you define the `CREATE` query of the view,
+
+```go
+//jedi:
+//view-create:
+//	CREATE VIEW xyz...
+//
+// regular commets can restart here.
+type W struct {
+	ID          int64 `jedi:"@pk"` //you can configure the ok on the view, it adds some methods.
+	Name        string
+	Description string
+}
+```
+
+### view-drop
+
+### view-create
+
+The `view-drop` let you define the `DROP` query of the view,
+
+```go
+//jedi:
+//view-drop:
+//	DROP...
+//
+// regular commets can restart here.
+type W struct {
+	ID          int64 `jedi:"@pk"` //you can configure the ok on the view, it adds some methods.
+	Name        string
+	Description string
+}
+```
+
+### table-create
+
+The `table-create` let you define the `CREATE` query of the table,
+
+```go
+//jedi:
+//table-create:
+//	CREATE TABLE...
+//
+// regular commets can restart here.
+type W struct {
+	ID          int64 `jedi:"@pk"` //you can configure the ok on the view, it adds some methods.
+	Name        string
+	Description string
+}
+```
+
+### table-drop
+
+The `table-drop` let you define the `DROP` query of the table,
+
+```go
+//jedi:
+//table-drop:
+//	DROP TABLE...
+//
+// regular commets can restart here.
+type W struct {
+	ID          int64 `jedi:"@pk"` //you can configure the ok on the view, it adds some methods.
+	Name        string
+	Description string
+}
+```
 
 # cli
 
