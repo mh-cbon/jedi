@@ -66,9 +66,11 @@ type CompositePk struct {
 //DateType have dates properties.
 //jedi:
 type DateType struct {
-	ID int64 `jedi:"@pk"`
-	T  time.Time
-	TP *time.Time
+	ID          int64 `jedi:"@pk"`
+	T           time.Time
+	TP          *time.Time
+	NotUTC      *time.Time `jedi:"@utc=false"`
+	LastUpdated *time.Time `jedi:"@last_updated"`
 }
 
 //SampleView is view of samples.

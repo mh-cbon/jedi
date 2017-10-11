@@ -168,14 +168,14 @@ func TestCRUD(t *testing.T) {
 			t.Fatalf("Data update is invalid got SKU=%v, want SKU=update3", p3.SKU)
 		}
 	})
-	t.Run("update silently ignores unknown data", func(t *testing.T) {
+	t.Run("update fails if the query did not update rows", func(t *testing.T) {
 		p1 := &Product{SKU: "update1", ID: 10}
 		res, err := JProduct(sess).Update(p1)
-		if err != nil {
-			t.Fatalf("Data update failed: err was %v", err)
-		}
 		if n, _ := res.RowsAffected(); n != 0 {
 			t.Fatalf("update affected %v rows", n)
+		}
+		if err == nil {
+			t.Fatalf("Data update must fail: err was %v", err)
 		}
 	})
 	t.Run("delete by primary key", func(t *testing.T) {

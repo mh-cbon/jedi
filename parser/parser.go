@@ -20,6 +20,8 @@ var anyComment = regexp.MustCompile(`^([A-Za-z_\.]+):(.+)`)
 var viewComment = regexp.MustCompile(`view:(.+)`)
 var viewFullComment = regexp.MustCompile(`viewfull:(.+)`)
 
+// search for a multiline jedi: prefixed comment, where jedi: is a configurable prefix.
+// The comment ends at empty line, or a new prefix is found.
 func getMLComment(from string, prefix string) string {
 	rec := false
 	var res string
@@ -40,6 +42,9 @@ func getMLComment(from string, prefix string) string {
 	return res
 }
 
+var integerSQLString = "INTEGER"
+
+// Parse given file returns the jedi structs found.
 func Parse(file string) ([]*model.Struct, error) {
 	// parse file
 	fset := token.NewFileSet()
@@ -122,7 +127,7 @@ func Parse(file string) ([]*model.Struct, error) {
 
 	// setup auto AI
 	for _, r := range res {
-		if len(r.Pks()) == 1 && r.Pks()[0].SQLType == "INTEGER" {
+		if len(r.Pks()) == 1 && r.Pks()[0].SQLType == integerSQLString {
 			r.Pks()[0].IsAI = true
 		}
 	}
@@ -265,6 +270,8 @@ func findProp(all []*model.Struct, n string) *model.Field {
 	return nil
 }
 
+var trueString = "true"
+
 func parseStructTypeSpec(ts *ast.TypeSpec, str *ast.StructType) (*model.Struct, error) {
 	res := &model.Struct{
 		Name: ts.Name.Name,
@@ -302,25 +309,26 @@ func parseStructTypeSpec(ts *ast.TypeSpec, str *ast.StructType) (*model.Struct, 
 		}
 		typ := strGoType(f.Type)
 		styp := strSQLType(f.Type)
-		isPk := props["pk"] == "true"
-		if props["has_many"] == "true" {
+		isPk := props["pk"] == trueString
+		if props["has_many"] == trueString {
 			props["has_many"] = strGoItemType(f.Type)
 		}
-		if props["has_one"] == "true" {
+		if props["has_one"] == trueString {
 			props["has_one"] = strGoItemType(f.Type)
 		}
 		res.Fields = append(res.Fields, &model.Field{
-			Name:       name.String(),
-			GoType:     typ,
-			SQLName:    column,
-			SQLType:    styp,
-			IsPk:       isPk,
-			IsAI:       isPk && styp == "INTEGER",
-			On:         props["on"],
-			HasMany:    props["has_many"],
-			HasOne:     props["has_one"],
-			IsNullable: strSQLNullable(f.Type),
-			UTC:        props["utc"] == "true",
+			Name:        name.String(),
+			GoType:      typ,
+			SQLName:     column,
+			SQLType:     styp,
+			IsPk:        isPk,
+			IsAI:        isPk && styp == integerSQLString,
+			On:          props["on"],
+			HasMany:     props["has_many"],
+			HasOne:      props["has_one"],
+			IsNullable:  strSQLNullable(f.Type),
+			UTC:         props["utc"] == trueString,
+			LastUpdated: props["last_updated"] == trueString,
 		})
 		n++
 	}
@@ -335,11 +343,12 @@ func parseStructTypeSpec(ts *ast.TypeSpec, str *ast.StructType) (*model.Struct, 
 // parseStructFieldTag is used by both file and runtime parsers
 func parseStructFieldTag(tag string) (sqlName string, props map[string]string) {
 	props = map[string]string{
-		"pk":       "false",
-		"has_many": "",
-		"has_one":  "",
-		"on":       "",
-		"utc":      "true",
+		"pk":           "false",
+		"has_many":     "",
+		"has_one":      "",
+		"on":           "",
+		"utc":          trueString,
+		"last_updated": "false",
 	}
 
 	parts := strings.Split(tag, ",")
@@ -354,7 +363,7 @@ func parseStructFieldTag(tag string) (sqlName string, props map[string]string) {
 			if len(u) > 1 {
 				props[u[0]] = u[1]
 			} else {
-				props[p[1:]] = "true"
+				props[p[1:]] = trueString
 			}
 		} else if len(p) > 0 {
 			sqlName = p
@@ -418,11 +427,11 @@ func strSQLType(x ast.Expr) string {
 		s := t.String()
 		switch s {
 		case "int64", "int32", "int16", "int8", "int":
-			return "INTEGER"
+			return integerSQLString
 		case "uint64", "uint32", "uint16", "uint8", "byte", "uint":
-			return "INTEGER"
+			return integerSQLString
 		case "bool":
-			return "INTEGER"
+			return integerSQLString
 		case "float64", "float32":
 			return "FLOAT"
 		case "string":

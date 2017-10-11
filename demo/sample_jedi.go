@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gocraft/dbr"
 	dbrdialect "github.com/gocraft/dbr/dialect"
@@ -13,6 +14,7 @@ import (
 	"github.com/mh-cbon/jedi/runtime"
 )
 
+var _ = time.Now
 var _ = fmt.Sprintf
 var _ = dbrdialect.PostgreSQL
 
@@ -82,7 +84,7 @@ name TEXT,
 description TEXT,
 update_date datetime,
 removal_date datetime NULL,
-PRIMARY KEY (id)
+PRIMARY KEY (id) 
 
 )`
 	} else if driver == drivers.Pgsql {
@@ -254,20 +256,18 @@ type jSampleDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string into given buffer using current dialect
-func (c *jSampleDeleteBuilder) Build(b dbr.Buffer) error {
-	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jSampleDeleteBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jSampleDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jSampleDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Where returns a jSampleDeleteBuilder instead of builder.DeleteBuilder.
 func (c *jSampleDeleteBuilder) Where(query interface{}, value ...interface{}) *jSampleDeleteBuilder {
 	c.DeleteBuilder.Where(query, value...)
@@ -279,20 +279,18 @@ type jSampleSelectBuilder struct {
 	*builder.SelectBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
-func (c *jSampleSelectBuilder) Build(b dbr.Buffer) error {
-	return c.SelectBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jSampleSelectBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jSampleSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jSampleSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Read evaluates current select query and load the results into a Sample
 func (c *jSampleSelectBuilder) Read() (*Sample, error) {
 	var one Sample
@@ -459,7 +457,7 @@ func (c jSampleQuerier) Insert(items ...*Sample) (sql.Result, error) {
 
 		data.UpdateDate = data.UpdateDate.UTC()
 
-		{
+		if data.RemovalDate != nil {
 			x := data.RemovalDate.UTC()
 			data.RemovalDate = &x
 		}
@@ -524,20 +522,28 @@ func (c jSampleQuerier) Update(items ...*Sample) (sql.Result, error) {
 
 		data.UpdateDate = data.UpdateDate.UTC()
 
-		{
+		if data.RemovalDate != nil {
 			x := data.RemovalDate.UTC()
 			data.RemovalDate = &x
 		}
 
-		res, err = c.db.Update(JSampleModel.Table()).
-			Set(`name`, data.Name).
-			Set(`description`, data.Description).
-			Set(`update_date`, data.UpdateDate).
-			Set(`removal_date`, data.RemovalDate).
-			Where("id = ?", data.ID).
-			Exec()
-		if err != nil {
-			return res, err
+		query := c.db.Update(JSampleModel.Table())
+
+		query = query.Set(`name`, data.Name)
+
+		query = query.Set(`description`, data.Description)
+
+		query = query.Set(`update_date`, data.UpdateDate)
+
+		query = query.Set(`removal_date`, data.RemovalDate)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
+		if n, _ := res.RowsAffected(); n == 0 {
+			x := &builder.UpdateBuilder{query}
+			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
 	return res, err
@@ -624,7 +630,7 @@ whatever TEXT
 		create = `CREATE TABLE IF NOT EXISTS basic_pk (
 id INTEGER NOT NULL AUTO_INCREMENT,
 whatever TEXT,
-PRIMARY KEY (id)
+PRIMARY KEY (id) 
 
 )`
 	} else if driver == drivers.Pgsql {
@@ -757,20 +763,18 @@ type jBasicPKDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string into given buffer using current dialect
-func (c *jBasicPKDeleteBuilder) Build(b dbr.Buffer) error {
-	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jBasicPKDeleteBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jBasicPKDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jBasicPKDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Where returns a jBasicPKDeleteBuilder instead of builder.DeleteBuilder.
 func (c *jBasicPKDeleteBuilder) Where(query interface{}, value ...interface{}) *jBasicPKDeleteBuilder {
 	c.DeleteBuilder.Where(query, value...)
@@ -782,20 +786,18 @@ type jBasicPKSelectBuilder struct {
 	*builder.SelectBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
-func (c *jBasicPKSelectBuilder) Build(b dbr.Buffer) error {
-	return c.SelectBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jBasicPKSelectBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jBasicPKSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jBasicPKSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Read evaluates current select query and load the results into a BasicPK
 func (c *jBasicPKSelectBuilder) Read() (*BasicPK, error) {
 	var one BasicPK
@@ -1012,12 +1014,17 @@ func (c jBasicPKQuerier) Update(items ...*BasicPK) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.db.Update(JBasicPKModel.Table()).
-			Set(`whatever`, data.Whatever).
-			Where("id = ?", data.ID).
-			Exec()
-		if err != nil {
-			return res, err
+		query := c.db.Update(JBasicPKModel.Table())
+
+		query = query.Set(`whatever`, data.Whatever)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
+		if n, _ := res.RowsAffected(); n == 0 {
+			x := &builder.UpdateBuilder{query}
+			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
 	return res, err
@@ -1142,7 +1149,7 @@ float32 FLOAT,
 float32_p FLOAT NULL,
 float64 FLOAT,
 float64_p FLOAT NULL,
-PRIMARY KEY (id)
+PRIMARY KEY (id) 
 
 )`
 	} else if driver == drivers.Pgsql {
@@ -1522,20 +1529,18 @@ type jBasicTypesDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string into given buffer using current dialect
-func (c *jBasicTypesDeleteBuilder) Build(b dbr.Buffer) error {
-	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jBasicTypesDeleteBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jBasicTypesDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jBasicTypesDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Where returns a jBasicTypesDeleteBuilder instead of builder.DeleteBuilder.
 func (c *jBasicTypesDeleteBuilder) Where(query interface{}, value ...interface{}) *jBasicTypesDeleteBuilder {
 	c.DeleteBuilder.Where(query, value...)
@@ -1547,20 +1552,18 @@ type jBasicTypesSelectBuilder struct {
 	*builder.SelectBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
-func (c *jBasicTypesSelectBuilder) Build(b dbr.Buffer) error {
-	return c.SelectBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jBasicTypesSelectBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jBasicTypesSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jBasicTypesSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Read evaluates current select query and load the results into a BasicTypes
 func (c *jBasicTypesSelectBuilder) Read() (*BasicTypes, error) {
 	var one BasicTypes
@@ -1815,31 +1818,55 @@ func (c jBasicTypesQuerier) Update(items ...*BasicTypes) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.db.Update(JBasicTypesModel.Table()).
-			Set(`string`, data.String).
-			Set(`string_p`, data.StringP).
-			Set(`intfield`, data.Int).
-			Set(`int_p`, data.IntP).
-			Set(`int32`, data.Int32).
-			Set(`int32_p`, data.Int32P).
-			Set(`int64`, data.Int64).
-			Set(`int64_p`, data.Int64P).
-			Set(`u_int`, data.UInt).
-			Set(`u_int_p`, data.UIntP).
-			Set(`u_int32`, data.UInt32).
-			Set(`u_int32_p`, data.UInt32P).
-			Set(`u_int64`, data.UInt64).
-			Set(`u_int64_p`, data.UInt64P).
-			Set(`bool`, data.Bool).
-			Set(`bool_p`, data.BoolP).
-			Set(`float32`, data.Float32).
-			Set(`float32_p`, data.Float32P).
-			Set(`float64`, data.Float64).
-			Set(`float64_p`, data.Float64P).
-			Where("id = ?", data.ID).
-			Exec()
-		if err != nil {
-			return res, err
+		query := c.db.Update(JBasicTypesModel.Table())
+
+		query = query.Set(`string`, data.String)
+
+		query = query.Set(`string_p`, data.StringP)
+
+		query = query.Set(`intfield`, data.Int)
+
+		query = query.Set(`int_p`, data.IntP)
+
+		query = query.Set(`int32`, data.Int32)
+
+		query = query.Set(`int32_p`, data.Int32P)
+
+		query = query.Set(`int64`, data.Int64)
+
+		query = query.Set(`int64_p`, data.Int64P)
+
+		query = query.Set(`u_int`, data.UInt)
+
+		query = query.Set(`u_int_p`, data.UIntP)
+
+		query = query.Set(`u_int32`, data.UInt32)
+
+		query = query.Set(`u_int32_p`, data.UInt32P)
+
+		query = query.Set(`u_int64`, data.UInt64)
+
+		query = query.Set(`u_int64_p`, data.UInt64P)
+
+		query = query.Set(`bool`, data.Bool)
+
+		query = query.Set(`bool_p`, data.BoolP)
+
+		query = query.Set(`float32`, data.Float32)
+
+		query = query.Set(`float32_p`, data.Float32P)
+
+		query = query.Set(`float64`, data.Float64)
+
+		query = query.Set(`float64_p`, data.Float64P)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
+		if n, _ := res.RowsAffected(); n == 0 {
+			x := &builder.UpdateBuilder{query}
+			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
 	return res, err
@@ -1920,21 +1947,21 @@ func JTextPkSetup() runtime.Setuper {
 		create = `CREATE TABLE IF NOT EXISTS second_sample (
 name TEXT,
 description TEXT,
-PRIMARY KEY (name)
+PRIMARY KEY (name) 
 
 )`
 	} else if driver == drivers.Mysql {
 		create = `CREATE TABLE IF NOT EXISTS second_sample (
 name VARCHAR(255) NOT NULL,
 description TEXT,
-PRIMARY KEY (name)
+PRIMARY KEY (name) 
 
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS second_sample (
 name TEXT,
 description TEXT,
-PRIMARY KEY (name)
+PRIMARY KEY (name) 
 
 )`
 	}
@@ -2061,20 +2088,18 @@ type jTextPkDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string into given buffer using current dialect
-func (c *jTextPkDeleteBuilder) Build(b dbr.Buffer) error {
-	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jTextPkDeleteBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jTextPkDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jTextPkDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Where returns a jTextPkDeleteBuilder instead of builder.DeleteBuilder.
 func (c *jTextPkDeleteBuilder) Where(query interface{}, value ...interface{}) *jTextPkDeleteBuilder {
 	c.DeleteBuilder.Where(query, value...)
@@ -2086,20 +2111,18 @@ type jTextPkSelectBuilder struct {
 	*builder.SelectBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
-func (c *jTextPkSelectBuilder) Build(b dbr.Buffer) error {
-	return c.SelectBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jTextPkSelectBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jTextPkSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jTextPkSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Read evaluates current select query and load the results into a TextPk
 func (c *jTextPkSelectBuilder) Read() (*TextPk, error) {
 	var one TextPk
@@ -2298,12 +2321,17 @@ func (c jTextPkQuerier) Update(items ...*TextPk) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.db.Update(JTextPkModel.Table()).
-			Set(`description`, data.Description).
-			Where("name = ?", data.Name).
-			Exec()
-		if err != nil {
-			return res, err
+		query := c.db.Update(JTextPkModel.Table())
+
+		query = query.Set(`description`, data.Description)
+
+		query = query.Where("name = ?", data.Name)
+
+		res, err = query.Exec()
+
+		if n, _ := res.RowsAffected(); n == 0 {
+			x := &builder.UpdateBuilder{query}
+			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
 	return res, err
@@ -2385,7 +2413,7 @@ func JCompositePkSetup() runtime.Setuper {
 p TEXT,
 k TEXT,
 description TEXT,
-PRIMARY KEY (p,k)
+PRIMARY KEY (p,k) 
 
 )`
 	} else if driver == drivers.Mysql {
@@ -2401,7 +2429,7 @@ PRIMARY KEY (p,k)
 p TEXT,
 k TEXT,
 description TEXT,
-PRIMARY KEY (p,k)
+PRIMARY KEY (p,k) 
 
 )`
 	}
@@ -2544,20 +2572,18 @@ type jCompositePkDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string into given buffer using current dialect
-func (c *jCompositePkDeleteBuilder) Build(b dbr.Buffer) error {
-	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jCompositePkDeleteBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jCompositePkDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jCompositePkDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Where returns a jCompositePkDeleteBuilder instead of builder.DeleteBuilder.
 func (c *jCompositePkDeleteBuilder) Where(query interface{}, value ...interface{}) *jCompositePkDeleteBuilder {
 	c.DeleteBuilder.Where(query, value...)
@@ -2569,20 +2595,18 @@ type jCompositePkSelectBuilder struct {
 	*builder.SelectBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
-func (c *jCompositePkSelectBuilder) Build(b dbr.Buffer) error {
-	return c.SelectBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jCompositePkSelectBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jCompositePkSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jCompositePkSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Read evaluates current select query and load the results into a CompositePk
 func (c *jCompositePkSelectBuilder) Read() (*CompositePk, error) {
 	var one CompositePk
@@ -2783,13 +2807,19 @@ func (c jCompositePkQuerier) Update(items ...*CompositePk) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.db.Update(JCompositePkModel.Table()).
-			Set(`description`, data.Description).
-			Where("p = ?", data.P).
-			Where("k = ?", data.K).
-			Exec()
-		if err != nil {
-			return res, err
+		query := c.db.Update(JCompositePkModel.Table())
+
+		query = query.Set(`description`, data.Description)
+
+		query = query.Where("p = ?", data.P)
+
+		query = query.Where("k = ?", data.K)
+
+		res, err = query.Exec()
+
+		if n, _ := res.RowsAffected(); n == 0 {
+			x := &builder.UpdateBuilder{query}
+			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
 	return res, err
@@ -2874,7 +2904,9 @@ func JDateTypeSetup() runtime.Setuper {
 		create = `CREATE TABLE IF NOT EXISTS date_type (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 t datetime,
-tp datetime NULL
+tp datetime NULL,
+not_utc datetime NULL,
+last_updated datetime NULL
 
 )`
 	} else if driver == drivers.Mysql {
@@ -2882,14 +2914,18 @@ tp datetime NULL
 id INTEGER NOT NULL AUTO_INCREMENT,
 t datetime,
 tp datetime NULL,
-PRIMARY KEY (id)
+not_utc datetime NULL,
+last_updated datetime NULL,
+PRIMARY KEY (id) 
 
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS date_type (
 id SERIAL PRIMARY KEY,
 t timestamp,
-tp timestamp NULL
+tp timestamp NULL,
+not_utc timestamp NULL,
+last_updated timestamp NULL
 
 )`
 	}
@@ -2919,6 +2955,10 @@ type jDateTypeModel struct {
 	T builder.ValuePropertyMeta
 
 	TP builder.ValuePropertyMeta
+
+	NotUTC builder.ValuePropertyMeta
+
+	LastUpdated builder.ValuePropertyMeta
 }
 
 // Eq provided items.
@@ -2955,6 +2995,10 @@ func (j jDateTypeModel) As(as string) jDateTypeModel {
 
 	j.TP.TableAlias = as
 
+	j.NotUTC.TableAlias = as
+
+	j.LastUpdated.TableAlias = as
+
 	return j
 }
 
@@ -2980,6 +3024,10 @@ func (j jDateTypeModel) Properties() map[string]builder.MetaProvider {
 	ret["T"] = j.T
 
 	ret["TP"] = j.TP
+
+	ret["NotUTC"] = j.NotUTC
+
+	ret["LastUpdated"] = j.LastUpdated
 
 	return ret
 }
@@ -3022,26 +3070,36 @@ var JDateTypeModel = jDateTypeModel{
 		`TP`, `*time.Time`,
 		false, false,
 	),
+
+	NotUTC: builder.NewValueMeta(
+		`not_utc`, `datetime`,
+		`NotUTC`, `*time.Time`,
+		false, false,
+	),
+
+	LastUpdated: builder.NewValueMeta(
+		`last_updated`, `datetime`,
+		`LastUpdated`, `*time.Time`,
+		false, false,
+	),
 }
 
 type jDateTypeDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string into given buffer using current dialect
-func (c *jDateTypeDeleteBuilder) Build(b dbr.Buffer) error {
-	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jDateTypeDeleteBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jDateTypeDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jDateTypeDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Where returns a jDateTypeDeleteBuilder instead of builder.DeleteBuilder.
 func (c *jDateTypeDeleteBuilder) Where(query interface{}, value ...interface{}) *jDateTypeDeleteBuilder {
 	c.DeleteBuilder.Where(query, value...)
@@ -3053,20 +3111,18 @@ type jDateTypeSelectBuilder struct {
 	*builder.SelectBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
-func (c *jDateTypeSelectBuilder) Build(b dbr.Buffer) error {
-	return c.SelectBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jDateTypeSelectBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jDateTypeSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jDateTypeSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Read evaluates current select query and load the results into a DateType
 func (c *jDateTypeSelectBuilder) Read() (*DateType, error) {
 	var one DateType
@@ -3231,11 +3287,21 @@ func (c jDateTypeQuerier) Insert(items ...*DateType) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
+		if data.LastUpdated == nil {
+			x := time.Now()
+			data.LastUpdated = &x
+		}
+
 		data.T = data.T.UTC()
 
-		{
+		if data.TP != nil {
 			x := data.TP.UTC()
 			data.TP = &x
+		}
+
+		if data.LastUpdated != nil {
+			x := data.LastUpdated.UTC()
+			data.LastUpdated = &x
 		}
 
 		query := c.db.InsertInto(JDateTypeModel.Table()).Columns(
@@ -3243,6 +3309,10 @@ func (c jDateTypeQuerier) Insert(items ...*DateType) (sql.Result, error) {
 			`t`,
 
 			`tp`,
+
+			`not_utc`,
+
+			`last_updated`,
 		).Record(data)
 		if runtime.Runs(drivers.Pgsql) {
 
@@ -3294,18 +3364,41 @@ func (c jDateTypeQuerier) Update(items ...*DateType) (sql.Result, error) {
 
 		data.T = data.T.UTC()
 
-		{
+		if data.TP != nil {
 			x := data.TP.UTC()
 			data.TP = &x
 		}
 
-		res, err = c.db.Update(JDateTypeModel.Table()).
-			Set(`t`, data.T).
-			Set(`tp`, data.TP).
-			Where("id = ?", data.ID).
-			Exec()
-		if err != nil {
-			return res, err
+		if data.LastUpdated != nil {
+			x := data.LastUpdated.UTC()
+			data.LastUpdated = &x
+		}
+
+		currentDate := data.LastUpdated
+
+		query := c.db.Update(JDateTypeModel.Table())
+
+		query = query.Set(`t`, data.T)
+
+		query = query.Set(`tp`, data.TP)
+
+		query = query.Set(`not_utc`, data.NotUTC)
+
+		query = query.Set(`last_updated`, "NOW()")
+
+		query = query.Where("id = ?", data.ID)
+
+		if currentDate == nil {
+			query = query.Where("last_updated IS NULL")
+		} else {
+			query = query.Where("last_updated = ?", currentDate)
+		}
+
+		res, err = query.Exec()
+
+		if n, _ := res.RowsAffected(); n == 0 {
+			x := &builder.UpdateBuilder{query}
+			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
 	return res, err
@@ -3383,19 +3476,19 @@ func JSampleViewSetup() runtime.Setuper {
 	var drop string
 
 	if driver == drivers.Sqlite {
-		create = `CREATE VIEW IF NOT EXISTS sample_view AS
+		create = `CREATE VIEW IF NOT EXISTS sample_view AS 
 	SELECT *
 	FROM sample
 	WHERE id > 1
 `
 	} else if driver == drivers.Mysql {
-		create = `CREATE OR REPLACE VIEW sample_view AS
+		create = `CREATE OR REPLACE VIEW sample_view AS 
 	SELECT *
 	FROM sample
 	WHERE id > 1
 `
 	} else if driver == drivers.Pgsql {
-		create = `CREATE OR REPLACE VIEW sample_view AS
+		create = `CREATE OR REPLACE VIEW sample_view AS 
 	SELECT *
 	FROM sample
 	WHERE id > 1
@@ -3536,20 +3629,18 @@ type jSampleViewDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string into given buffer using current dialect
-func (c *jSampleViewDeleteBuilder) Build(b dbr.Buffer) error {
-	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jSampleViewDeleteBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jSampleViewDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jSampleViewDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Where returns a jSampleViewDeleteBuilder instead of builder.DeleteBuilder.
 func (c *jSampleViewDeleteBuilder) Where(query interface{}, value ...interface{}) *jSampleViewDeleteBuilder {
 	c.DeleteBuilder.Where(query, value...)
@@ -3561,20 +3652,18 @@ type jSampleViewSelectBuilder struct {
 	*builder.SelectBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
-func (c *jSampleViewSelectBuilder) Build(b dbr.Buffer) error {
-	return c.SelectBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jSampleViewSelectBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jSampleViewSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jSampleViewSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Read evaluates current select query and load the results into a SampleView
 func (c *jSampleViewSelectBuilder) Read() (*SampleView, error) {
 	var one SampleView

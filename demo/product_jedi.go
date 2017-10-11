@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gocraft/dbr"
 	dbrdialect "github.com/gocraft/dbr/dialect"
@@ -13,6 +14,7 @@ import (
 	"github.com/mh-cbon/jedi/runtime"
 )
 
+var _ = time.Now
 var _ = fmt.Sprintf
 var _ = dbrdialect.PostgreSQL
 
@@ -303,20 +305,18 @@ type jProductDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string into given buffer using current dialect
-func (c *jProductDeleteBuilder) Build(b dbr.Buffer) error {
-	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jProductDeleteBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jProductDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jProductDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Where returns a jProductDeleteBuilder instead of builder.DeleteBuilder.
 func (c *jProductDeleteBuilder) Where(query interface{}, value ...interface{}) *jProductDeleteBuilder {
 	c.DeleteBuilder.Where(query, value...)
@@ -328,20 +328,18 @@ type jProductSelectBuilder struct {
 	*builder.SelectBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
-func (c *jProductSelectBuilder) Build(b dbr.Buffer) error {
-	return c.SelectBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jProductSelectBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jProductSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jProductSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Read evaluates current select query and load the results into a Product
 func (c *jProductSelectBuilder) Read() (*Product, error) {
 	var one Product
@@ -564,15 +562,23 @@ func (c jProductQuerier) Update(items ...*Product) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.db.Update(JProductModel.Table()).
-			Set(`sku`, data.SKU).
-			Set(`brand_id`, data.BrandID).
-			Set(`brand2_id`, data.Brand2ID).
-			Set(`master_id`, data.MasterID).
-			Where("id = ?", data.ID).
-			Exec()
-		if err != nil {
-			return res, err
+		query := c.db.Update(JProductModel.Table())
+
+		query = query.Set(`sku`, data.SKU)
+
+		query = query.Set(`brand_id`, data.BrandID)
+
+		query = query.Set(`brand2_id`, data.Brand2ID)
+
+		query = query.Set(`master_id`, data.MasterID)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
+		if n, _ := res.RowsAffected(); n == 0 {
+			x := &builder.UpdateBuilder{query}
+			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
 	return res, err
@@ -1608,20 +1614,18 @@ type jCategoryDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string into given buffer using current dialect
-func (c *jCategoryDeleteBuilder) Build(b dbr.Buffer) error {
-	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jCategoryDeleteBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jCategoryDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jCategoryDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Where returns a jCategoryDeleteBuilder instead of builder.DeleteBuilder.
 func (c *jCategoryDeleteBuilder) Where(query interface{}, value ...interface{}) *jCategoryDeleteBuilder {
 	c.DeleteBuilder.Where(query, value...)
@@ -1633,20 +1637,18 @@ type jCategorySelectBuilder struct {
 	*builder.SelectBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
-func (c *jCategorySelectBuilder) Build(b dbr.Buffer) error {
-	return c.SelectBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jCategorySelectBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jCategorySelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jCategorySelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Read evaluates current select query and load the results into a Category
 func (c *jCategorySelectBuilder) Read() (*Category, error) {
 	var one Category
@@ -1863,12 +1865,17 @@ func (c jCategoryQuerier) Update(items ...*Category) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.db.Update(JCategoryModel.Table()).
-			Set(`name`, data.Name).
-			Where("id = ?", data.ID).
-			Exec()
-		if err != nil {
-			return res, err
+		query := c.db.Update(JCategoryModel.Table())
+
+		query = query.Set(`name`, data.Name)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
+		if n, _ := res.RowsAffected(); n == 0 {
+			x := &builder.UpdateBuilder{query}
+			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
 	return res, err
@@ -2384,20 +2391,18 @@ type jBrandDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string into given buffer using current dialect
-func (c *jBrandDeleteBuilder) Build(b dbr.Buffer) error {
-	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jBrandDeleteBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jBrandDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jBrandDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Where returns a jBrandDeleteBuilder instead of builder.DeleteBuilder.
 func (c *jBrandDeleteBuilder) Where(query interface{}, value ...interface{}) *jBrandDeleteBuilder {
 	c.DeleteBuilder.Where(query, value...)
@@ -2409,20 +2414,18 @@ type jBrandSelectBuilder struct {
 	*builder.SelectBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
-func (c *jBrandSelectBuilder) Build(b dbr.Buffer) error {
-	return c.SelectBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jBrandSelectBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jBrandSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jBrandSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Read evaluates current select query and load the results into a Brand
 func (c *jBrandSelectBuilder) Read() (*Brand, error) {
 	var one Brand
@@ -2639,12 +2642,17 @@ func (c jBrandQuerier) Update(items ...*Brand) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.db.Update(JBrandModel.Table()).
-			Set(`name`, data.Name).
-			Where("id = ?", data.ID).
-			Exec()
-		if err != nil {
-			return res, err
+		query := c.db.Update(JBrandModel.Table())
+
+		query = query.Set(`name`, data.Name)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
+		if n, _ := res.RowsAffected(); n == 0 {
+			x := &builder.UpdateBuilder{query}
+			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
 	return res, err
@@ -3099,20 +3107,18 @@ type jCategoryproductsToProductcategoriesDeleteBuilder struct {
 	*builder.DeleteBuilder
 }
 
-//Build builds the sql string into given buffer using current dialect
-func (c *jCategoryproductsToProductcategoriesDeleteBuilder) Build(b dbr.Buffer) error {
-	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jCategoryproductsToProductcategoriesDeleteBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jCategoryproductsToProductcategoriesDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jCategoryproductsToProductcategoriesDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Where returns a jCategoryproductsToProductcategoriesDeleteBuilder instead of builder.DeleteBuilder.
 func (c *jCategoryproductsToProductcategoriesDeleteBuilder) Where(query interface{}, value ...interface{}) *jCategoryproductsToProductcategoriesDeleteBuilder {
 	c.DeleteBuilder.Where(query, value...)
@@ -3124,20 +3130,18 @@ type jCategoryproductsToProductcategoriesSelectBuilder struct {
 	*builder.SelectBuilder
 }
 
-//Build builds the sql string using current dialect into given bufer
-func (c *jCategoryproductsToProductcategoriesSelectBuilder) Build(b dbr.Buffer) error {
-	return c.SelectBuilder.Build(runtime.GetDialect(), b)
-}
-
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *jCategoryproductsToProductcategoriesSelectBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
-
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jCategoryproductsToProductcategoriesSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jCategoryproductsToProductcategoriesSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Read evaluates current select query and load the results into a CategoryproductsToProductcategories
 func (c *jCategoryproductsToProductcategoriesSelectBuilder) Read() (*CategoryproductsToProductcategories, error) {
 	var one CategoryproductsToProductcategories

@@ -32,11 +32,11 @@ func TestDate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if d.T.Format(time.ANSIC) != t1.T.Format(time.ANSIC) {
-			t.Fatal("invalid date d.T wanted", d.T.Format(time.ANSIC), "got", t1.T.Format(time.ANSIC))
+		if d.T.Format(time.RFC3339) != t1.T.Format(time.RFC3339) {
+			t.Fatal("invalid date d.T wanted", d.T.Format(time.RFC3339), "got", t1.T.Format(time.RFC3339))
 		}
-		if d.TP.Format(time.ANSIC) != t1.TP.Format(time.ANSIC) {
-			t.Fatal("invalid date d.TP wanted", d.TP.Format(time.ANSIC), "got", t1.TP.Format(time.ANSIC))
+		if d.TP.Format(time.RFC3339) != t1.TP.Format(time.RFC3339) {
+			t.Fatal("invalid date d.TP wanted", d.TP.Format(time.RFC3339), "got", t1.TP.Format(time.RFC3339))
 		}
 	})
 	t.Run("update data", func(t *testing.T) {
@@ -54,11 +54,11 @@ func TestDate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if d.T.Format(time.ANSIC) != t1.T.Format(time.ANSIC) {
-			t.Fatal("invalid date d.T wanted", d.T.Format(time.ANSIC), "got", t1.T.Format(time.ANSIC))
+		if d.T.Format(time.RFC3339) != t1.T.Format(time.RFC3339) {
+			t.Fatal("invalid date d.T wanted", d.T.Format(time.RFC3339), "got", t1.T.Format(time.RFC3339))
 		}
-		if d.TP.Format(time.ANSIC) != t1.TP.Format(time.ANSIC) {
-			t.Fatal("invalid date d.TP wanted", d.TP.Format(time.ANSIC), "got", t1.TP.Format(time.ANSIC))
+		if d.TP.Format(time.RFC3339) != t1.TP.Format(time.RFC3339) {
+			t.Fatal("invalid date d.TP wanted", d.TP.Format(time.RFC3339), "got", t1.TP.Format(time.RFC3339))
 		}
 	})
 }

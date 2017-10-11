@@ -22,6 +22,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gocraft/dbr"
 	dbrdialect "github.com/gocraft/dbr/dialect"
@@ -30,6 +31,7 @@ import (
 	"github.com/mh-cbon/jedi/builder"
 )
 
+var _ = time.Now
 var _ = fmt.Sprintf
 var _ = dbrdialect.PostgreSQL
 
@@ -244,18 +246,18 @@ type {{.current.Name}} struct {
 type j{{.current.Name}}DeleteBuilder struct {
 	*builder.DeleteBuilder
 }
-//Build builds the sql string into given buffer using current dialect
-func (c *j{{.current.Name}}DeleteBuilder) Build(b dbr.Buffer) error {
-	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
-}
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *j{{.current.Name}}DeleteBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
+// //Build builds the sql string into given buffer using current dialect
+// func (c *j{{.current.Name}}DeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *j{{.current.Name}}DeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Where returns a j{{.current.Name}}DeleteBuilder instead of builder.DeleteBuilder.
 func (c *j{{.current.Name}}DeleteBuilder) Where(query interface{}, value ...interface{}) *j{{.current.Name}}DeleteBuilder {
 	c.DeleteBuilder.Where(query, value...)
@@ -266,18 +268,18 @@ type j{{.current.Name}}SelectBuilder struct {
 	as string
 	*builder.SelectBuilder
 }
-//Build builds the sql string using current dialect into given bufer
-func (c *j{{.current.Name}}SelectBuilder) Build(b dbr.Buffer) error {
-	return c.SelectBuilder.Build(runtime.GetDialect(), b)
-}
-//String returns the sql string for current dialect. It returns empty string if the build returns an error.
-func (c *j{{.current.Name}}SelectBuilder) String() string {
-	b := dbr.NewBuffer()
-	if err := c.Build(b); err != nil {
-		return ""
-	}
-	return b.String()
-}
+// //Build builds the sql string using current dialect into given bufer
+// func (c *j{{.current.Name}}SelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *j{{.current.Name}}SelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
 //Read evaluates current select query and load the results into a {{.current.Name}}
 func (c *j{{.current.Name}}SelectBuilder) Read() (*{{.current.Name}}, error) {
 	var one {{.current.Name}}
@@ -430,9 +432,19 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 		var err error
 		for _, data := range items {
 			{{range $i, $col := .current.Fields | dateTypes}}
+				{{if $col.LastUpdated}}
+					{{if $col.IsStar}}
+					if data.{{$col.Name}} == nil {
+						x := time.Now()
+						data.{{$col.Name}} = &x
+					}
+					{{end}}
+				{{end}}
+			{{end}}
+			{{range $i, $col := .current.Fields | dateTypes}}
 				{{if $col.UTC}}
 					{{if $col.IsStar}}
-					{
+					if data.{{$col.Name}} != nil {
 						x := data.{{$col.Name}}.UTC()
 						data.{{$col.Name}} = &x
 					}
@@ -443,7 +455,7 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 			{{end}}
 			query := c.db.InsertInto(J{{.current.Name}}Model.Table()).Columns(
 				{{range $i, $col := .current.Fields | notAI | withSQLType | withGoName}}
-				{{$col.SQLName | quote}},
+					{{$col.SQLName | quote}},
 				{{end}}
 			).Record(data)
 			if runtime.Runs(drivers.Pgsql) {
@@ -506,7 +518,7 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 				{{range $i, $col := .current.Fields | dateTypes}}
 					{{if $col.UTC}}
 						{{if $col.IsStar}}
-						{
+						if data.{{$col.Name}} != nil{
 							x := data.{{$col.Name}}.UTC()
 							data.{{$col.Name}} = &x
 						}
@@ -515,16 +527,36 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 						{{end}}
 					{{end}}
 				{{end}}
-				res, err = c.db.Update(J{{.current.Name}}Model.Table()).
-					{{range $i, $col := .current.Fields | notPk | withSQLType | withGoName}}
-						Set({{.SQLName | quote}}, data.{{.Name}}).
+				{{range $i, $col := .current.Fields | dateTypes}}
+					{{if $col.LastUpdated}}
+						currentDate := data.{{$col.Name}}
 					{{end}}
-					{{range $i, $col := .current.Fields | isPk}}
-						Where("{{$col.SQLName}} = ?", data.{{$col.Name}}).
+				{{end}}
+				query := c.db.Update(J{{.current.Name}}Model.Table())
+				{{range $i, $col := .current.Fields | notPk | withSQLType | withGoName}}
+					{{if $col.LastUpdated}}
+						query = query.Set({{.SQLName | quote}}, "NOW()")
+					{{else}}
+						query = query.Set({{.SQLName | quote}}, data.{{.Name}})
 					{{end}}
-					Exec()
-				if err != nil {
-					return res, err
+				{{end}}
+				{{range $i, $col := .current.Fields | isPk}}
+					query = query.Where("{{$col.SQLName}} = ?", data.{{$col.Name}})
+				{{end}}
+				{{range $i, $col := .current.Fields | dateTypes}}
+					{{if $col.LastUpdated}}
+						if currentDate == nil {
+							query = query.Where("{{$col.SQLName}} IS NULL")
+						} else {
+							query = query.Where("{{$col.SQLName}} = ?", currentDate)
+						}
+					{{end}}
+				{{end}}
+				res, err = query.Exec()
+
+				if n, _ := res.RowsAffected(); n == 0 {
+					x := &builder.UpdateBuilder{query}
+					err = runtime.NewNoRowsAffected(x.String())
 				}
 			}
 			return res, err
@@ -536,6 +568,7 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 			panic("todo")
 		}
 	{{end}}
+
 
 	//Delete returns a delete builder
 	func (c j{{.current.Name}}Querier) Delete() *j{{.current.Name}}DeleteBuilder {
@@ -576,7 +609,6 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 	{{end}}
 
 {{end}}
-
 
 
 {{range $i, $f := .current.Fields | isHasOne}}

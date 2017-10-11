@@ -32,6 +32,13 @@ __"✔/-"__ are items in progress, check the [CI](https://travis-ci.org/mh-cbon/
 - [Jedi setup](#jedi-setup)
   - [Schema](#schema)
 - [Jedi model](#jedi-model)
+  - [Tags](#tags)
+    - [pk](#pk)
+    - [has_one](#has_one)
+    - [has_many](#has_many)
+    - [on](#on)
+    - [utc](#utc)
+    - [last_updated](#last_updated)
 - [Jedi CRUD](#jedi-crud)
   - [Find](#find)
   - [Insert](#insert)
@@ -210,6 +217,99 @@ You can also get metadata
 JTodoModel.ID.IsPk()
 JTodoModel.ID.IsAI()
 // more in the documentation
+```
+
+## Tags
+
+#### pk
+
+`jedi:"@pk"` tag defines a property as being part of the primary key.
+
+```go
+type CompositePk struct {
+	P           string `jedi:"@pk"`
+	K           string `jedi:"@pk"`
+	//...
+}
+```
+
+#### has_one
+
+`jedi:"@has_many"` tag defines a property as having `One <go type`.
+
+```go
+type Product struct {
+	ID         int64       `jedi:"@pk"`
+	brand      *Brand      `jedi:"@has_one=Brand.products"`
+	BrandID    *int64
+	//...
+}
+type Brand struct {
+	ID        int64      `jedi:"@pk"`
+	products  []*Product `jedi:"@has_many=Product.brand"`
+	//...
+}
+```
+
+#### has_many
+
+`jedi:"@has_many"` tag defines a property as having `Many <go type`.
+
+```go
+type Product struct {
+	ID       int64      `jedi:"@pk"`
+	categories []*Category `jedi:"@has_many=Category.products"`
+	//...
+}
+type Category struct {
+	ID       int64      `jedi:"@pk"`
+	products []*Product `jedi:"@has_many=Product.categories"`
+	//...
+}
+```
+
+#### on
+
+`jedi:"@on"` tag defines the middle type being used for a `many2many` relation.
+
+```go
+type Product struct {
+	ID       int64      `jedi:"@pk"`
+	categories []*Category `jedi:"@has_many=Category.products, @on=CatToProd"`
+	//...
+}
+type Category struct {
+	ID       int64      `jedi:"@pk"`
+	products []*Product `jedi:"@has_many=Product.categories"`
+	//...
+}
+type CatToProd struct {
+	ProductsID       int64      `jedi:"@pk"`
+	CategoriesID       int64      `jedi:"@pk"`
+	//...
+}
+```
+
+#### utc
+
+`jedi:"@utc=false"` tag defines a `time.Time` property that must not be automatically turned into UTC before `Insert`/`Update`.
+
+```go
+type DateType struct {
+	//...
+	NotUTC      *time.Time `jedi:"@utc=false"`
+}
+```
+
+#### last_updated
+
+`jedi:"@last_updated"` tag defines the `time.Time` property to automatically being set when the struct is inserted, and added as a condition for an update query.
+
+```go
+type DateType struct {
+	//...
+	LastUpdated *time.Time `jedi:"@last_updated"`
+}
 ```
 
 # Jedi CRUD
