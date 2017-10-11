@@ -51,6 +51,7 @@ __"✔/-"__ are items in progress, check the [CI](https://travis-ci.org/mh-cbon/
   - [Delete](#delete)
 - [Working with Basic types](#working-with-basic-types)
 - [Working with Dates](#working-with-dates)
+  - [Fractionnal seconds](#fractionnal-seconds)
 - [Working with Relations](#working-with-relations)
   - [Has One](#has-one)
     - [Set / Unset / Read](#set--unset--read)
@@ -530,6 +531,13 @@ You can work with those basic types, they might be pointer too,
 `jedi` recognizes fields of type `time.Time` or `*time.Time`.
 
 Unless its tags defines `jedi:"@utc=false"`, it will automatically be turned into UTC before `Insert` and `Update` queries.
+
+## Fractionnal seconds
+
+`time.Time` of `@last_updated` properties are always truncated to the microseond (6 digits).
+
+__In general__ if you stumble upon a case where `refTime.Equal(y.JustInsertedWhateverTime)`
+is unexpectedly `false`, try to Round the time values such as `y.Truncate(time.Microsecond)`.
 
 # Working with Relations
 
