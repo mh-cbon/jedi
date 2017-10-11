@@ -439,6 +439,7 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 						data.{{$col.Name}} = &x
 					}
 					{{end}}
+					data.{{$col.Name}}.Truncate(time.Microsecond)
 				{{end}}
 			{{end}}
 			{{range $i, $col := .current.Fields | dateTypes}}
@@ -530,7 +531,15 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 				{{range $i, $col := .current.Fields | dateTypes}}
 					{{if $col.LastUpdated}}
 						currentDate := data.{{$col.Name}}
-						newDate := time.Now().UTC()
+						newDate := time.Now().UTC().Truncate(time.Microsecond)
+						{{if $col.IsStar}}
+						if currentDate != nil {
+							y := currentDate.Truncate(time.Microsecond)
+							currentDate = &y
+						}
+						{{else}}
+						currentDate = currentDate.Truncate(time.Microsecond)
+						{{end}}
 					{{end}}
 				{{end}}
 				query := c.db.Update(J{{.current.Name}}Model.Table())
@@ -546,11 +555,15 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 				{{end}}
 				{{range $i, $col := .current.Fields | dateTypes}}
 					{{if $col.LastUpdated}}
-						if currentDate == nil {
+						{{if $col.IsStar}}
+						if currentDate == nil {//TODO
 							query = query.Where("{{$col.SQLName}} IS NULL")
 						} else {
 							query = query.Where("{{$col.SQLName}} = ?", currentDate)
 						}
+						{{else}}
+						query = query.Where("{{$col.SQLName}} = ?", currentDate)
+						{{end}}
 					{{end}}
 				{{end}}
 				res, err = query.Exec()

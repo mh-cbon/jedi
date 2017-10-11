@@ -340,10 +340,10 @@ var funcs = map[string]interface{}{
 				cols += f.SQLName
 				if f.IsPk && driver == drivers.Mysql && f.SQLType == "TEXT" {
 					cols += " VARCHAR(255)"
-				} else if f.GoType == "time.Time" && driver == drivers.Pgsql {
+				} else if (f.GoType == "time.Time" || f.GoType == "*time.Time") && driver == drivers.Pgsql {
 					cols += " timestamp(6)"
-				} else if f.GoType == "*time.Time" && driver == drivers.Pgsql {
-					cols += " timestamp"
+				} else if (f.GoType == "time.Time" || f.GoType == "*time.Time") && driver == drivers.Mysql {
+					cols += " datetime(6)"
 				} else if f.IsAI && f.SQLType == "INTEGER" && driver == drivers.Pgsql {
 					cols += " SERIAL"
 				} else {

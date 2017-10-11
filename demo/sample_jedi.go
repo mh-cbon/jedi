@@ -82,8 +82,8 @@ removal_date datetime NULL
 id INTEGER NOT NULL AUTO_INCREMENT,
 name TEXT,
 description TEXT,
-update_date datetime,
-removal_date datetime NULL,
+update_date datetime(6),
+removal_date datetime(6) NULL,
 PRIMARY KEY (id) 
 
 )`
@@ -93,7 +93,7 @@ id SERIAL PRIMARY KEY,
 name TEXT,
 description TEXT,
 update_date timestamp(6),
-removal_date timestamp NULL
+removal_date timestamp(6) NULL
 
 )`
 	}
@@ -2917,10 +2917,10 @@ last_updated datetime NULL
 	} else if driver == drivers.Mysql {
 		create = `CREATE TABLE IF NOT EXISTS date_type (
 id INTEGER NOT NULL AUTO_INCREMENT,
-t datetime,
-tp datetime NULL,
-not_utc datetime NULL,
-last_updated datetime NULL,
+t datetime(6),
+tp datetime(6) NULL,
+not_utc datetime(6) NULL,
+last_updated datetime(6) NULL,
 PRIMARY KEY (id) 
 
 )`
@@ -2928,9 +2928,9 @@ PRIMARY KEY (id)
 		create = `CREATE TABLE IF NOT EXISTS date_type (
 id SERIAL PRIMARY KEY,
 t timestamp(6),
-tp timestamp NULL,
-not_utc timestamp NULL,
-last_updated timestamp NULL
+tp timestamp(6) NULL,
+not_utc timestamp(6) NULL,
+last_updated timestamp(6) NULL
 
 )`
 	}
@@ -3297,6 +3297,8 @@ func (c jDateTypeQuerier) Insert(items ...*DateType) (sql.Result, error) {
 			data.LastUpdated = &x
 		}
 
+		data.LastUpdated.Truncate(time.Microsecond)
+
 		data.T = data.T.UTC()
 
 		if data.TP != nil {
@@ -3380,7 +3382,12 @@ func (c jDateTypeQuerier) Update(items ...*DateType) (sql.Result, error) {
 		}
 
 		currentDate := data.LastUpdated
-		newDate := time.Now().UTC()
+		newDate := time.Now().UTC().Truncate(time.Microsecond)
+
+		if currentDate != nil {
+			y := currentDate.Truncate(time.Microsecond)
+			currentDate = &y
+		}
 
 		query := c.db.Update(JDateTypeModel.Table())
 
@@ -3394,7 +3401,7 @@ func (c jDateTypeQuerier) Update(items ...*DateType) (sql.Result, error) {
 
 		query = query.Where("id = ?", data.ID)
 
-		if currentDate == nil {
+		if currentDate == nil { //TODO
 			query = query.Where("last_updated IS NULL")
 		} else {
 			query = query.Where("last_updated = ?", currentDate)

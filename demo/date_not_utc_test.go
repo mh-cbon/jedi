@@ -32,11 +32,11 @@ func TestDateNotUTC(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Data insert failed: %v", err)
 		}
-		d, err := JDateType(sess).Find(1)
+		d, err := JDateType(sess).Find(t1.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if d.NotUTC.Format(time.RFC3339) == t1.NotUTC.Format(time.RFC3339) {
+		if d.NotUTC.Format(time.RFC3339Nano) == t1.NotUTC.Format(time.RFC3339Nano) {
 			t.Fatal("invalid date d.NotUTC, they must mismatch")
 		}
 	})
@@ -51,15 +51,16 @@ func TestDateNotUTC(t *testing.T) {
 		}
 		c := time.Now().In(loc)
 		t1.NotUTC = &c
+		<-time.After(1 * time.Millisecond)
 		_, err = JDateType(sess).Update(t1)
 		if err != nil {
 			t.Fatalf("Data update failed: %v", err)
 		}
-		d, err := JDateType(sess).Find(1)
+		d, err := JDateType(sess).Find(t1.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if d.NotUTC.Format(time.RFC3339) == t1.NotUTC.Format(time.RFC3339) {
+		if d.NotUTC.Format(time.RFC3339Nano) == t1.NotUTC.Format(time.RFC3339Nano) {
 			t.Fatal("invalid date d.NotUTC, they must mismatch")
 		}
 	})

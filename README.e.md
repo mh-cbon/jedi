@@ -488,6 +488,13 @@ You can work with those basic types, they might be pointer too,
 
 Unless its tags defines `jedi:"@utc=false"`, it will automatically be turned into UTC before `Insert` and `Update` queries.
 
+## Fractionnal seconds
+
+`time.Time` of `@last_updated` properties are always truncated to the microseond (6 digits).
+
+__In general__ if you stumble upon a case where `refTime.Equal(y.JustInsertedWhateverTime)`
+is unexpectedly `false`, try to Round the time values such as `y.Truncate(time.Microsecond)`.
+
 # Working with Relations
 
 `jedi` supports `@has_one` and `@has_many` property tags to implement `oneToMany`, `manyToOne` and `manyToMany` relationships.
