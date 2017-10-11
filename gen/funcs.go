@@ -341,7 +341,7 @@ var funcs = map[string]interface{}{
 				if f.IsPk && driver == drivers.Mysql && f.SQLType == "TEXT" {
 					cols += " VARCHAR(255)"
 				} else if f.GoType == "time.Time" && driver == drivers.Pgsql {
-					cols += " timestamp"
+					cols += " timestamp(6)"
 				} else if f.GoType == "*time.Time" && driver == drivers.Pgsql {
 					cols += " timestamp"
 				} else if f.IsAI && f.SQLType == "INTEGER" && driver == drivers.Pgsql {

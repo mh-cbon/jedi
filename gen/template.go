@@ -530,12 +530,13 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 				{{range $i, $col := .current.Fields | dateTypes}}
 					{{if $col.LastUpdated}}
 						currentDate := data.{{$col.Name}}
+						newDate := time.Now().UTC()
 					{{end}}
 				{{end}}
 				query := c.db.Update(J{{.current.Name}}Model.Table())
 				{{range $i, $col := .current.Fields | notPk | withSQLType | withGoName}}
 					{{if $col.LastUpdated}}
-						query = query.Set({{.SQLName | quote}}, "NOW()")
+						query = query.Set({{.SQLName | quote}}, newDate)
 					{{else}}
 						query = query.Set({{.SQLName | quote}}, data.{{.Name}})
 					{{end}}
@@ -558,6 +559,17 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 					x := &builder.UpdateBuilder{UpdateBuilder: query}
 					err = runtime.NewNoRowsAffected(x.String())
 				}
+				{{range $i, $col := .current.Fields | dateTypes}}
+					{{if $col.LastUpdated}}
+						if err == nil {
+							{{if $col.IsStar}}
+							data.{{$col.Name}} = &newDate
+							{{else}}
+							data.{{$col.Name}} = newDate
+							{{end}}
+						}
+					{{end}}
+				{{end}}
 			}
 			return res, err
 		}

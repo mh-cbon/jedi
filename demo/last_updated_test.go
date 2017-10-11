@@ -27,7 +27,7 @@ func TestLastUpdatedDate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Data insert failed: %v", err)
 		}
-		d, err := JDateType(sess).Find(1)
+		d, err := JDateType(sess).Find(t1.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -42,7 +42,7 @@ func TestLastUpdatedDate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Data insert failed: %v", err)
 		}
-		d, err := JDateType(sess).Find(1)
+		d, err := JDateType(sess).Find(t1.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,7 +68,7 @@ func TestLastUpdatedDate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if d.LastUpdated.Format(time.RFC3339) == c.Format(time.RFC3339) {
+		if d.LastUpdated.Format(time.RFC3339) != c.Format(time.RFC3339) {
 			t.Fatal("invalid date d.LastUpdated / t1.LastUpdated, they must mismatch")
 		}
 	})

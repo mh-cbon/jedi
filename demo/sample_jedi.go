@@ -92,7 +92,7 @@ PRIMARY KEY (id)
 id SERIAL PRIMARY KEY,
 name TEXT,
 description TEXT,
-update_date timestamp,
+update_date timestamp(6),
 removal_date timestamp NULL
 
 )`
@@ -545,6 +545,7 @@ func (c jSampleQuerier) Update(items ...*Sample) (sql.Result, error) {
 			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
+
 	}
 	return res, err
 }
@@ -1026,6 +1027,7 @@ func (c jBasicPKQuerier) Update(items ...*BasicPK) (sql.Result, error) {
 			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
+
 	}
 	return res, err
 }
@@ -1868,6 +1870,7 @@ func (c jBasicTypesQuerier) Update(items ...*BasicTypes) (sql.Result, error) {
 			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
+
 	}
 	return res, err
 }
@@ -2333,6 +2336,7 @@ func (c jTextPkQuerier) Update(items ...*TextPk) (sql.Result, error) {
 			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
+
 	}
 	return res, err
 }
@@ -2821,6 +2825,7 @@ func (c jCompositePkQuerier) Update(items ...*CompositePk) (sql.Result, error) {
 			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
+
 	}
 	return res, err
 }
@@ -2922,7 +2927,7 @@ PRIMARY KEY (id)
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS date_type (
 id SERIAL PRIMARY KEY,
-t timestamp,
+t timestamp(6),
 tp timestamp NULL,
 not_utc timestamp NULL,
 last_updated timestamp NULL
@@ -3375,6 +3380,7 @@ func (c jDateTypeQuerier) Update(items ...*DateType) (sql.Result, error) {
 		}
 
 		currentDate := data.LastUpdated
+		newDate := time.Now().UTC()
 
 		query := c.db.Update(JDateTypeModel.Table())
 
@@ -3384,7 +3390,7 @@ func (c jDateTypeQuerier) Update(items ...*DateType) (sql.Result, error) {
 
 		query = query.Set(`not_utc`, data.NotUTC)
 
-		query = query.Set(`last_updated`, "NOW()")
+		query = query.Set(`last_updated`, newDate)
 
 		query = query.Where("id = ?", data.ID)
 
@@ -3400,6 +3406,13 @@ func (c jDateTypeQuerier) Update(items ...*DateType) (sql.Result, error) {
 			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
+
+		if err == nil {
+
+			data.LastUpdated = &newDate
+
+		}
+
 	}
 	return res, err
 }
