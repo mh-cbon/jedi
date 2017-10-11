@@ -53,13 +53,11 @@ func TestLastUpdatedDate(t *testing.T) {
 				"got", t1.LastUpdated.Format(time.RFC3339))
 		}
 	})
-	t.Run("update data does not set date to UTC", func(t *testing.T) {
+	t.Run("update data automatically update LastUpdated property", func(t *testing.T) {
 		t1, err := JDateType(sess).Find(1)
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := time.Now()
-		t1.NotUTC = &c
 		_, err = JDateType(sess).Update(t1)
 		if err != nil {
 			t.Fatalf("Data update failed: %v", err)
@@ -68,7 +66,7 @@ func TestLastUpdatedDate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if d.NotUTC.Format(time.RFC3339) == t1.NotUTC.Format(time.RFC3339) {
+		if d.LastUpdated.Format(time.RFC3339) == t1.LastUpdated.Format(time.RFC3339) {
 			t.Fatal("invalid date d.NotUTC wanted, they must mismatch")
 		}
 	})

@@ -22,9 +22,13 @@ func TestDateNotUTC(t *testing.T) {
 	sess := conn.NewSession(&jedi.EventReceiver{W: os.Stderr})
 
 	t.Run("insert data does not write utc date", func(t *testing.T) {
-		c := time.Now()
+		loc, err := time.LoadLocation("Asia/Tokyo")
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := time.Now().In(loc)
 		t1 := &DateType{NotUTC: &c}
-		_, err := JDateType(sess).Insert(t1)
+		_, err = JDateType(sess).Insert(t1)
 		if err != nil {
 			t.Fatalf("Data insert failed: %v", err)
 		}
@@ -41,7 +45,11 @@ func TestDateNotUTC(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		c := time.Now()
+		loc, err := time.LoadLocation("Asia/Tokyo")
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := time.Now().In(loc)
 		t1.NotUTC = &c
 		_, err = JDateType(sess).Update(t1)
 		if err != nil {

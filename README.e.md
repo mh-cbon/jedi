@@ -109,13 +109,12 @@ type jTodoSetup struct {
 }
 
 //Create applies the create table command to te underlying connection.
-func (c jProductSetup) Create(db *dbr.Connection) ...
+func (c jProductSetup) Create(db *dbr.Connection) {}
 
 //Drop applies the drop table command to te underlying connection.
-func (c jProductSetup) Drop(db *dbr.Connection) ...
+func (c jProductSetup) Drop(db *dbr.Connection) {}
 
-func JTodoSetup() runtime.Setuper {
-}
+func JTodoSetup() runtime.Setuper {}
 ```
 
 To manually setup a type
@@ -195,7 +194,7 @@ type CompositePk struct {
 
 #### has_one
 
-`jedi:"@has_many"` tag defines a property as having `One <go type`.
+`jedi:"@has_one"` tag defines a property as having `One <go type`.
 
 ```go
 type Product struct {
@@ -234,8 +233,8 @@ type Category struct {
 
 ```go
 type Product struct {
-	ID       int64      `jedi:"@pk"`
-	categories []*Category `jedi:"@has_many=Category.products, @on=CatToProd"`
+	ID       int64      		`jedi:"@pk"`
+	categories []*Category 	`jedi:"@has_many=Category.products, @on=CatToProd"`
 	//...
 }
 type Category struct {
@@ -244,8 +243,8 @@ type Category struct {
 	//...
 }
 type CatToProd struct {
-	ProductsID       int64      `jedi:"@pk"`
-	CategoriesID       int64      `jedi:"@pk"`
+	ProductsID       		int64      `jedi:"@pk"`
+	CategoriesID       	int64      `jedi:"@pk"`
 	//...
 }
 ```
@@ -333,7 +332,7 @@ The `Insert(obj type) (sql.Result, error)` method attempts to write given object
 
 If the object has declared an `AUTO INCREMENT` field, the property is updated.
 
-An `interger primary key` field is `AUTO INCREMENT`.
+An `integer primary key` field is `AUTO INCREMENT`.
 
 ```go
 func main () {
