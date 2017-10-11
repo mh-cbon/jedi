@@ -58,6 +58,8 @@ func TestLastUpdatedDate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		c := *t1.LastUpdated
+		<-time.After(10 * time.Millisecond)
 		_, err = JDateType(sess).Update(t1)
 		if err != nil {
 			t.Fatalf("Data update failed: %v", err)
@@ -66,8 +68,32 @@ func TestLastUpdatedDate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if d.LastUpdated.Format(time.RFC3339) == t1.LastUpdated.Format(time.RFC3339) {
-			t.Fatal("invalid date d.NotUTC wanted, they must mismatch")
+		if d.LastUpdated.Format(time.RFC3339) == c.Format(time.RFC3339) {
+			t.Fatal("invalid date d.LastUpdated / t1.LastUpdated, they must mismatch")
+		}
+	})
+	t.Run("update returns error if the LastUpdated value does not match", func(t *testing.T) {
+		t1, err := JDateType(sess).Find(1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t1.LastUpdated = nil
+		_, err = JDateType(sess).Update(t1)
+		if err == nil {
+			t.Fatalf("Data update must fail, got err= %v", err)
+		}
+	})
+	t.Run("update returns error if the LastUpdated value does not match 2", func(t *testing.T) {
+		t1, err := JDateType(sess).Find(1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		<-time.After(time.Millisecond)
+		c := time.Now()
+		t1.LastUpdated = &c
+		_, err = JDateType(sess).Update(t1)
+		if err == nil {
+			t.Fatalf("Data update must fail, got err= %v", err)
 		}
 	})
 }
