@@ -32,11 +32,11 @@ func TestDate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if d.T.Format(time.RFC3339) != t1.T.Format(time.RFC3339) {
+		if d.T.Format(time.RFC3339) != t1.T.Format(time.RFC3339) { // carefully ignore microseconds.
 			t.Fatal("invalid date d.T =", d.T.Format(time.RFC3339),
 				"wanted", t1.T.Format(time.RFC3339))
 		}
-		if d.TP.Format(time.RFC3339) != t1.TP.Format(time.RFC3339) {
+		if d.TP.Format(time.RFC3339) != t1.TP.Format(time.RFC3339) { // carefully ignore microseconds.
 			t.Fatal("invalid date d.TP =", d.TP.Format(time.RFC3339),
 				"wanted", t1.TP.Format(time.RFC3339))
 		}
@@ -57,11 +57,11 @@ func TestDate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if d.T.Format(time.RFC3339) != t1.T.Format(time.RFC3339) {
+		if d.T.Format(time.RFC3339) != t1.T.Format(time.RFC3339) { // carefully ignore microseconds.
 			t.Fatal("invalid date d.T =", d.T.Format(time.RFC3339),
 				"wanted", t1.T.Format(time.RFC3339))
 		}
-		if d.TP.Format(time.RFC3339) != t1.TP.Format(time.RFC3339) {
+		if d.TP.Format(time.RFC3339) != t1.TP.Format(time.RFC3339) { // carefully ignore microseconds.
 			t.Fatal("invalid date d.TP =", d.TP.Format(time.RFC3339),
 				"wanted", t1.TP.Format(time.RFC3339))
 		}

@@ -36,7 +36,7 @@ func TestDateNotUTC(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if d.NotUTC.Format(time.RFC3339Nano) == t1.NotUTC.Format(time.RFC3339Nano) {
+		if d.NotUTC.Equal(*t1.NotUTC) {
 			t.Fatal("invalid date d.NotUTC, they must mismatch")
 		}
 	})
@@ -60,7 +60,7 @@ func TestDateNotUTC(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if d.NotUTC.Format(time.RFC3339Nano) == t1.NotUTC.Format(time.RFC3339Nano) {
+		if d.NotUTC.Equal(*t1.NotUTC) {
 			t.Fatal("invalid date d.NotUTC, they must mismatch")
 		}
 	})

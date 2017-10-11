@@ -438,8 +438,13 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 						x := time.Now()
 						data.{{$col.Name}} = &x
 					}
+					{
+						x := data.{{$col.Name}}.Truncate(time.Microsecond)
+						data.{{$col.Name}} = &x
+					}
+					{{else}}
+					data.{{$col.Name}} = data.{{$col.Name}}.Truncate(time.Microsecond)
 					{{end}}
-					data.{{$col.Name}}.Truncate(time.Microsecond)
 				{{end}}
 			{{end}}
 			{{range $i, $col := .current.Fields | dateTypes}}

@@ -48,9 +48,9 @@ func TestLastUpdatedDate(t *testing.T) {
 		}
 		if d.LastUpdated == nil {
 			t.Fatal("LastUpdated date not written, must not be nil")
-		} else if d.LastUpdated.Format(time.RFC3339) != t1.LastUpdated.Format(time.RFC3339) {
-			t.Fatal("invalid date d.LastUpdated wanted", d.LastUpdated.Format(time.RFC3339),
-				"got", t1.LastUpdated.Format(time.RFC3339))
+		} else if !d.LastUpdated.Equal(*t1.LastUpdated) {
+			t.Fatal("invalid date d.LastUpdated =", d.LastUpdated.Format(time.RFC3339Nano),
+				"t1=", t1.LastUpdated.Format(time.RFC3339Nano))
 		}
 	})
 	t.Run("update data automatically update LastUpdated property", func(t *testing.T) {
@@ -68,7 +68,8 @@ func TestLastUpdatedDate(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if d.LastUpdated.Format(time.RFC3339Nano) == c.Format(time.RFC3339Nano) {
+		// if d.LastUpdated.Format(time.RFC3339Nano) == c.Format(time.RFC3339Nano) {
+		if d.LastUpdated.Equal(c) {
 			t.Fatal("they must mismatch d.LastUpdated", d.LastUpdated.Format(time.RFC3339Nano),
 				"c", c.Format(time.RFC3339Nano),
 			)

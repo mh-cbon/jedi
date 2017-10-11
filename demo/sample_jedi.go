@@ -3296,8 +3296,10 @@ func (c jDateTypeQuerier) Insert(items ...*DateType) (sql.Result, error) {
 			x := time.Now()
 			data.LastUpdated = &x
 		}
-
-		data.LastUpdated.Truncate(time.Microsecond)
+		{
+			x := data.LastUpdated.Truncate(time.Microsecond)
+			data.LastUpdated = &x
+		}
 
 		data.T = data.T.UTC()
 
