@@ -555,7 +555,7 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 				res, err = query.Exec()
 
 				if n, _ := res.RowsAffected(); n == 0 {
-					x := &builder.UpdateBuilder{query}
+					x := &builder.UpdateBuilder{UpdateBuilder: query}
 					err = runtime.NewNoRowsAffected(x.String())
 				}
 			}

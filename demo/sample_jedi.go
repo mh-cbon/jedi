@@ -542,7 +542,7 @@ func (c jSampleQuerier) Update(items ...*Sample) (sql.Result, error) {
 		res, err = query.Exec()
 
 		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{query}
+			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
@@ -1023,7 +1023,7 @@ func (c jBasicPKQuerier) Update(items ...*BasicPK) (sql.Result, error) {
 		res, err = query.Exec()
 
 		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{query}
+			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
@@ -1865,7 +1865,7 @@ func (c jBasicTypesQuerier) Update(items ...*BasicTypes) (sql.Result, error) {
 		res, err = query.Exec()
 
 		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{query}
+			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
@@ -2330,7 +2330,7 @@ func (c jTextPkQuerier) Update(items ...*TextPk) (sql.Result, error) {
 		res, err = query.Exec()
 
 		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{query}
+			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
@@ -2818,7 +2818,7 @@ func (c jCompositePkQuerier) Update(items ...*CompositePk) (sql.Result, error) {
 		res, err = query.Exec()
 
 		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{query}
+			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
@@ -3397,7 +3397,7 @@ func (c jDateTypeQuerier) Update(items ...*DateType) (sql.Result, error) {
 		res, err = query.Exec()
 
 		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{query}
+			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}

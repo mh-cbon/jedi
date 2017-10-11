@@ -577,7 +577,7 @@ func (c jProductQuerier) Update(items ...*Product) (sql.Result, error) {
 		res, err = query.Exec()
 
 		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{query}
+			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
@@ -1874,7 +1874,7 @@ func (c jCategoryQuerier) Update(items ...*Category) (sql.Result, error) {
 		res, err = query.Exec()
 
 		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{query}
+			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
@@ -2651,7 +2651,7 @@ func (c jBrandQuerier) Update(items ...*Brand) (sql.Result, error) {
 		res, err = query.Exec()
 
 		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{query}
+			x := &builder.UpdateBuilder{UpdateBuilder: query}
 			err = runtime.NewNoRowsAffected(x.String())
 		}
 	}
