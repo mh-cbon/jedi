@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"log"
 	"strings"
 
 	"github.com/mh-cbon/jedi/drivers"
@@ -29,6 +30,9 @@ func itemGoType(s string) string {
 	s = strings.TrimLeft(s, "*")
 	return s
 }
+
+var timeString = "time.Time"
+var timePString = "*time.Time"
 
 var funcs = map[string]interface{}{
 	"quote": func(a string) string {
@@ -102,6 +106,15 @@ var funcs = map[string]interface{}{
 		}
 		return ret
 	},
+	"isSQLText": func(fields []*model.Field) []*model.Field {
+		var ret []*model.Field
+		for _, c := range fields {
+			if c.SQLType == "TEXT" {
+				ret = append(ret, c)
+			}
+		}
+		return ret
+	},
 	"isHasOne": func(fields []*model.Field) []*model.Field {
 		var ret []*model.Field
 		for _, c := range fields {
@@ -144,10 +157,6 @@ var funcs = map[string]interface{}{
 		if foreign == nil {
 			return ret
 		}
-		foreignProp := model.FindProp(all, aboutField.HasOne)
-		if foreignProp == nil {
-			return ret
-		}
 
 		ret = &model.HasOne{
 			Local:   aboutStruct,
@@ -155,6 +164,12 @@ var funcs = map[string]interface{}{
 		}
 
 		for _, pk := range foreign.Pks() {
+			localName := strings.Title(aboutField.Name) + pk.Name
+			localImported := aboutStruct.GetFieldByName(localName)
+			if localImported == nil {
+				log.Printf("jedi: %q is missing a field %v.%v", aboutStruct.Name, aboutStruct.Name, localName)
+				continue
+			}
 			j := &model.JoinFields{
 				LocalField:   aboutStruct.GetFieldByName(strings.Title(aboutField.Name) + pk.Name),
 				ForeignField: pk,
@@ -206,16 +221,19 @@ var funcs = map[string]interface{}{
 		}
 
 		n := model.HasMany2ManyGoTypeName(aboutStruct, foreign, aboutField, foreignProp)
+		midType := model.FindStruct(all, n)
 		ret = &model.Many2Many{
 			Local:   aboutStruct,
 			Foreign: foreign,
-			Middle:  model.FindStruct(all, n),
+			Middle:  midType,
 		}
 
 		for _, pk := range ret.Local.Pks() {
+			foreiName := strings.Title(aboutStruct.Name) + pk.Name
+			foreiField := ret.Middle.GetFieldByName(foreiName)
 			j := &model.JoinFields{
 				LocalField:   pk,
-				ForeignField: ret.Middle.GetFieldByName(strings.Title(aboutStruct.Name) + pk.Name),
+				ForeignField: foreiField,
 			}
 			ret.LMFields = append(ret.LMFields, j)
 		}
@@ -260,7 +278,7 @@ var funcs = map[string]interface{}{
 	"dateTypes": func(fields []*model.Field) []*model.Field {
 		var ret []*model.Field
 		for _, c := range fields {
-			if c.GoType == "time.Time" || c.GoType == "*time.Time" {
+			if c.GoType == timeString || c.GoType == timePString {
 				ret = append(ret, c)
 			}
 		}
@@ -340,9 +358,9 @@ var funcs = map[string]interface{}{
 				cols += f.SQLName
 				if f.IsPk && driver == drivers.Mysql && f.SQLType == "TEXT" {
 					cols += " VARCHAR(255)"
-				} else if (f.GoType == "time.Time" || f.GoType == "*time.Time") && driver == drivers.Pgsql {
+				} else if (f.GoType == timeString || f.GoType == timePString) && driver == drivers.Pgsql {
 					cols += " timestamp(6)"
-				} else if (f.GoType == "time.Time" || f.GoType == "*time.Time") && driver == drivers.Mysql {
+				} else if (f.GoType == timeString || f.GoType == timePString) && driver == drivers.Mysql {
 					cols += " datetime(6)"
 				} else if f.IsAI && f.SQLType == "INTEGER" && driver == drivers.Pgsql {
 					cols += " SERIAL"

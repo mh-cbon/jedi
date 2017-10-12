@@ -576,9 +576,11 @@ func (c jProductQuerier) Update(items ...*Product) (sql.Result, error) {
 
 		res, err = query.Exec()
 
-		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{UpdateBuilder: query}
-			err = runtime.NewNoRowsAffected(x.String())
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
 		}
 
 	}
@@ -1874,9 +1876,11 @@ func (c jCategoryQuerier) Update(items ...*Category) (sql.Result, error) {
 
 		res, err = query.Exec()
 
-		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{UpdateBuilder: query}
-			err = runtime.NewNoRowsAffected(x.String())
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
 		}
 
 	}
@@ -2652,9 +2656,11 @@ func (c jBrandQuerier) Update(items ...*Brand) (sql.Result, error) {
 
 		res, err = query.Exec()
 
-		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{UpdateBuilder: query}
-			err = runtime.NewNoRowsAffected(x.String())
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
 		}
 
 	}
@@ -2956,23 +2962,23 @@ func JCategoryproductsToProductcategoriesSetup() runtime.Setuper {
 
 	if driver == drivers.Sqlite {
 		create = `CREATE TABLE IF NOT EXISTS category_productstoproduct_categories (
-product_id INTEGER,
 category_id INTEGER,
-PRIMARY KEY (product_id,category_id) 
+product_id INTEGER,
+PRIMARY KEY (category_id,product_id) 
 
 )`
 	} else if driver == drivers.Mysql {
 		create = `CREATE TABLE IF NOT EXISTS category_productstoproduct_categories (
-product_id INTEGER NOT NULL,
 category_id INTEGER NOT NULL,
-PRIMARY KEY (product_id,category_id) 
+product_id INTEGER NOT NULL,
+PRIMARY KEY (category_id,product_id) 
 
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS category_productstoproduct_categories (
-product_id INTEGER,
 category_id INTEGER,
-PRIMARY KEY (product_id,category_id) 
+product_id INTEGER,
+PRIMARY KEY (category_id,product_id) 
 
 )`
 	}
@@ -2997,9 +3003,9 @@ PRIMARY KEY (product_id,category_id)
 type jCategoryproductsToProductcategoriesModel struct {
 	as string
 
-	ProductID builder.ValuePropertyMeta
-
 	CategoryID builder.ValuePropertyMeta
+
+	ProductID builder.ValuePropertyMeta
 }
 
 // Eq provided items.
@@ -3008,9 +3014,9 @@ func (j jCategoryproductsToProductcategoriesModel) Eq(s ...*CategoryproductsToPr
 	for _, t := range s {
 		ors = append(ors, dbr.And(
 
-			JCategoryproductsToProductcategoriesModel.ProductID.Eq(t.ProductID),
-
 			JCategoryproductsToProductcategoriesModel.CategoryID.Eq(t.CategoryID),
+
+			JCategoryproductsToProductcategoriesModel.ProductID.Eq(t.ProductID),
 		))
 	}
 	return dbr.Or(ors...)
@@ -3022,9 +3028,9 @@ func (j jCategoryproductsToProductcategoriesModel) In(s ...*CategoryproductsToPr
 	for _, t := range s {
 		ors = append(ors, dbr.And(
 
-			JCategoryproductsToProductcategoriesModel.ProductID.Eq(t.ProductID),
-
 			JCategoryproductsToProductcategoriesModel.CategoryID.Eq(t.CategoryID),
+
+			JCategoryproductsToProductcategoriesModel.ProductID.Eq(t.ProductID),
 		))
 	}
 	return dbr.Or(ors...)
@@ -3034,9 +3040,9 @@ func (j jCategoryproductsToProductcategoriesModel) In(s ...*CategoryproductsToPr
 func (j jCategoryproductsToProductcategoriesModel) As(as string) jCategoryproductsToProductcategoriesModel {
 	j.as = as
 
-	j.ProductID.TableAlias = as
-
 	j.CategoryID.TableAlias = as
+
+	j.ProductID.TableAlias = as
 
 	return j
 }
@@ -3058,9 +3064,9 @@ func (j jCategoryproductsToProductcategoriesModel) Alias() string {
 func (j jCategoryproductsToProductcategoriesModel) Properties() map[string]builder.MetaProvider {
 	ret := map[string]builder.MetaProvider{}
 
-	ret["ProductID"] = j.ProductID
-
 	ret["CategoryID"] = j.CategoryID
+
+	ret["ProductID"] = j.ProductID
 
 	return ret
 }
@@ -3086,24 +3092,24 @@ func (j jCategoryproductsToProductcategoriesModel) Fields(ins ...string) []strin
 // JCategoryproductsToProductcategoriesModel provides helper to work with CategoryproductsToProductcategories data provider
 var JCategoryproductsToProductcategoriesModel = jCategoryproductsToProductcategoriesModel{
 
-	ProductID: builder.NewValueMeta(
-		`product_id`, `INTEGER`,
-		`ProductID`, `int64`,
-		true, false,
-	),
-
 	CategoryID: builder.NewValueMeta(
 		`category_id`, `INTEGER`,
 		`CategoryID`, `int64`,
+		true, false,
+	),
+
+	ProductID: builder.NewValueMeta(
+		`product_id`, `INTEGER`,
+		`ProductID`, `int64`,
 		true, false,
 	),
 }
 
 // CategoryproductsToProductcategories is automatically generated to handle a many to many relationship.
 type CategoryproductsToProductcategories struct {
-	ProductID int64
-
 	CategoryID int64
+
+	ProductID int64
 }
 
 type jCategoryproductsToProductcategoriesDeleteBuilder struct {
@@ -3311,9 +3317,9 @@ func (c jCategoryproductsToProductcategoriesQuerier) Insert(items ...*Categorypr
 
 		query := c.db.InsertInto(JCategoryproductsToProductcategoriesModel.Table()).Columns(
 
-			`product_id`,
-
 			`category_id`,
+
+			`product_id`,
 		).Record(data)
 		if runtime.Runs(drivers.Pgsql) {
 
@@ -3347,12 +3353,12 @@ func (c jCategoryproductsToProductcategoriesQuerier) Delete() *jCategoryproducts
 }
 
 //DeleteByPk deletes one CategoryproductsToProductcategories by its PKs
-func (c jCategoryproductsToProductcategoriesQuerier) DeleteByPk(ProductID int64, CategoryID int64) error {
+func (c jCategoryproductsToProductcategoriesQuerier) DeleteByPk(CategoryID int64, ProductID int64) error {
 	_, err := c.Delete().Where(
 
-		JCategoryproductsToProductcategoriesModel.ProductID.Eq(ProductID),
-
 		JCategoryproductsToProductcategoriesModel.CategoryID.Eq(CategoryID),
+
+		JCategoryproductsToProductcategoriesModel.ProductID.Eq(ProductID),
 	).Exec()
 	return err
 }
@@ -3366,11 +3372,11 @@ func (c jCategoryproductsToProductcategoriesQuerier) DeleteAll(items ...*Categor
 }
 
 //Find one CategoryproductsToProductcategories using its PKs
-func (c jCategoryproductsToProductcategoriesQuerier) Find(ProductID int64, CategoryID int64) (*CategoryproductsToProductcategories, error) {
+func (c jCategoryproductsToProductcategoriesQuerier) Find(CategoryID int64, ProductID int64) (*CategoryproductsToProductcategories, error) {
 	return c.Select().Where(
 
-		JCategoryproductsToProductcategoriesModel.ProductID.Eq(ProductID),
-
 		JCategoryproductsToProductcategoriesModel.CategoryID.Eq(CategoryID),
+
+		JCategoryproductsToProductcategoriesModel.ProductID.Eq(ProductID),
 	).Read()
 }

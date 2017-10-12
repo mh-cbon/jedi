@@ -459,6 +459,23 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 					{{end}}
 				{{end}}
 			{{end}}
+			{{range $i, $col := .current.Fields | isPk | isSQLText}}
+				if runtime.Runs(drivers.Mysql) {
+					{{if $col.IsStar}}
+					if data.{{$col.Name}} != nil {
+						x := *data.{{$col.Name}}
+						if len(x)>255 {
+							return nil, fmt.Errorf("{{$col.Name}}: PRIMARY KEY length exceeded max=255, got=%v", len(x))
+						}
+						data.{{$col.Name}} = &x
+					}
+					{{else}}
+					if len(data.{{$col.Name}})>255 {
+						return nil, fmt.Errorf("{{$col.Name}}: PRIMARY KEY length exceeded max=255, got=%v", len(data.{{$col.Name}}))
+					}
+					{{end}}
+				}
+			{{end}}
 			query := c.db.InsertInto(J{{.current.Name}}Model.Table()).Columns(
 				{{range $i, $col := .current.Fields | notAI | withSQLType | withGoName}}
 					{{$col.SQLName | quote}},
@@ -561,7 +578,7 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 				{{range $i, $col := .current.Fields | dateTypes}}
 					{{if $col.LastUpdated}}
 						{{if $col.IsStar}}
-						if currentDate == nil {//TODO
+						if currentDate == nil {
 							query = query.Where("{{$col.SQLName}} IS NULL")
 						} else {
 							query = query.Where("{{$col.SQLName}} = ?", currentDate)
@@ -573,9 +590,11 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 				{{end}}
 				res, err = query.Exec()
 
-				if n, _ := res.RowsAffected(); n == 0 {
-					x := &builder.UpdateBuilder{UpdateBuilder: query}
-					err = runtime.NewNoRowsAffected(x.String())
+				if err == nil {
+					if n, _ := res.RowsAffected(); n == 0 {
+						x := &builder.UpdateBuilder{UpdateBuilder: query}
+						err = runtime.NewNoRowsAffected(x.String())
+					}
 				}
 				{{range $i, $col := .current.Fields | dateTypes}}
 					{{if $col.LastUpdated}}

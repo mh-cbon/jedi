@@ -20,8 +20,8 @@ Features
 - ‎✔ CRUD operations
 - ‎‎✔ auto increment support
 - ‎‎✔ Always UTC date
-- ‎‎✔/‎- text pk
-- ‎‎✔/‎- composite pk
+- ‎‎✔ text pk
+- ‎‎✔ composite pk
 - ‎✔ hasOne relation helper
 - ‎✔ hasMany2One relation helper
 - ‎‎✔/‎- hasMany2Many relation helper
@@ -487,6 +487,18 @@ You can work with those basic types, they might be pointer too,
 `jedi` recognizes fields of type `time.Time` or `*time.Time`.
 
 Unless its tags defines `jedi:"@utc=false"`, it will automatically be turned into UTC before `Insert` and `Update` queries.
+
+# Working with text PK
+
+When you define a string field as being part of the PK,
+`jedi` will use a `VARCHAR(255)` sql type when the driver is `mysql`.
+
+Error reference : `BLOB/TEXT column 'XXX' used in key specification without a key length`
+
+Ass an addition `jedi` will add special checks in the `Insert`/`Update` procedure to trigger an error
+if you pass in a string with a length greater than 255 when `mysql` is the driver being used.
+
+This is to ensure consistency independently of the underlying driver.
 
 ## Fractionnal seconds
 

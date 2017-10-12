@@ -99,9 +99,9 @@ func Parse(file string) ([]*model.Struct, error) {
 			tableCreate = getMLComment(doc.Text(), "table-create:")
 			tableDrop = getMLComment(doc.Text(), "table-drop:")
 
-			log.Printf("jedi:%v table:%q viewSelect:%v viewCreate:%v viewDrop:%v tableCreate:%v tableDrop:%v\n",
-				ts.Name.String(), table,
-				viewSelect != "", viewCreate != "", viewDrop != "", tableCreate != "", tableDrop != "")
+			// log.Printf("jedi:%v table:%q viewSelect:%v viewCreate:%v viewDrop:%v tableCreate:%v tableDrop:%v\n",
+			// 	ts.Name.String(), table,
+			// 	viewSelect != "", viewCreate != "", viewDrop != "", tableCreate != "", tableDrop != "")
 
 			str, ok := ts.Type.(*ast.StructType)
 			if !ok {
@@ -144,10 +144,11 @@ func Parse(file string) ([]*model.Struct, error) {
 				for _, pk := range foreign.Pks() {
 					rRequiredField := strings.Title(f.Name) + pk.Name
 					if g := r.GetFieldByName(rRequiredField); g == nil {
-						log.Printf("jedi: missing field %v.%v it has_one=%v, so it needs a field named %v\n",
-							r.Name, rRequiredField, f.HasOne, rRequiredField)
+						log.Printf("jedi: %v is missing a field %v.%v because it @has_one=%v\n",
+							r.Name, r.Name, rRequiredField, f.HasOne)
 					} else if g.IsStar() != f.IsStar() {
-						log.Printf("jedi: incompatible fields %q / %q in %q, must be both go pointer or both value\n", g.Name, f.Name, r.Name)
+						log.Printf("jedi: %v.%v / %v.%v must be both go pointer or both value\n",
+							r.Name, g.Name, r.Name, f.Name)
 					}
 				}
 			}
@@ -159,38 +160,62 @@ func Parse(file string) ([]*model.Struct, error) {
 	for _, r := range res {
 		for _, f := range r.Fields {
 			if f.HasMany != "" {
-				if strings.Index(f.HasMany, ".") == -1 {
-					foreign := findStruct(res, f.HasMany)
-					if foreign == nil {
-						log.Printf("jedi: has_many not found %q in %q\n", f.HasMany, r.Name)
-						continue
-					}
 
-				} else {
-					foreignProp := findProp(res, f.HasMany)
-					foreign := findStruct(res, f.HasMany)
-					if foreignProp.HasMany != "" {
-						IsAutoGoType := foreignProp.On == "" && f.On == ""
-						if !IsAutoGoType && f.On != foreignProp.On {
-							log.Printf("jedi: has_many with different 'On' target %v.%v @on=%v Vs %v.%v @on=%v\n",
-								r.Name, f.Name, f.On, foreign.Name, foreignProp.Name, foreignProp.Name)
+				if strings.Index(f.HasMany, ".") < 1 {
+					log.Printf("jedi: %v.%v must target a reverse property in @has_many=%q\n",
+						r.Name, f.Name, f.HasMany)
+					// clean the field so it is not generated becasue invalid.
+					f.HasMany = ""
+					continue
+				}
+
+				foreign := findStruct(res, f.HasMany)
+				if foreign == nil {
+					log.Printf("jedi: %v.%v target type not found in @has_many=%q\n", r.Name, f.Name, f.HasMany)
+					// clean the field so it is not generated becasue invalid.
+					f.HasMany = ""
+					continue
+				}
+
+				foreignProp := findProp(res, f.HasMany)
+				if foreignProp == nil {
+					log.Printf("jedi: %v.%v target property not found in @has_many=%q\n", r.Name, f.Name, f.HasMany)
+					// clean the field so it is not generated becasue invalid.
+					f.HasMany = ""
+					continue
+				}
+
+				if foreignProp.HasOne != "" {
+					// looking for many2many relations only
+					continue
+				}
+
+				if foreignProp.HasMany == "" {
+					log.Printf("jedi: %v.%v: is missing a reverse property: @has_many=%q\n",
+						foreign.Name, foreignProp.Name,
+						r.Name+"."+f.Name,
+					)
+					// clean the field so it is not generated becasue invalid.
+					f.HasMany = ""
+					continue
+				}
+
+				IsAutoGoType := foreignProp.On == "" && f.On == ""
+				if !IsAutoGoType && f.On != foreignProp.On {
+					log.Printf("jedi: %v.%v(@has_many=%q @on=%q) / %v.%v(@has_many=%q @on=%q): values must match\n",
+						r.Name, f.Name, f.HasMany, f.On,
+						foreign.Name, foreignProp.Name, foreignProp.HasMany, foreignProp.On)
+				}
+
+				gType := model.HasMany2ManyGoTypeName(r, foreign, f, foreignProp)
+				if _, ok := todos[gType]; ok == false {
+					if IsAutoGoType {
+						todos[gType] = &model.Struct{
+							SQLName:      model.HasMany2ManyTableName(r, foreign, f, foreignProp),
+							Name:         gType,
+							IsAutoGoType: IsAutoGoType,
 						}
-
-						gType := model.HasMany2ManyGoTypeName(r, foreign, f, foreignProp)
-						if _, ok := todos[gType]; ok == false {
-							if IsAutoGoType {
-								todos[gType] = &model.Struct{
-									SQLName:      model.HasMany2ManyTableName(r, foreign, f, foreignProp),
-									Name:         gType,
-									IsAutoGoType: IsAutoGoType,
-								}
-								hasManyAddColumns(todos[gType], r, foreign, f, foreignProp)
-							}
-						}
-					} else if foreignProp.HasOne == "" {
-						log.Printf("jedi: remote target %v.%v is missing a reverse has_many property to %v.%v such as @has_many=%v\n",
-							foreign.Name, foreignProp.Name, r.Name, f.Name, f.HasMany)
-
+						hasManyAddColumns(todos[gType], r, foreign, f, foreignProp)
 					}
 				}
 			}
@@ -214,7 +239,7 @@ func itemGoType(s string) string {
 
 func hasManyAddColumns(join, left, right *model.Struct, leftProp, rightProp *model.Field) {
 	for _, r := range right.Pks() {
-		gType := itemGoType(rightProp.GoType)
+		gType := itemGoType(right.Name)
 		sName := fmt.Sprintf("%v_%v", strings.ToLower(gType), strings.ToLower(r.Name))
 		gName := fmt.Sprintf("%v%v", gType, r.Name)
 		join.Fields = append(join.Fields, &model.Field{
@@ -226,7 +251,7 @@ func hasManyAddColumns(join, left, right *model.Struct, leftProp, rightProp *mod
 		})
 	}
 	for _, l := range left.Pks() {
-		gType := itemGoType(leftProp.GoType)
+		gType := itemGoType(left.Name)
 		sName := fmt.Sprintf("%v_%v", strings.ToLower(gType), strings.ToLower(l.Name))
 		gName := fmt.Sprintf("%v%v", gType, l.Name)
 		join.Fields = append(join.Fields, &model.Field{
@@ -271,6 +296,8 @@ func findProp(all []*model.Struct, n string) *model.Field {
 }
 
 var trueString = "true"
+var byteString = "byte"
+var uint8String = "uint8"
 
 func parseStructTypeSpec(ts *ast.TypeSpec, str *ast.StructType) (*model.Struct, error) {
 	res := &model.Struct{
@@ -381,8 +408,8 @@ func strGoItemType(x ast.Expr) string {
 		return strGoItemType(t.X) + "." + t.Sel.String()
 	case *ast.Ident:
 		s := t.String()
-		if s == "byte" {
-			return "uint8"
+		if s == byteString {
+			return uint8String
 		}
 		return s
 	case *ast.ArrayType:
@@ -403,8 +430,8 @@ func strGoType(x ast.Expr) string {
 		return strGoType(t.X) + "." + t.Sel.String()
 	case *ast.Ident:
 		s := t.String()
-		if s == "byte" {
-			return "uint8"
+		if s == byteString {
+			return uint8String
 		}
 		return s
 	case *ast.ArrayType:
@@ -428,7 +455,7 @@ func strSQLType(x ast.Expr) string {
 		switch s {
 		case "int64", "int32", "int16", "int8", "int":
 			return integerSQLString
-		case "uint64", "uint32", "uint16", "uint8", "byte", "uint":
+		case "uint64", "uint32", "uint16", uint8String, byteString, "uint":
 			return integerSQLString
 		case "bool":
 			return integerSQLString

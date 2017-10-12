@@ -29,11 +29,23 @@ func init() {
 
 		JTextPkSetup,
 
+		JHasOneTextPkSetup,
+
+		JHasManyTextPkSetup,
+
 		JCompositePkSetup,
+
+		JHasOneCompositePkSetup,
+
+		JHasManyCompositePkSetup,
 
 		JDateTypeSetup,
 
 		JSampleViewSetup,
+
+		JHasManyTextPkrelatedsToTextPkrelatedsSetup,
+
+		JCompositePkrelatedsToHasManyCompositePkrelatedsSetup,
 	)
 }
 
@@ -541,9 +553,11 @@ func (c jSampleQuerier) Update(items ...*Sample) (sql.Result, error) {
 
 		res, err = query.Exec()
 
-		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{UpdateBuilder: query}
-			err = runtime.NewNoRowsAffected(x.String())
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
 		}
 
 	}
@@ -1023,9 +1037,11 @@ func (c jBasicPKQuerier) Update(items ...*BasicPK) (sql.Result, error) {
 
 		res, err = query.Exec()
 
-		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{UpdateBuilder: query}
-			err = runtime.NewNoRowsAffected(x.String())
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
 		}
 
 	}
@@ -1866,9 +1882,11 @@ func (c jBasicTypesQuerier) Update(items ...*BasicTypes) (sql.Result, error) {
 
 		res, err = query.Exec()
 
-		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{UpdateBuilder: query}
-			err = runtime.NewNoRowsAffected(x.String())
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
 		}
 
 	}
@@ -1992,6 +2010,10 @@ type jTextPkModel struct {
 	Name builder.ValuePropertyMeta
 
 	Description builder.ValuePropertyMeta
+
+	HasManyHasOneTextPk builder.RelPropertyMeta
+
+	Relateds builder.RelPropertyMeta
 }
 
 // Eq provided items.
@@ -2026,6 +2048,10 @@ func (j jTextPkModel) As(as string) jTextPkModel {
 
 	j.Description.TableAlias = as
 
+	// j.HasManyHasOneTextPk.TableAlias = as
+
+	// j.Relateds.TableAlias = as
+
 	return j
 }
 
@@ -2049,6 +2075,10 @@ func (j jTextPkModel) Properties() map[string]builder.MetaProvider {
 	ret["Name"] = j.Name
 
 	ret["Description"] = j.Description
+
+	ret["HasManyHasOneTextPk"] = j.HasManyHasOneTextPk
+
+	ret["Relateds"] = j.Relateds
 
 	return ret
 }
@@ -2084,6 +2114,16 @@ var JTextPkModel = jTextPkModel{
 		`description`, `TEXT`,
 		`Description`, `string`,
 		false, false,
+	),
+
+	HasManyHasOneTextPk: builder.NewRelMeta(
+		`hasManyHasOneTextPk`, `[]*HasOneTextPk`,
+		``, `HasOneTextPk.related`, ``,
+	),
+
+	Relateds: builder.NewRelMeta(
+		`relateds`, `[]*HasManyTextPk`,
+		``, `HasManyTextPk.relateds`, ``,
 	),
 }
 
@@ -2290,6 +2330,14 @@ func (c jTextPkQuerier) Insert(items ...*TextPk) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
+		if runtime.Runs(drivers.Mysql) {
+
+			if len(data.Name) > 255 {
+				return nil, fmt.Errorf("Name: PRIMARY KEY length exceeded max=255, got=%v", len(data.Name))
+			}
+
+		}
+
 		query := c.db.InsertInto(JTextPkModel.Table()).Columns(
 
 			`name`,
@@ -2332,9 +2380,11 @@ func (c jTextPkQuerier) Update(items ...*TextPk) (sql.Result, error) {
 
 		res, err = query.Exec()
 
-		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{UpdateBuilder: query}
-			err = runtime.NewNoRowsAffected(x.String())
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
 		}
 
 	}
@@ -2380,6 +2430,1814 @@ func (c jTextPkQuerier) Find(Name string) (*TextPk, error) {
 		JTextPkModel.Name.Eq(Name),
 	).Read()
 }
+
+// Relateds returns a query builder to select Relateds linked to this TextPk
+func (g *TextPk) Relateds(db dbr.SessionRunner,
+	AsHasManyTextPk, AsHasManyTextPkrelatedsToTextPkrelateds, AsTextPk string,
+) *jHasManyTextPkSelectBuilder {
+
+	leftTable := JHasManyTextPkModel.Table()
+	var query *jHasManyTextPkSelectBuilder
+	if AsHasManyTextPk != "" {
+		leftTable = AsHasManyTextPk
+		query = JHasManyTextPk(db).As(AsHasManyTextPk).Select(AsHasManyTextPk + ".*")
+	} else {
+		query = JHasManyTextPk(db).Select(leftTable + ".*")
+	}
+
+	midTable := JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()
+	{
+		on := ""
+		if AsHasManyTextPkrelatedsToTextPkrelateds != "" {
+			midTable = AsHasManyTextPkrelatedsToTextPkrelateds
+		}
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "hasmanytextpk_id",
+			leftTable, "id",
+		)
+
+		if AsHasManyTextPkrelatedsToTextPkrelateds == "" {
+			query = query.Join(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()).As(AsHasManyTextPkrelatedsToTextPkrelateds), on)
+		}
+	}
+
+	rightTable := JTextPkModel.Table()
+	{
+		on := ""
+		if AsTextPk != "" {
+			rightTable = AsTextPk
+		}
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "textpk_name",
+			rightTable, "name",
+		)
+
+		if AsTextPk == "" {
+			query = query.Join(dbr.I(JTextPkModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JTextPkModel.Table()).As(AsTextPk), on)
+		}
+	}
+
+	{
+		m := JTextPkModel
+		if AsTextPk != "" {
+			m = m.As(AsTextPk)
+		}
+		query = query.Where(
+
+			m.Name.Eq(g.Name),
+		)
+	}
+
+	return query
+}
+
+//LinkWithRelateds writes new links with TextPk.
+func (g *TextPk) LinkWithRelateds(db dbr.SessionRunner, items ...*HasManyTextPk) (sql.Result, error) {
+	toInsert := []*HasManyTextPkrelatedsToTextPkrelateds{}
+	for _, item := range items {
+		toInsert = append(toInsert, &HasManyTextPkrelatedsToTextPkrelateds{
+
+			HasManyTextPkID: item.ID,
+
+			TextPkName: g.Name,
+		})
+	}
+	return JHasManyTextPkrelatedsToTextPkrelateds(db).Insert(toInsert...)
+}
+
+//UnlinkWithRelateds deletes given existing links with TextPk.
+func (g *TextPk) UnlinkWithRelateds(db dbr.SessionRunner, items ...*HasManyTextPk) (sql.Result, error) {
+	toDelete := []*HasManyTextPkrelatedsToTextPkrelateds{}
+	for _, item := range items {
+		toDelete = append(toDelete, &HasManyTextPkrelatedsToTextPkrelateds{
+
+			HasManyTextPkID: item.ID,
+
+			TextPkName: g.Name,
+		})
+	}
+	return JHasManyTextPkrelatedsToTextPkrelateds(db).DeleteAll(toDelete...)
+}
+
+//UnlinkAllRelateds deletes all existing links with TextPk.
+func (g *TextPk) UnlinkAllRelateds(db dbr.SessionRunner) (sql.Result, error) {
+	return JHasManyTextPkrelatedsToTextPkrelateds(db).Delete().Where(
+
+		JHasManyTextPkrelatedsToTextPkrelatedsModel.TextPkName.Eq(g.Name),
+	).Exec()
+}
+
+//SetRelateds replaces existing links with TextPk.
+func (g *TextPk) SetRelateds(db dbr.SessionRunner, items ...*HasManyTextPk) (sql.Result, error) {
+	if res, err := g.UnlinkAllRelateds(db); err != nil {
+		return res, err
+	}
+	return g.LinkWithRelateds(db, items...)
+}
+
+// JoinRelateds adds a JOIN to TextPk.Relateds
+func (c *jTextPkSelectBuilder) JoinRelateds(
+	AsHasManyTextPkrelatedsToTextPkrelateds, AsHasManyTextPk string,
+) *jTextPkSelectBuilder {
+
+	query := c
+
+	leftTable := JTextPkModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()
+	if AsHasManyTextPkrelatedsToTextPkrelateds != "" {
+		midTable = AsHasManyTextPkrelatedsToTextPkrelateds
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "textpk_name",
+			leftTable, "name",
+		)
+
+		if AsHasManyTextPkrelatedsToTextPkrelateds == "" {
+			query = query.Join(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()).As(AsHasManyTextPkrelatedsToTextPkrelateds), on)
+		}
+	}
+
+	{
+		rightTable := JHasManyTextPkModel.Table()
+		if AsHasManyTextPk != "" {
+			rightTable = AsHasManyTextPk
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "hasmanytextpk_id",
+			rightTable, "id",
+		)
+
+		if AsHasManyTextPk == "" {
+			query = query.Join(dbr.I(JHasManyTextPkModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JHasManyTextPkModel.Table()).As(AsHasManyTextPk), on)
+		}
+	}
+
+	return query
+}
+
+// LeftJoinRelateds adds a LEFT JOIN to TextPk.Relateds
+func (c *jTextPkSelectBuilder) LeftJoinRelateds(
+	AsHasManyTextPkrelatedsToTextPkrelateds, AsHasManyTextPk string,
+) *jTextPkSelectBuilder {
+
+	query := c
+
+	leftTable := JTextPkModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()
+	if AsHasManyTextPkrelatedsToTextPkrelateds != "" {
+		midTable = AsHasManyTextPkrelatedsToTextPkrelateds
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "textpk_name",
+			leftTable, "name",
+		)
+
+		if AsHasManyTextPkrelatedsToTextPkrelateds == "" {
+			query = query.LeftJoin(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()), on)
+		} else {
+			query = query.LeftJoin(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()).As(AsHasManyTextPkrelatedsToTextPkrelateds), on)
+		}
+	}
+
+	{
+		rightTable := JHasManyTextPkModel.Table()
+		if AsHasManyTextPk != "" {
+			rightTable = AsHasManyTextPk
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "hasmanytextpk_id",
+			rightTable, "id",
+		)
+
+		if AsHasManyTextPk == "" {
+			query = query.LeftJoin(dbr.I(JHasManyTextPkModel.Table()), on)
+		} else {
+			query = query.LeftJoin(dbr.I(JHasManyTextPkModel.Table()).As(AsHasManyTextPk), on)
+		}
+	}
+
+	return query
+}
+
+// // RightJoinRelateds adds a RIGHT JOIN to TextPk.Relateds
+// func (c *jTextPkSelectBuilder) RightJoinRelateds(
+// 	AsHasManyTextPkrelatedsToTextPkrelateds, AsHasManyTextPk string,
+// ) *jTextPkSelectBuilder {
+//
+// 	query := c
+//
+// 	leftTable := JTextPkModel.Table()
+// 	if c.as != "" {
+// 		leftTable = c.as
+// 	}
+//
+// 	midTable := JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()
+// 	if AsHasManyTextPkrelatedsToTextPkrelateds != "" {
+// 		midTable = AsHasManyTextPkrelatedsToTextPkrelateds
+// 	}
+//
+// 	{
+// 		on := ""
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "textpk_name",
+// 			leftTable, "name",
+// 			)
+//
+//
+// 		if AsHasManyTextPkrelatedsToTextPkrelateds == "" {
+// 			query = query.RightJoin(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()), on)
+// 		} else {
+// 			query = query.RightJoin(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()).As(AsHasManyTextPkrelatedsToTextPkrelateds), on)
+// 		}
+// 	}
+//
+// 	{
+// 		rightTable := JHasManyTextPkModel.Table()
+// 		if AsHasManyTextPk != "" {
+// 			rightTable = AsHasManyTextPk
+// 		}
+// 		on := ""
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "hasmanytextpk_id",
+// 			rightTable, "id",
+// 			)
+//
+//
+// 		if AsHasManyTextPk == "" {
+// 			query = query.RightJoin(dbr.I(JHasManyTextPkModel.Table()), on)
+// 		} else {
+// 			query = query.RightJoin(dbr.I(JHasManyTextPkModel.Table()).As(AsHasManyTextPk), on)
+// 		}
+// 	}
+//
+// 	return query
+// }
+
+// HasManyHasOneTextPk returns a query builder to select HasManyHasOneTextPk linked to this TextPk
+func (g *TextPk) HasManyHasOneTextPk(db dbr.SessionRunner,
+	AsRelated, AsHasManyHasOneTextPk string,
+) *jHasOneTextPkSelectBuilder {
+
+	var query *jHasOneTextPkSelectBuilder
+
+	leftTable := JHasOneTextPkModel.Table()
+	if AsRelated != "" {
+		leftTable = AsRelated
+		query = JHasOneTextPk(db).As(AsRelated).Select(leftTable + ".*")
+	} else {
+		query = JHasOneTextPk(db).Select(leftTable + ".*")
+	}
+
+	rightTable := JTextPkModel.Table()
+	if AsHasManyHasOneTextPk != "" {
+		rightTable = AsHasManyHasOneTextPk
+	}
+
+	on := ""
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		leftTable, "related_name",
+		rightTable, "name",
+	)
+
+	if AsHasManyHasOneTextPk == "" {
+		return query.Join(dbr.I(JTextPkModel.Table()), on)
+	}
+	return query.Join(dbr.I(JTextPkModel.Table()).As(AsHasManyHasOneTextPk), on)
+}
+
+// JoinHasManyHasOneTextPk adds a JOIN to TextPk.HasManyHasOneTextPk
+func (c *jTextPkSelectBuilder) JoinHasManyHasOneTextPk(
+	AsHasManyHasOneTextPk string,
+) *jTextPkSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JTextPkModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JHasOneTextPkModel.Table())
+	if AsHasManyHasOneTextPk != "" {
+		foreiTable = dialect.QuoteIdent(AsHasManyHasOneTextPk)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("name"),
+		foreiTable, dialect.QuoteIdent("related_name"),
+	)
+
+	if AsHasManyHasOneTextPk == "" {
+		return c.Join(dbr.I(JHasOneTextPkModel.Table()), on)
+	}
+	return c.Join(dbr.I(JHasOneTextPkModel.Table()).As(AsHasManyHasOneTextPk), on)
+}
+
+// LeftJoinHasManyHasOneTextPk adds a LEFT JOIN to TextPk.HasManyHasOneTextPk
+func (c *jTextPkSelectBuilder) LeftJoinHasManyHasOneTextPk(
+	AsHasManyHasOneTextPk string,
+) *jTextPkSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JTextPkModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JHasOneTextPkModel.Table())
+	if AsHasManyHasOneTextPk != "" {
+		foreiTable = dialect.QuoteIdent(AsHasManyHasOneTextPk)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("name"),
+		foreiTable, dialect.QuoteIdent("related_name"),
+	)
+
+	if AsHasManyHasOneTextPk == "" {
+		return c.LeftJoin(dbr.I(JHasOneTextPkModel.Table()), on)
+	}
+	return c.LeftJoin(dbr.I(JHasOneTextPkModel.Table()).As(AsHasManyHasOneTextPk), on)
+}
+
+// // RightJoinHasManyHasOneTextPk adds a Right JOIN to TextPk.HasManyHasOneTextPk
+// func (c *jTextPkSelectBuilder) RightJoinHasManyHasOneTextPk(
+// 	AsHasManyHasOneTextPk string,
+// ) *jTextPkSelectBuilder {
+// 	dialect := runtime.GetDialect()
+// 	on := ""
+// 	localTable := dialect.QuoteIdent(JTextPkModel.Table())
+// 	if c.as != "" {
+// 		localTable = dialect.QuoteIdent(c.as)
+// 	}
+// 	foreiTable := dialect.QuoteIdent(JHasOneTextPkModel.Table())
+// 	if AsHasManyHasOneTextPk != "" {
+// 		foreiTable = dialect.QuoteIdent(AsHasManyHasOneTextPk)
+// 	}
+//
+// 	on += fmt.Sprintf("%v.%v = %v.%v",
+// 		localTable, dialect.QuoteIdent("name"),
+// 		foreiTable, dialect.QuoteIdent("related_name"),
+// 	)
+//
+// 	if AsHasManyHasOneTextPk == "" {
+// 		return c.RightJoin(dbr.I(JHasOneTextPkModel.Table()), on)
+// 	}
+// 	return c.RightJoin(dbr.I(JHasOneTextPkModel.Table()).As(AsHasManyHasOneTextPk), on)
+// }
+
+type jHasOneTextPkSetup struct {
+	Name       string
+	CreateStmt string
+	DropStmt   string
+	isView     bool
+}
+
+//Create applies the create table command to te underlying connection.
+func (c jHasOneTextPkSetup) Create(db *dbr.Connection) error {
+	_, err := db.Exec(c.CreateStmt)
+	return runtime.NewSQLError(err, c.CreateStmt)
+}
+
+//Drop applies the drop table command to te underlying connection.
+func (c jHasOneTextPkSetup) Drop(db *dbr.Connection) error {
+	_, err := db.Exec(c.DropStmt)
+	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jHasOneTextPkSetup) IsView() bool {
+	return c.isView
+}
+
+// JHasOneTextPkSetup helps to create/drop the schema
+func JHasOneTextPkSetup() runtime.Setuper {
+	driver := runtime.GetCurrentDriver()
+
+	var create string
+	var drop string
+
+	if driver == drivers.Sqlite {
+		create = `CREATE TABLE IF NOT EXISTS has_one_text_pk (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+x TEXT,
+related_name TEXT NULL
+
+)`
+	} else if driver == drivers.Mysql {
+		create = `CREATE TABLE IF NOT EXISTS has_one_text_pk (
+id INTEGER NOT NULL AUTO_INCREMENT,
+x TEXT,
+related_name TEXT NULL,
+PRIMARY KEY (id) 
+
+)`
+	} else if driver == drivers.Pgsql {
+		create = `CREATE TABLE IF NOT EXISTS has_one_text_pk (
+id SERIAL PRIMARY KEY,
+x TEXT,
+related_name TEXT NULL
+
+)`
+	}
+
+	if driver == drivers.Sqlite {
+		drop = `DROP TABLE IF EXISTS has_one_text_pk`
+	} else if driver == drivers.Mysql {
+		drop = `DROP TABLE IF EXISTS has_one_text_pk`
+	} else if driver == drivers.Pgsql {
+		drop = `DROP TABLE IF EXISTS has_one_text_pk`
+	}
+
+	return jHasOneTextPkSetup{
+		Name:       `has_one_text_pk`,
+		CreateStmt: create,
+		DropStmt:   drop,
+		isView:     !true,
+	}
+}
+
+// jHasOneTextPkModel provides helper to work with HasOneTextPk data provider
+type jHasOneTextPkModel struct {
+	as string
+
+	ID builder.ValuePropertyMeta
+
+	X builder.ValuePropertyMeta
+
+	RelatedName builder.ValuePropertyMeta
+
+	Related builder.RelPropertyMeta
+}
+
+// Eq provided items.
+func (j jHasOneTextPkModel) Eq(s ...*HasOneTextPk) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHasOneTextPkModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// In provided items.
+func (j jHasOneTextPkModel) In(s ...*HasOneTextPk) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHasOneTextPkModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// As returns a copy with an alias.
+func (j jHasOneTextPkModel) As(as string) jHasOneTextPkModel {
+	j.as = as
+
+	j.ID.TableAlias = as
+
+	j.X.TableAlias = as
+
+	j.RelatedName.TableAlias = as
+
+	// j.Related.TableAlias = as
+
+	return j
+}
+
+// Table returns the sql table name
+func (j jHasOneTextPkModel) Table() string {
+	return "has_one_text_pk"
+}
+
+// Alias returns the current alias
+func (j jHasOneTextPkModel) Alias() string {
+	if j.as == "" {
+		return j.Table()
+	}
+	return j.as
+}
+
+// Properties returns a map of property name => meta
+func (j jHasOneTextPkModel) Properties() map[string]builder.MetaProvider {
+	ret := map[string]builder.MetaProvider{}
+
+	ret["ID"] = j.ID
+
+	ret["X"] = j.X
+
+	ret["RelatedName"] = j.RelatedName
+
+	ret["Related"] = j.Related
+
+	return ret
+}
+
+// Fields returns given sql fields with appropriate aliasing.
+func (j jHasOneTextPkModel) Fields(ins ...string) []string {
+	dialect := runtime.GetDialect()
+	if len(ins) == 0 {
+		ins = append(ins, "*")
+	}
+	for i, in := range ins {
+		if j.as != "" {
+			if in == "*" {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
+			} else {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
+			}
+		}
+	}
+	return ins
+}
+
+// JHasOneTextPkModel provides helper to work with HasOneTextPk data provider
+var JHasOneTextPkModel = jHasOneTextPkModel{
+
+	ID: builder.NewValueMeta(
+		`id`, `INTEGER`,
+		`ID`, `int64`,
+		true, true,
+	),
+
+	X: builder.NewValueMeta(
+		`x`, `TEXT`,
+		`X`, `string`,
+		false, false,
+	),
+
+	RelatedName: builder.NewValueMeta(
+		`related_name`, `TEXT`,
+		`RelatedName`, `*string`,
+		false, false,
+	),
+
+	Related: builder.NewRelMeta(
+		`related`, `*TextPk`,
+		`TextPk`, ``, ``,
+	),
+}
+
+type jHasOneTextPkDeleteBuilder struct {
+	*builder.DeleteBuilder
+}
+
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jHasOneTextPkDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHasOneTextPkDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Where returns a jHasOneTextPkDeleteBuilder instead of builder.DeleteBuilder.
+func (c *jHasOneTextPkDeleteBuilder) Where(query interface{}, value ...interface{}) *jHasOneTextPkDeleteBuilder {
+	c.DeleteBuilder.Where(query, value...)
+	return c
+}
+
+type jHasOneTextPkSelectBuilder struct {
+	as string
+	*builder.SelectBuilder
+}
+
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jHasOneTextPkSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHasOneTextPkSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Read evaluates current select query and load the results into a HasOneTextPk
+func (c *jHasOneTextPkSelectBuilder) Read() (*HasOneTextPk, error) {
+	var one HasOneTextPk
+	err := c.LoadStruct(&one)
+	return &one, err
+}
+
+//ReadAll evaluates current select query and load the results into a slice of HasOneTextPk
+func (c *jHasOneTextPkSelectBuilder) ReadAll() ([]*HasOneTextPk, error) {
+	var all []*HasOneTextPk
+	_, err := c.LoadStructs(&all)
+	return all, err
+}
+
+//Where returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) Where(query interface{}, value ...interface{}) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.Where(query, value...)
+	return c
+}
+
+//GroupBy returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) GroupBy(col ...string) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) Having(query interface{}, value ...interface{}) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) Limit(n uint64) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) Offset(n uint64) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) OrderAsc(col string) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) OrderDesc(col string) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) OrderDir(col string, isAsc bool) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) OrderBy(col string) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Join returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) Join(table, on interface{}) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.Join(table, on)
+	return c
+}
+
+//LeftJoin returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) LeftJoin(table, on interface{}) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.LeftJoin(table, on)
+	return c
+}
+
+//RightJoin returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) RightJoin(table, on interface{}) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.RightJoin(table, on)
+	return c
+}
+
+//FullJoin returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) FullJoin(table, on interface{}) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.FullJoin(table, on)
+	return c
+}
+
+//Distinct returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) Distinct() *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.Distinct()
+	return c
+}
+
+// JHasOneTextPk provides a basic querier
+func JHasOneTextPk(db dbr.SessionRunner) jHasOneTextPkQuerier {
+	return jHasOneTextPkQuerier{
+		db: db,
+	}
+}
+
+type jHasOneTextPkQuerier struct {
+	db dbr.SessionRunner
+	as string
+}
+
+//As set alias prior building.
+func (c jHasOneTextPkQuerier) As(as string) jHasOneTextPkQuerier {
+	c.as = as
+	return c
+}
+
+//Model returns a model with appropriate aliasing.
+func (c jHasOneTextPkQuerier) Model() jHasOneTextPkModel {
+	return JHasOneTextPkModel.As(c.as)
+}
+
+//Select returns a HasOneTextPk Select Builder.
+func (c jHasOneTextPkQuerier) Select(what ...string) *jHasOneTextPkSelectBuilder {
+	m := c.Model()
+	dialect := runtime.GetDialect()
+	from := dialect.QuoteIdent(m.Table())
+	if m.Alias() != "" && m.Alias() != m.Table() {
+		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias() != "" && m.Alias() != m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias + ".*")
+	}
+	return &jHasOneTextPkSelectBuilder{
+		as: c.as,
+		SelectBuilder: &builder.SelectBuilder{
+			SelectBuilder: c.db.Select(what...).From(from),
+		},
+	}
+}
+
+//Where returns a HasOneTextPk Select Builder.
+func (c jHasOneTextPkQuerier) Where(query interface{}, value ...interface{}) *jHasOneTextPkSelectBuilder {
+	return c.Select().Where(query, value...)
+}
+
+//Count returns a HasOneTextPk Select Builder to count given expressions.
+func (c jHasOneTextPkQuerier) Count(what ...string) *jHasOneTextPkSelectBuilder {
+	if len(what) == 0 {
+		what = append(what, "*")
+	}
+	return c.Select("COUNT(" + strings.Join(what, ",") + ")")
+}
+
+// Insert a new HasOneTextPk, if it has autoincrement primary key, the value will be set.
+// It stops on first error.
+func (c jHasOneTextPkQuerier) Insert(items ...*HasOneTextPk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		query := c.db.InsertInto(JHasOneTextPkModel.Table()).Columns(
+
+			`x`,
+
+			`related_name`,
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
+
+			query = query.Returning(
+
+				`id`,
+			)
+
+			var auto0 int64
+
+			err = query.Load(
+
+				&auto0,
+			)
+
+			data.ID = auto0
+
+		} else {
+			res, err = query.Exec()
+
+			if err == nil {
+				id, err2 := res.LastInsertId()
+				if err2 != nil {
+					return res, err2
+				}
+				data.ID = id
+			}
+
+		}
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// InsertBulk inserts multiple items into the database.
+// It does not post update any auto increment field.
+// It builds an insert query of multiple rows and send it on the underlying connection.
+func (c jHasOneTextPkQuerier) InsertBulk(items ...*HasOneTextPk) error {
+	panic("todo")
+}
+
+// Update a HasOneTextPk. It stops on first error.
+func (c jHasOneTextPkQuerier) Update(items ...*HasOneTextPk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		query := c.db.Update(JHasOneTextPkModel.Table())
+
+		query = query.Set(`x`, data.X)
+
+		query = query.Set(`related_name`, data.RelatedName)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
+		}
+
+	}
+	return res, err
+}
+
+// UpdateBulk updates multiple items into the database.
+// It builds an update query of multiple rows and send it on the underlying connection.
+func (c jHasOneTextPkQuerier) UpdateBulk(items ...*HasOneTextPk) error {
+	panic("todo")
+}
+
+//Delete returns a delete builder
+func (c jHasOneTextPkQuerier) Delete() *jHasOneTextPkDeleteBuilder {
+	return &jHasOneTextPkDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHasOneTextPkModel.Table()),
+		},
+	}
+}
+
+//DeleteByPk deletes one HasOneTextPk by its PKs
+func (c jHasOneTextPkQuerier) DeleteByPk(ID int64) error {
+	_, err := c.Delete().Where(
+
+		JHasOneTextPkModel.ID.Eq(ID),
+	).Exec()
+	return err
+}
+
+// DeleteAll given HasOneTextPk
+func (c jHasOneTextPkQuerier) DeleteAll(items ...*HasOneTextPk) (sql.Result, error) {
+	q := c.Delete().Where(
+		JHasOneTextPkModel.In(items...),
+	)
+	return q.Exec()
+}
+
+//Find one HasOneTextPk using its PKs
+func (c jHasOneTextPkQuerier) Find(ID int64) (*HasOneTextPk, error) {
+	return c.Select().Where(
+
+		JHasOneTextPkModel.ID.Eq(ID),
+	).Read()
+}
+
+// JoinRelated adds a JOIN to HasOneTextPk.Related
+func (c *jHasOneTextPkSelectBuilder) JoinRelated(
+	AsRelated string,
+) *jHasOneTextPkSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JHasOneTextPkModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JTextPkModel.Table())
+	if AsRelated != "" {
+		foreiTable = dialect.QuoteIdent(AsRelated)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("related_name"),
+		foreiTable, dialect.QuoteIdent("name"),
+	)
+
+	if AsRelated == "" {
+		return c.Join(dbr.I(JTextPkModel.Table()), on)
+	}
+	return c.Join(dbr.I(JTextPkModel.Table()).As(AsRelated), on)
+}
+
+// LeftJoinRelated adds a LEFT JOIN to HasOneTextPk.Related
+func (c *jHasOneTextPkSelectBuilder) LeftJoinRelated(
+	AsRelated string,
+) *jHasOneTextPkSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := JHasOneTextPkModel.Table()
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JTextPkModel.Table())
+	if AsRelated != "" {
+		foreiTable = dialect.QuoteIdent(AsRelated)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("related_name"),
+		foreiTable, dialect.QuoteIdent("name"),
+	)
+
+	if AsRelated == "" {
+		return c.LeftJoin(dbr.I(JTextPkModel.Table()), on)
+	}
+	return c.LeftJoin(dbr.I(JTextPkModel.Table()).As(AsRelated), on)
+}
+
+// // RightJoinRelated adds a RIGHT JOIN to HasOneTextPk.Related
+// func (c *jHasOneTextPkSelectBuilder) RightJoinRelated(
+// 	AsRelated string,
+// ) *jHasOneTextPkSelectBuilder {
+// 	dialect := runtime.GetDialect()
+// 	on := ""
+// 	localTable := dialect.QuoteIdent(JHasOneTextPkModel.Table())
+// 	if c.as != "" {
+// 		localTable = dialect.QuoteIdent(c.as)
+// 	}
+// 	foreiTable := dialect.QuoteIdent(JTextPkModel.Table())
+// 	if AsRelated != "" {
+// 		foreiTable = dialect.QuoteIdent(AsRelated)
+// 	}
+//
+// 	on += fmt.Sprintf("%v.%v = %v.%v",
+// 		localTable, dialect.QuoteIdent("related_name"),
+// 		foreiTable, dialect.QuoteIdent("name"),
+// 	)
+//
+// 	if AsRelated == "" {
+// 		return c.RightJoin(dbr.I(JTextPkModel.Table()), on)
+// 	}
+// 	return c.RightJoin(dbr.I(JTextPkModel.Table()).As(AsRelated), on)
+// }
+
+// FullJoinRelated adds a FULL JOIN to HasOneTextPk.Related
+func (c *jHasOneTextPkSelectBuilder) FullJoinRelated(
+	AsRelated string,
+) *jHasOneTextPkSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JHasOneTextPkModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JTextPkModel.Table())
+	if AsRelated != "" {
+		foreiTable = dialect.QuoteIdent(AsRelated)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("related_name"),
+		foreiTable, dialect.QuoteIdent("name"),
+	)
+
+	if AsRelated == "" {
+		return c.FullJoin(dbr.I(JTextPkModel.Table()), on)
+	}
+	return c.FullJoin(dbr.I(JTextPkModel.Table()).As(AsRelated), on)
+}
+
+// Related reads associated object
+func (g *HasOneTextPk) Related(db dbr.SessionRunner) (*TextPk, error) {
+	q := JTextPk(db).Select()
+	q = q.Where(
+
+		JTextPkModel.Name.Eq(g.RelatedName),
+	)
+	return q.Read()
+}
+
+// SetRelated copies pk values to this object properties
+func (g *HasOneTextPk) SetRelated(o *TextPk) *HasOneTextPk {
+
+	if o == nil {
+		g.RelatedName = nil
+	} else {
+
+		g.RelatedName = &o.Name
+
+	}
+
+	return g
+}
+
+// UnsetRelated set defaults values to this object properties
+func (g *HasOneTextPk) UnsetRelated() *HasOneTextPk {
+
+	var def0 *string
+
+	g.RelatedName = def0
+
+	g.related = nil
+
+	return g
+}
+
+type jHasManyTextPkSetup struct {
+	Name       string
+	CreateStmt string
+	DropStmt   string
+	isView     bool
+}
+
+//Create applies the create table command to te underlying connection.
+func (c jHasManyTextPkSetup) Create(db *dbr.Connection) error {
+	_, err := db.Exec(c.CreateStmt)
+	return runtime.NewSQLError(err, c.CreateStmt)
+}
+
+//Drop applies the drop table command to te underlying connection.
+func (c jHasManyTextPkSetup) Drop(db *dbr.Connection) error {
+	_, err := db.Exec(c.DropStmt)
+	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jHasManyTextPkSetup) IsView() bool {
+	return c.isView
+}
+
+// JHasManyTextPkSetup helps to create/drop the schema
+func JHasManyTextPkSetup() runtime.Setuper {
+	driver := runtime.GetCurrentDriver()
+
+	var create string
+	var drop string
+
+	if driver == drivers.Sqlite {
+		create = `CREATE TABLE IF NOT EXISTS has_many_text_pk (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+x TEXT
+
+)`
+	} else if driver == drivers.Mysql {
+		create = `CREATE TABLE IF NOT EXISTS has_many_text_pk (
+id INTEGER NOT NULL AUTO_INCREMENT,
+x TEXT,
+PRIMARY KEY (id) 
+
+)`
+	} else if driver == drivers.Pgsql {
+		create = `CREATE TABLE IF NOT EXISTS has_many_text_pk (
+id SERIAL PRIMARY KEY,
+x TEXT
+
+)`
+	}
+
+	if driver == drivers.Sqlite {
+		drop = `DROP TABLE IF EXISTS has_many_text_pk`
+	} else if driver == drivers.Mysql {
+		drop = `DROP TABLE IF EXISTS has_many_text_pk`
+	} else if driver == drivers.Pgsql {
+		drop = `DROP TABLE IF EXISTS has_many_text_pk`
+	}
+
+	return jHasManyTextPkSetup{
+		Name:       `has_many_text_pk`,
+		CreateStmt: create,
+		DropStmt:   drop,
+		isView:     !true,
+	}
+}
+
+// jHasManyTextPkModel provides helper to work with HasManyTextPk data provider
+type jHasManyTextPkModel struct {
+	as string
+
+	ID builder.ValuePropertyMeta
+
+	X builder.ValuePropertyMeta
+
+	Relateds builder.RelPropertyMeta
+}
+
+// Eq provided items.
+func (j jHasManyTextPkModel) Eq(s ...*HasManyTextPk) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHasManyTextPkModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// In provided items.
+func (j jHasManyTextPkModel) In(s ...*HasManyTextPk) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHasManyTextPkModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// As returns a copy with an alias.
+func (j jHasManyTextPkModel) As(as string) jHasManyTextPkModel {
+	j.as = as
+
+	j.ID.TableAlias = as
+
+	j.X.TableAlias = as
+
+	// j.Relateds.TableAlias = as
+
+	return j
+}
+
+// Table returns the sql table name
+func (j jHasManyTextPkModel) Table() string {
+	return "has_many_text_pk"
+}
+
+// Alias returns the current alias
+func (j jHasManyTextPkModel) Alias() string {
+	if j.as == "" {
+		return j.Table()
+	}
+	return j.as
+}
+
+// Properties returns a map of property name => meta
+func (j jHasManyTextPkModel) Properties() map[string]builder.MetaProvider {
+	ret := map[string]builder.MetaProvider{}
+
+	ret["ID"] = j.ID
+
+	ret["X"] = j.X
+
+	ret["Relateds"] = j.Relateds
+
+	return ret
+}
+
+// Fields returns given sql fields with appropriate aliasing.
+func (j jHasManyTextPkModel) Fields(ins ...string) []string {
+	dialect := runtime.GetDialect()
+	if len(ins) == 0 {
+		ins = append(ins, "*")
+	}
+	for i, in := range ins {
+		if j.as != "" {
+			if in == "*" {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
+			} else {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
+			}
+		}
+	}
+	return ins
+}
+
+// JHasManyTextPkModel provides helper to work with HasManyTextPk data provider
+var JHasManyTextPkModel = jHasManyTextPkModel{
+
+	ID: builder.NewValueMeta(
+		`id`, `INTEGER`,
+		`ID`, `int64`,
+		true, true,
+	),
+
+	X: builder.NewValueMeta(
+		`x`, `TEXT`,
+		`X`, `string`,
+		false, false,
+	),
+
+	Relateds: builder.NewRelMeta(
+		`relateds`, `[]*TextPk`,
+		``, `TextPk.relateds`, ``,
+	),
+}
+
+type jHasManyTextPkDeleteBuilder struct {
+	*builder.DeleteBuilder
+}
+
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jHasManyTextPkDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHasManyTextPkDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Where returns a jHasManyTextPkDeleteBuilder instead of builder.DeleteBuilder.
+func (c *jHasManyTextPkDeleteBuilder) Where(query interface{}, value ...interface{}) *jHasManyTextPkDeleteBuilder {
+	c.DeleteBuilder.Where(query, value...)
+	return c
+}
+
+type jHasManyTextPkSelectBuilder struct {
+	as string
+	*builder.SelectBuilder
+}
+
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jHasManyTextPkSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHasManyTextPkSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Read evaluates current select query and load the results into a HasManyTextPk
+func (c *jHasManyTextPkSelectBuilder) Read() (*HasManyTextPk, error) {
+	var one HasManyTextPk
+	err := c.LoadStruct(&one)
+	return &one, err
+}
+
+//ReadAll evaluates current select query and load the results into a slice of HasManyTextPk
+func (c *jHasManyTextPkSelectBuilder) ReadAll() ([]*HasManyTextPk, error) {
+	var all []*HasManyTextPk
+	_, err := c.LoadStructs(&all)
+	return all, err
+}
+
+//Where returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) Where(query interface{}, value ...interface{}) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.Where(query, value...)
+	return c
+}
+
+//GroupBy returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) GroupBy(col ...string) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) Having(query interface{}, value ...interface{}) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) Limit(n uint64) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) Offset(n uint64) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) OrderAsc(col string) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) OrderDesc(col string) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) OrderDir(col string, isAsc bool) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) OrderBy(col string) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Join returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) Join(table, on interface{}) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.Join(table, on)
+	return c
+}
+
+//LeftJoin returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) LeftJoin(table, on interface{}) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.LeftJoin(table, on)
+	return c
+}
+
+//RightJoin returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) RightJoin(table, on interface{}) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.RightJoin(table, on)
+	return c
+}
+
+//FullJoin returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) FullJoin(table, on interface{}) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.FullJoin(table, on)
+	return c
+}
+
+//Distinct returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) Distinct() *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.Distinct()
+	return c
+}
+
+// JHasManyTextPk provides a basic querier
+func JHasManyTextPk(db dbr.SessionRunner) jHasManyTextPkQuerier {
+	return jHasManyTextPkQuerier{
+		db: db,
+	}
+}
+
+type jHasManyTextPkQuerier struct {
+	db dbr.SessionRunner
+	as string
+}
+
+//As set alias prior building.
+func (c jHasManyTextPkQuerier) As(as string) jHasManyTextPkQuerier {
+	c.as = as
+	return c
+}
+
+//Model returns a model with appropriate aliasing.
+func (c jHasManyTextPkQuerier) Model() jHasManyTextPkModel {
+	return JHasManyTextPkModel.As(c.as)
+}
+
+//Select returns a HasManyTextPk Select Builder.
+func (c jHasManyTextPkQuerier) Select(what ...string) *jHasManyTextPkSelectBuilder {
+	m := c.Model()
+	dialect := runtime.GetDialect()
+	from := dialect.QuoteIdent(m.Table())
+	if m.Alias() != "" && m.Alias() != m.Table() {
+		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias() != "" && m.Alias() != m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias + ".*")
+	}
+	return &jHasManyTextPkSelectBuilder{
+		as: c.as,
+		SelectBuilder: &builder.SelectBuilder{
+			SelectBuilder: c.db.Select(what...).From(from),
+		},
+	}
+}
+
+//Where returns a HasManyTextPk Select Builder.
+func (c jHasManyTextPkQuerier) Where(query interface{}, value ...interface{}) *jHasManyTextPkSelectBuilder {
+	return c.Select().Where(query, value...)
+}
+
+//Count returns a HasManyTextPk Select Builder to count given expressions.
+func (c jHasManyTextPkQuerier) Count(what ...string) *jHasManyTextPkSelectBuilder {
+	if len(what) == 0 {
+		what = append(what, "*")
+	}
+	return c.Select("COUNT(" + strings.Join(what, ",") + ")")
+}
+
+// Insert a new HasManyTextPk, if it has autoincrement primary key, the value will be set.
+// It stops on first error.
+func (c jHasManyTextPkQuerier) Insert(items ...*HasManyTextPk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		query := c.db.InsertInto(JHasManyTextPkModel.Table()).Columns(
+
+			`x`,
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
+
+			query = query.Returning(
+
+				`id`,
+			)
+
+			var auto0 int64
+
+			err = query.Load(
+
+				&auto0,
+			)
+
+			data.ID = auto0
+
+		} else {
+			res, err = query.Exec()
+
+			if err == nil {
+				id, err2 := res.LastInsertId()
+				if err2 != nil {
+					return res, err2
+				}
+				data.ID = id
+			}
+
+		}
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// InsertBulk inserts multiple items into the database.
+// It does not post update any auto increment field.
+// It builds an insert query of multiple rows and send it on the underlying connection.
+func (c jHasManyTextPkQuerier) InsertBulk(items ...*HasManyTextPk) error {
+	panic("todo")
+}
+
+// Update a HasManyTextPk. It stops on first error.
+func (c jHasManyTextPkQuerier) Update(items ...*HasManyTextPk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		query := c.db.Update(JHasManyTextPkModel.Table())
+
+		query = query.Set(`x`, data.X)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
+		}
+
+	}
+	return res, err
+}
+
+// UpdateBulk updates multiple items into the database.
+// It builds an update query of multiple rows and send it on the underlying connection.
+func (c jHasManyTextPkQuerier) UpdateBulk(items ...*HasManyTextPk) error {
+	panic("todo")
+}
+
+//Delete returns a delete builder
+func (c jHasManyTextPkQuerier) Delete() *jHasManyTextPkDeleteBuilder {
+	return &jHasManyTextPkDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHasManyTextPkModel.Table()),
+		},
+	}
+}
+
+//DeleteByPk deletes one HasManyTextPk by its PKs
+func (c jHasManyTextPkQuerier) DeleteByPk(ID int64) error {
+	_, err := c.Delete().Where(
+
+		JHasManyTextPkModel.ID.Eq(ID),
+	).Exec()
+	return err
+}
+
+// DeleteAll given HasManyTextPk
+func (c jHasManyTextPkQuerier) DeleteAll(items ...*HasManyTextPk) (sql.Result, error) {
+	q := c.Delete().Where(
+		JHasManyTextPkModel.In(items...),
+	)
+	return q.Exec()
+}
+
+//Find one HasManyTextPk using its PKs
+func (c jHasManyTextPkQuerier) Find(ID int64) (*HasManyTextPk, error) {
+	return c.Select().Where(
+
+		JHasManyTextPkModel.ID.Eq(ID),
+	).Read()
+}
+
+// Relateds returns a query builder to select Relateds linked to this HasManyTextPk
+func (g *HasManyTextPk) Relateds(db dbr.SessionRunner,
+	AsTextPk, AsHasManyTextPkrelatedsToTextPkrelateds, AsHasManyTextPk string,
+) *jTextPkSelectBuilder {
+
+	leftTable := JTextPkModel.Table()
+	var query *jTextPkSelectBuilder
+	if AsTextPk != "" {
+		leftTable = AsTextPk
+		query = JTextPk(db).As(AsTextPk).Select(AsTextPk + ".*")
+	} else {
+		query = JTextPk(db).Select(leftTable + ".*")
+	}
+
+	midTable := JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()
+	{
+		on := ""
+		if AsHasManyTextPkrelatedsToTextPkrelateds != "" {
+			midTable = AsHasManyTextPkrelatedsToTextPkrelateds
+		}
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "textpk_name",
+			leftTable, "name",
+		)
+
+		if AsHasManyTextPkrelatedsToTextPkrelateds == "" {
+			query = query.Join(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()).As(AsHasManyTextPkrelatedsToTextPkrelateds), on)
+		}
+	}
+
+	rightTable := JHasManyTextPkModel.Table()
+	{
+		on := ""
+		if AsHasManyTextPk != "" {
+			rightTable = AsHasManyTextPk
+		}
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "hasmanytextpk_id",
+			rightTable, "id",
+		)
+
+		if AsHasManyTextPk == "" {
+			query = query.Join(dbr.I(JHasManyTextPkModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JHasManyTextPkModel.Table()).As(AsHasManyTextPk), on)
+		}
+	}
+
+	{
+		m := JHasManyTextPkModel
+		if AsHasManyTextPk != "" {
+			m = m.As(AsHasManyTextPk)
+		}
+		query = query.Where(
+
+			m.ID.Eq(g.ID),
+		)
+	}
+
+	return query
+}
+
+//LinkWithRelateds writes new links with HasManyTextPk.
+func (g *HasManyTextPk) LinkWithRelateds(db dbr.SessionRunner, items ...*TextPk) (sql.Result, error) {
+	toInsert := []*HasManyTextPkrelatedsToTextPkrelateds{}
+	for _, item := range items {
+		toInsert = append(toInsert, &HasManyTextPkrelatedsToTextPkrelateds{
+
+			TextPkName: item.Name,
+
+			HasManyTextPkID: g.ID,
+		})
+	}
+	return JHasManyTextPkrelatedsToTextPkrelateds(db).Insert(toInsert...)
+}
+
+//UnlinkWithRelateds deletes given existing links with HasManyTextPk.
+func (g *HasManyTextPk) UnlinkWithRelateds(db dbr.SessionRunner, items ...*TextPk) (sql.Result, error) {
+	toDelete := []*HasManyTextPkrelatedsToTextPkrelateds{}
+	for _, item := range items {
+		toDelete = append(toDelete, &HasManyTextPkrelatedsToTextPkrelateds{
+
+			TextPkName: item.Name,
+
+			HasManyTextPkID: g.ID,
+		})
+	}
+	return JHasManyTextPkrelatedsToTextPkrelateds(db).DeleteAll(toDelete...)
+}
+
+//UnlinkAllRelateds deletes all existing links with HasManyTextPk.
+func (g *HasManyTextPk) UnlinkAllRelateds(db dbr.SessionRunner) (sql.Result, error) {
+	return JHasManyTextPkrelatedsToTextPkrelateds(db).Delete().Where(
+
+		JHasManyTextPkrelatedsToTextPkrelatedsModel.HasManyTextPkID.Eq(g.ID),
+	).Exec()
+}
+
+//SetRelateds replaces existing links with HasManyTextPk.
+func (g *HasManyTextPk) SetRelateds(db dbr.SessionRunner, items ...*TextPk) (sql.Result, error) {
+	if res, err := g.UnlinkAllRelateds(db); err != nil {
+		return res, err
+	}
+	return g.LinkWithRelateds(db, items...)
+}
+
+// JoinRelateds adds a JOIN to HasManyTextPk.Relateds
+func (c *jHasManyTextPkSelectBuilder) JoinRelateds(
+	AsHasManyTextPkrelatedsToTextPkrelateds, AsTextPk string,
+) *jHasManyTextPkSelectBuilder {
+
+	query := c
+
+	leftTable := JHasManyTextPkModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()
+	if AsHasManyTextPkrelatedsToTextPkrelateds != "" {
+		midTable = AsHasManyTextPkrelatedsToTextPkrelateds
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "hasmanytextpk_id",
+			leftTable, "id",
+		)
+
+		if AsHasManyTextPkrelatedsToTextPkrelateds == "" {
+			query = query.Join(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()).As(AsHasManyTextPkrelatedsToTextPkrelateds), on)
+		}
+	}
+
+	{
+		rightTable := JTextPkModel.Table()
+		if AsTextPk != "" {
+			rightTable = AsTextPk
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "textpk_name",
+			rightTable, "name",
+		)
+
+		if AsTextPk == "" {
+			query = query.Join(dbr.I(JTextPkModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JTextPkModel.Table()).As(AsTextPk), on)
+		}
+	}
+
+	return query
+}
+
+// LeftJoinRelateds adds a LEFT JOIN to HasManyTextPk.Relateds
+func (c *jHasManyTextPkSelectBuilder) LeftJoinRelateds(
+	AsHasManyTextPkrelatedsToTextPkrelateds, AsTextPk string,
+) *jHasManyTextPkSelectBuilder {
+
+	query := c
+
+	leftTable := JHasManyTextPkModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()
+	if AsHasManyTextPkrelatedsToTextPkrelateds != "" {
+		midTable = AsHasManyTextPkrelatedsToTextPkrelateds
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "hasmanytextpk_id",
+			leftTable, "id",
+		)
+
+		if AsHasManyTextPkrelatedsToTextPkrelateds == "" {
+			query = query.LeftJoin(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()), on)
+		} else {
+			query = query.LeftJoin(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()).As(AsHasManyTextPkrelatedsToTextPkrelateds), on)
+		}
+	}
+
+	{
+		rightTable := JTextPkModel.Table()
+		if AsTextPk != "" {
+			rightTable = AsTextPk
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "textpk_name",
+			rightTable, "name",
+		)
+
+		if AsTextPk == "" {
+			query = query.LeftJoin(dbr.I(JTextPkModel.Table()), on)
+		} else {
+			query = query.LeftJoin(dbr.I(JTextPkModel.Table()).As(AsTextPk), on)
+		}
+	}
+
+	return query
+}
+
+// // RightJoinRelateds adds a RIGHT JOIN to HasManyTextPk.Relateds
+// func (c *jHasManyTextPkSelectBuilder) RightJoinRelateds(
+// 	AsHasManyTextPkrelatedsToTextPkrelateds, AsTextPk string,
+// ) *jHasManyTextPkSelectBuilder {
+//
+// 	query := c
+//
+// 	leftTable := JHasManyTextPkModel.Table()
+// 	if c.as != "" {
+// 		leftTable = c.as
+// 	}
+//
+// 	midTable := JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()
+// 	if AsHasManyTextPkrelatedsToTextPkrelateds != "" {
+// 		midTable = AsHasManyTextPkrelatedsToTextPkrelateds
+// 	}
+//
+// 	{
+// 		on := ""
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "hasmanytextpk_id",
+// 			leftTable, "id",
+// 			)
+//
+//
+// 		if AsHasManyTextPkrelatedsToTextPkrelateds == "" {
+// 			query = query.RightJoin(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()), on)
+// 		} else {
+// 			query = query.RightJoin(dbr.I(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()).As(AsHasManyTextPkrelatedsToTextPkrelateds), on)
+// 		}
+// 	}
+//
+// 	{
+// 		rightTable := JTextPkModel.Table()
+// 		if AsTextPk != "" {
+// 			rightTable = AsTextPk
+// 		}
+// 		on := ""
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "textpk_name",
+// 			rightTable, "name",
+// 			)
+//
+//
+// 		if AsTextPk == "" {
+// 			query = query.RightJoin(dbr.I(JTextPkModel.Table()), on)
+// 		} else {
+// 			query = query.RightJoin(dbr.I(JTextPkModel.Table()).As(AsTextPk), on)
+// 		}
+// 	}
+//
+// 	return query
+// }
 
 type jCompositePkSetup struct {
 	Name       string
@@ -2463,6 +4321,10 @@ type jCompositePkModel struct {
 	K builder.ValuePropertyMeta
 
 	Description builder.ValuePropertyMeta
+
+	HasManyHasOneCompositePk builder.RelPropertyMeta
+
+	Relateds builder.RelPropertyMeta
 }
 
 // Eq provided items.
@@ -2503,6 +4365,10 @@ func (j jCompositePkModel) As(as string) jCompositePkModel {
 
 	j.Description.TableAlias = as
 
+	// j.HasManyHasOneCompositePk.TableAlias = as
+
+	// j.Relateds.TableAlias = as
+
 	return j
 }
 
@@ -2528,6 +4394,10 @@ func (j jCompositePkModel) Properties() map[string]builder.MetaProvider {
 	ret["K"] = j.K
 
 	ret["Description"] = j.Description
+
+	ret["HasManyHasOneCompositePk"] = j.HasManyHasOneCompositePk
+
+	ret["Relateds"] = j.Relateds
 
 	return ret
 }
@@ -2569,6 +4439,16 @@ var JCompositePkModel = jCompositePkModel{
 		`description`, `TEXT`,
 		`Description`, `string`,
 		false, false,
+	),
+
+	HasManyHasOneCompositePk: builder.NewRelMeta(
+		`hasManyHasOneCompositePk`, `[]*HasOneCompositePk`,
+		``, `HasOneCompositePk.related`, ``,
+	),
+
+	Relateds: builder.NewRelMeta(
+		`relateds`, `[]*HasManyCompositePk`,
+		``, `HasManyCompositePk.relateds`, ``,
 	),
 }
 
@@ -2775,6 +4655,22 @@ func (c jCompositePkQuerier) Insert(items ...*CompositePk) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
+		if runtime.Runs(drivers.Mysql) {
+
+			if len(data.P) > 255 {
+				return nil, fmt.Errorf("P: PRIMARY KEY length exceeded max=255, got=%v", len(data.P))
+			}
+
+		}
+
+		if runtime.Runs(drivers.Mysql) {
+
+			if len(data.K) > 255 {
+				return nil, fmt.Errorf("K: PRIMARY KEY length exceeded max=255, got=%v", len(data.K))
+			}
+
+		}
+
 		query := c.db.InsertInto(JCompositePkModel.Table()).Columns(
 
 			`p`,
@@ -2821,9 +4717,11 @@ func (c jCompositePkQuerier) Update(items ...*CompositePk) (sql.Result, error) {
 
 		res, err = query.Exec()
 
-		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{UpdateBuilder: query}
-			err = runtime.NewNoRowsAffected(x.String())
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
 		}
 
 	}
@@ -2873,6 +4771,1939 @@ func (c jCompositePkQuerier) Find(P string, K string) (*CompositePk, error) {
 		JCompositePkModel.K.Eq(K),
 	).Read()
 }
+
+// Relateds returns a query builder to select Relateds linked to this CompositePk
+func (g *CompositePk) Relateds(db dbr.SessionRunner,
+	AsHasManyCompositePk, AsCompositePkrelatedsToHasManyCompositePkrelateds, AsCompositePk string,
+) *jHasManyCompositePkSelectBuilder {
+
+	leftTable := JHasManyCompositePkModel.Table()
+	var query *jHasManyCompositePkSelectBuilder
+	if AsHasManyCompositePk != "" {
+		leftTable = AsHasManyCompositePk
+		query = JHasManyCompositePk(db).As(AsHasManyCompositePk).Select(AsHasManyCompositePk + ".*")
+	} else {
+		query = JHasManyCompositePk(db).Select(leftTable + ".*")
+	}
+
+	midTable := JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()
+	{
+		on := ""
+		if AsCompositePkrelatedsToHasManyCompositePkrelateds != "" {
+			midTable = AsCompositePkrelatedsToHasManyCompositePkrelateds
+		}
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "hasmanycompositepk_id",
+			leftTable, "id",
+		)
+
+		if AsCompositePkrelatedsToHasManyCompositePkrelateds == "" {
+			query = query.Join(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()).As(AsCompositePkrelatedsToHasManyCompositePkrelateds), on)
+		}
+	}
+
+	rightTable := JCompositePkModel.Table()
+	{
+		on := ""
+		if AsCompositePk != "" {
+			rightTable = AsCompositePk
+		}
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "compositepk_p",
+			rightTable, "p",
+		)
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "compositepk_k",
+			rightTable, "k",
+		)
+
+		if AsCompositePk == "" {
+			query = query.Join(dbr.I(JCompositePkModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JCompositePkModel.Table()).As(AsCompositePk), on)
+		}
+	}
+
+	{
+		m := JCompositePkModel
+		if AsCompositePk != "" {
+			m = m.As(AsCompositePk)
+		}
+		query = query.Where(
+
+			m.P.Eq(g.P),
+
+			m.K.Eq(g.K),
+		)
+	}
+
+	return query
+}
+
+//LinkWithRelateds writes new links with CompositePk.
+func (g *CompositePk) LinkWithRelateds(db dbr.SessionRunner, items ...*HasManyCompositePk) (sql.Result, error) {
+	toInsert := []*CompositePkrelatedsToHasManyCompositePkrelateds{}
+	for _, item := range items {
+		toInsert = append(toInsert, &CompositePkrelatedsToHasManyCompositePkrelateds{
+
+			HasManyCompositePkID: item.ID,
+
+			CompositePkP: g.P,
+
+			CompositePkK: g.K,
+		})
+	}
+	return JCompositePkrelatedsToHasManyCompositePkrelateds(db).Insert(toInsert...)
+}
+
+//UnlinkWithRelateds deletes given existing links with CompositePk.
+func (g *CompositePk) UnlinkWithRelateds(db dbr.SessionRunner, items ...*HasManyCompositePk) (sql.Result, error) {
+	toDelete := []*CompositePkrelatedsToHasManyCompositePkrelateds{}
+	for _, item := range items {
+		toDelete = append(toDelete, &CompositePkrelatedsToHasManyCompositePkrelateds{
+
+			HasManyCompositePkID: item.ID,
+
+			CompositePkP: g.P,
+
+			CompositePkK: g.K,
+		})
+	}
+	return JCompositePkrelatedsToHasManyCompositePkrelateds(db).DeleteAll(toDelete...)
+}
+
+//UnlinkAllRelateds deletes all existing links with CompositePk.
+func (g *CompositePk) UnlinkAllRelateds(db dbr.SessionRunner) (sql.Result, error) {
+	return JCompositePkrelatedsToHasManyCompositePkrelateds(db).Delete().Where(
+
+		JCompositePkrelatedsToHasManyCompositePkrelatedsModel.CompositePkP.Eq(g.P),
+
+		JCompositePkrelatedsToHasManyCompositePkrelatedsModel.CompositePkK.Eq(g.K),
+	).Exec()
+}
+
+//SetRelateds replaces existing links with CompositePk.
+func (g *CompositePk) SetRelateds(db dbr.SessionRunner, items ...*HasManyCompositePk) (sql.Result, error) {
+	if res, err := g.UnlinkAllRelateds(db); err != nil {
+		return res, err
+	}
+	return g.LinkWithRelateds(db, items...)
+}
+
+// JoinRelateds adds a JOIN to CompositePk.Relateds
+func (c *jCompositePkSelectBuilder) JoinRelateds(
+	AsCompositePkrelatedsToHasManyCompositePkrelateds, AsHasManyCompositePk string,
+) *jCompositePkSelectBuilder {
+
+	query := c
+
+	leftTable := JCompositePkModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()
+	if AsCompositePkrelatedsToHasManyCompositePkrelateds != "" {
+		midTable = AsCompositePkrelatedsToHasManyCompositePkrelateds
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "compositepk_p",
+			leftTable, "p",
+		)
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "compositepk_k",
+			leftTable, "k",
+		)
+
+		if AsCompositePkrelatedsToHasManyCompositePkrelateds == "" {
+			query = query.Join(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()).As(AsCompositePkrelatedsToHasManyCompositePkrelateds), on)
+		}
+	}
+
+	{
+		rightTable := JHasManyCompositePkModel.Table()
+		if AsHasManyCompositePk != "" {
+			rightTable = AsHasManyCompositePk
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "hasmanycompositepk_id",
+			rightTable, "id",
+		)
+
+		if AsHasManyCompositePk == "" {
+			query = query.Join(dbr.I(JHasManyCompositePkModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JHasManyCompositePkModel.Table()).As(AsHasManyCompositePk), on)
+		}
+	}
+
+	return query
+}
+
+// LeftJoinRelateds adds a LEFT JOIN to CompositePk.Relateds
+func (c *jCompositePkSelectBuilder) LeftJoinRelateds(
+	AsCompositePkrelatedsToHasManyCompositePkrelateds, AsHasManyCompositePk string,
+) *jCompositePkSelectBuilder {
+
+	query := c
+
+	leftTable := JCompositePkModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()
+	if AsCompositePkrelatedsToHasManyCompositePkrelateds != "" {
+		midTable = AsCompositePkrelatedsToHasManyCompositePkrelateds
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "compositepk_p",
+			leftTable, "p",
+		)
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "compositepk_k",
+			leftTable, "k",
+		)
+
+		if AsCompositePkrelatedsToHasManyCompositePkrelateds == "" {
+			query = query.LeftJoin(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()), on)
+		} else {
+			query = query.LeftJoin(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()).As(AsCompositePkrelatedsToHasManyCompositePkrelateds), on)
+		}
+	}
+
+	{
+		rightTable := JHasManyCompositePkModel.Table()
+		if AsHasManyCompositePk != "" {
+			rightTable = AsHasManyCompositePk
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "hasmanycompositepk_id",
+			rightTable, "id",
+		)
+
+		if AsHasManyCompositePk == "" {
+			query = query.LeftJoin(dbr.I(JHasManyCompositePkModel.Table()), on)
+		} else {
+			query = query.LeftJoin(dbr.I(JHasManyCompositePkModel.Table()).As(AsHasManyCompositePk), on)
+		}
+	}
+
+	return query
+}
+
+// // RightJoinRelateds adds a RIGHT JOIN to CompositePk.Relateds
+// func (c *jCompositePkSelectBuilder) RightJoinRelateds(
+// 	AsCompositePkrelatedsToHasManyCompositePkrelateds, AsHasManyCompositePk string,
+// ) *jCompositePkSelectBuilder {
+//
+// 	query := c
+//
+// 	leftTable := JCompositePkModel.Table()
+// 	if c.as != "" {
+// 		leftTable = c.as
+// 	}
+//
+// 	midTable := JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()
+// 	if AsCompositePkrelatedsToHasManyCompositePkrelateds != "" {
+// 		midTable = AsCompositePkrelatedsToHasManyCompositePkrelateds
+// 	}
+//
+// 	{
+// 		on := ""
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "compositepk_p",
+// 			leftTable, "p",
+// 			)
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "compositepk_k",
+// 			leftTable, "k",
+// 			)
+//
+//
+// 		if AsCompositePkrelatedsToHasManyCompositePkrelateds == "" {
+// 			query = query.RightJoin(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()), on)
+// 		} else {
+// 			query = query.RightJoin(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()).As(AsCompositePkrelatedsToHasManyCompositePkrelateds), on)
+// 		}
+// 	}
+//
+// 	{
+// 		rightTable := JHasManyCompositePkModel.Table()
+// 		if AsHasManyCompositePk != "" {
+// 			rightTable = AsHasManyCompositePk
+// 		}
+// 		on := ""
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "hasmanycompositepk_id",
+// 			rightTable, "id",
+// 			)
+//
+//
+// 		if AsHasManyCompositePk == "" {
+// 			query = query.RightJoin(dbr.I(JHasManyCompositePkModel.Table()), on)
+// 		} else {
+// 			query = query.RightJoin(dbr.I(JHasManyCompositePkModel.Table()).As(AsHasManyCompositePk), on)
+// 		}
+// 	}
+//
+// 	return query
+// }
+
+// HasManyHasOneCompositePk returns a query builder to select HasManyHasOneCompositePk linked to this CompositePk
+func (g *CompositePk) HasManyHasOneCompositePk(db dbr.SessionRunner,
+	AsRelated, AsHasManyHasOneCompositePk string,
+) *jHasOneCompositePkSelectBuilder {
+
+	var query *jHasOneCompositePkSelectBuilder
+
+	leftTable := JHasOneCompositePkModel.Table()
+	if AsRelated != "" {
+		leftTable = AsRelated
+		query = JHasOneCompositePk(db).As(AsRelated).Select(leftTable + ".*")
+	} else {
+		query = JHasOneCompositePk(db).Select(leftTable + ".*")
+	}
+
+	rightTable := JCompositePkModel.Table()
+	if AsHasManyHasOneCompositePk != "" {
+		rightTable = AsHasManyHasOneCompositePk
+	}
+
+	on := ""
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		leftTable, "related_p",
+		rightTable, "p",
+	)
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		leftTable, "related_k",
+		rightTable, "k",
+	)
+
+	if AsHasManyHasOneCompositePk == "" {
+		return query.Join(dbr.I(JCompositePkModel.Table()), on)
+	}
+	return query.Join(dbr.I(JCompositePkModel.Table()).As(AsHasManyHasOneCompositePk), on)
+}
+
+// JoinHasManyHasOneCompositePk adds a JOIN to CompositePk.HasManyHasOneCompositePk
+func (c *jCompositePkSelectBuilder) JoinHasManyHasOneCompositePk(
+	AsHasManyHasOneCompositePk string,
+) *jCompositePkSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JCompositePkModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JHasOneCompositePkModel.Table())
+	if AsHasManyHasOneCompositePk != "" {
+		foreiTable = dialect.QuoteIdent(AsHasManyHasOneCompositePk)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("p"),
+		foreiTable, dialect.QuoteIdent("related_p"),
+	)
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("k"),
+		foreiTable, dialect.QuoteIdent("related_k"),
+	)
+
+	if AsHasManyHasOneCompositePk == "" {
+		return c.Join(dbr.I(JHasOneCompositePkModel.Table()), on)
+	}
+	return c.Join(dbr.I(JHasOneCompositePkModel.Table()).As(AsHasManyHasOneCompositePk), on)
+}
+
+// LeftJoinHasManyHasOneCompositePk adds a LEFT JOIN to CompositePk.HasManyHasOneCompositePk
+func (c *jCompositePkSelectBuilder) LeftJoinHasManyHasOneCompositePk(
+	AsHasManyHasOneCompositePk string,
+) *jCompositePkSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JCompositePkModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JHasOneCompositePkModel.Table())
+	if AsHasManyHasOneCompositePk != "" {
+		foreiTable = dialect.QuoteIdent(AsHasManyHasOneCompositePk)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("p"),
+		foreiTable, dialect.QuoteIdent("related_p"),
+	)
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("k"),
+		foreiTable, dialect.QuoteIdent("related_k"),
+	)
+
+	if AsHasManyHasOneCompositePk == "" {
+		return c.LeftJoin(dbr.I(JHasOneCompositePkModel.Table()), on)
+	}
+	return c.LeftJoin(dbr.I(JHasOneCompositePkModel.Table()).As(AsHasManyHasOneCompositePk), on)
+}
+
+// // RightJoinHasManyHasOneCompositePk adds a Right JOIN to CompositePk.HasManyHasOneCompositePk
+// func (c *jCompositePkSelectBuilder) RightJoinHasManyHasOneCompositePk(
+// 	AsHasManyHasOneCompositePk string,
+// ) *jCompositePkSelectBuilder {
+// 	dialect := runtime.GetDialect()
+// 	on := ""
+// 	localTable := dialect.QuoteIdent(JCompositePkModel.Table())
+// 	if c.as != "" {
+// 		localTable = dialect.QuoteIdent(c.as)
+// 	}
+// 	foreiTable := dialect.QuoteIdent(JHasOneCompositePkModel.Table())
+// 	if AsHasManyHasOneCompositePk != "" {
+// 		foreiTable = dialect.QuoteIdent(AsHasManyHasOneCompositePk)
+// 	}
+//
+// 	on += fmt.Sprintf("%v.%v = %v.%v",
+// 		localTable, dialect.QuoteIdent("p"),
+// 		foreiTable, dialect.QuoteIdent("related_p"),
+// 	)
+//
+// 	on += fmt.Sprintf("%v.%v = %v.%v",
+// 		localTable, dialect.QuoteIdent("k"),
+// 		foreiTable, dialect.QuoteIdent("related_k"),
+// 	)
+//
+// 	if AsHasManyHasOneCompositePk == "" {
+// 		return c.RightJoin(dbr.I(JHasOneCompositePkModel.Table()), on)
+// 	}
+// 	return c.RightJoin(dbr.I(JHasOneCompositePkModel.Table()).As(AsHasManyHasOneCompositePk), on)
+// }
+
+type jHasOneCompositePkSetup struct {
+	Name       string
+	CreateStmt string
+	DropStmt   string
+	isView     bool
+}
+
+//Create applies the create table command to te underlying connection.
+func (c jHasOneCompositePkSetup) Create(db *dbr.Connection) error {
+	_, err := db.Exec(c.CreateStmt)
+	return runtime.NewSQLError(err, c.CreateStmt)
+}
+
+//Drop applies the drop table command to te underlying connection.
+func (c jHasOneCompositePkSetup) Drop(db *dbr.Connection) error {
+	_, err := db.Exec(c.DropStmt)
+	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jHasOneCompositePkSetup) IsView() bool {
+	return c.isView
+}
+
+// JHasOneCompositePkSetup helps to create/drop the schema
+func JHasOneCompositePkSetup() runtime.Setuper {
+	driver := runtime.GetCurrentDriver()
+
+	var create string
+	var drop string
+
+	if driver == drivers.Sqlite {
+		create = `CREATE TABLE IF NOT EXISTS has_one_composite_pk (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+x TEXT,
+related_p TEXT NULL,
+related_k TEXT NULL
+
+)`
+	} else if driver == drivers.Mysql {
+		create = `CREATE TABLE IF NOT EXISTS has_one_composite_pk (
+id INTEGER NOT NULL AUTO_INCREMENT,
+x TEXT,
+related_p TEXT NULL,
+related_k TEXT NULL,
+PRIMARY KEY (id) 
+
+)`
+	} else if driver == drivers.Pgsql {
+		create = `CREATE TABLE IF NOT EXISTS has_one_composite_pk (
+id SERIAL PRIMARY KEY,
+x TEXT,
+related_p TEXT NULL,
+related_k TEXT NULL
+
+)`
+	}
+
+	if driver == drivers.Sqlite {
+		drop = `DROP TABLE IF EXISTS has_one_composite_pk`
+	} else if driver == drivers.Mysql {
+		drop = `DROP TABLE IF EXISTS has_one_composite_pk`
+	} else if driver == drivers.Pgsql {
+		drop = `DROP TABLE IF EXISTS has_one_composite_pk`
+	}
+
+	return jHasOneCompositePkSetup{
+		Name:       `has_one_composite_pk`,
+		CreateStmt: create,
+		DropStmt:   drop,
+		isView:     !true,
+	}
+}
+
+// jHasOneCompositePkModel provides helper to work with HasOneCompositePk data provider
+type jHasOneCompositePkModel struct {
+	as string
+
+	ID builder.ValuePropertyMeta
+
+	X builder.ValuePropertyMeta
+
+	RelatedP builder.ValuePropertyMeta
+
+	RelatedK builder.ValuePropertyMeta
+
+	Related builder.RelPropertyMeta
+}
+
+// Eq provided items.
+func (j jHasOneCompositePkModel) Eq(s ...*HasOneCompositePk) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHasOneCompositePkModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// In provided items.
+func (j jHasOneCompositePkModel) In(s ...*HasOneCompositePk) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHasOneCompositePkModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// As returns a copy with an alias.
+func (j jHasOneCompositePkModel) As(as string) jHasOneCompositePkModel {
+	j.as = as
+
+	j.ID.TableAlias = as
+
+	j.X.TableAlias = as
+
+	j.RelatedP.TableAlias = as
+
+	j.RelatedK.TableAlias = as
+
+	// j.Related.TableAlias = as
+
+	return j
+}
+
+// Table returns the sql table name
+func (j jHasOneCompositePkModel) Table() string {
+	return "has_one_composite_pk"
+}
+
+// Alias returns the current alias
+func (j jHasOneCompositePkModel) Alias() string {
+	if j.as == "" {
+		return j.Table()
+	}
+	return j.as
+}
+
+// Properties returns a map of property name => meta
+func (j jHasOneCompositePkModel) Properties() map[string]builder.MetaProvider {
+	ret := map[string]builder.MetaProvider{}
+
+	ret["ID"] = j.ID
+
+	ret["X"] = j.X
+
+	ret["RelatedP"] = j.RelatedP
+
+	ret["RelatedK"] = j.RelatedK
+
+	ret["Related"] = j.Related
+
+	return ret
+}
+
+// Fields returns given sql fields with appropriate aliasing.
+func (j jHasOneCompositePkModel) Fields(ins ...string) []string {
+	dialect := runtime.GetDialect()
+	if len(ins) == 0 {
+		ins = append(ins, "*")
+	}
+	for i, in := range ins {
+		if j.as != "" {
+			if in == "*" {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
+			} else {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
+			}
+		}
+	}
+	return ins
+}
+
+// JHasOneCompositePkModel provides helper to work with HasOneCompositePk data provider
+var JHasOneCompositePkModel = jHasOneCompositePkModel{
+
+	ID: builder.NewValueMeta(
+		`id`, `INTEGER`,
+		`ID`, `int64`,
+		true, true,
+	),
+
+	X: builder.NewValueMeta(
+		`x`, `TEXT`,
+		`X`, `string`,
+		false, false,
+	),
+
+	RelatedP: builder.NewValueMeta(
+		`related_p`, `TEXT`,
+		`RelatedP`, `*string`,
+		false, false,
+	),
+
+	RelatedK: builder.NewValueMeta(
+		`related_k`, `TEXT`,
+		`RelatedK`, `*string`,
+		false, false,
+	),
+
+	Related: builder.NewRelMeta(
+		`related`, `*CompositePk`,
+		`CompositePk`, ``, ``,
+	),
+}
+
+type jHasOneCompositePkDeleteBuilder struct {
+	*builder.DeleteBuilder
+}
+
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jHasOneCompositePkDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHasOneCompositePkDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Where returns a jHasOneCompositePkDeleteBuilder instead of builder.DeleteBuilder.
+func (c *jHasOneCompositePkDeleteBuilder) Where(query interface{}, value ...interface{}) *jHasOneCompositePkDeleteBuilder {
+	c.DeleteBuilder.Where(query, value...)
+	return c
+}
+
+type jHasOneCompositePkSelectBuilder struct {
+	as string
+	*builder.SelectBuilder
+}
+
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jHasOneCompositePkSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHasOneCompositePkSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Read evaluates current select query and load the results into a HasOneCompositePk
+func (c *jHasOneCompositePkSelectBuilder) Read() (*HasOneCompositePk, error) {
+	var one HasOneCompositePk
+	err := c.LoadStruct(&one)
+	return &one, err
+}
+
+//ReadAll evaluates current select query and load the results into a slice of HasOneCompositePk
+func (c *jHasOneCompositePkSelectBuilder) ReadAll() ([]*HasOneCompositePk, error) {
+	var all []*HasOneCompositePk
+	_, err := c.LoadStructs(&all)
+	return all, err
+}
+
+//Where returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) Where(query interface{}, value ...interface{}) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.Where(query, value...)
+	return c
+}
+
+//GroupBy returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) GroupBy(col ...string) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) Having(query interface{}, value ...interface{}) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) Limit(n uint64) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) Offset(n uint64) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) OrderAsc(col string) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) OrderDesc(col string) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) OrderDir(col string, isAsc bool) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) OrderBy(col string) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Join returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) Join(table, on interface{}) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.Join(table, on)
+	return c
+}
+
+//LeftJoin returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) LeftJoin(table, on interface{}) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.LeftJoin(table, on)
+	return c
+}
+
+//RightJoin returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) RightJoin(table, on interface{}) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.RightJoin(table, on)
+	return c
+}
+
+//FullJoin returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) FullJoin(table, on interface{}) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.FullJoin(table, on)
+	return c
+}
+
+//Distinct returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) Distinct() *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.Distinct()
+	return c
+}
+
+// JHasOneCompositePk provides a basic querier
+func JHasOneCompositePk(db dbr.SessionRunner) jHasOneCompositePkQuerier {
+	return jHasOneCompositePkQuerier{
+		db: db,
+	}
+}
+
+type jHasOneCompositePkQuerier struct {
+	db dbr.SessionRunner
+	as string
+}
+
+//As set alias prior building.
+func (c jHasOneCompositePkQuerier) As(as string) jHasOneCompositePkQuerier {
+	c.as = as
+	return c
+}
+
+//Model returns a model with appropriate aliasing.
+func (c jHasOneCompositePkQuerier) Model() jHasOneCompositePkModel {
+	return JHasOneCompositePkModel.As(c.as)
+}
+
+//Select returns a HasOneCompositePk Select Builder.
+func (c jHasOneCompositePkQuerier) Select(what ...string) *jHasOneCompositePkSelectBuilder {
+	m := c.Model()
+	dialect := runtime.GetDialect()
+	from := dialect.QuoteIdent(m.Table())
+	if m.Alias() != "" && m.Alias() != m.Table() {
+		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias() != "" && m.Alias() != m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias + ".*")
+	}
+	return &jHasOneCompositePkSelectBuilder{
+		as: c.as,
+		SelectBuilder: &builder.SelectBuilder{
+			SelectBuilder: c.db.Select(what...).From(from),
+		},
+	}
+}
+
+//Where returns a HasOneCompositePk Select Builder.
+func (c jHasOneCompositePkQuerier) Where(query interface{}, value ...interface{}) *jHasOneCompositePkSelectBuilder {
+	return c.Select().Where(query, value...)
+}
+
+//Count returns a HasOneCompositePk Select Builder to count given expressions.
+func (c jHasOneCompositePkQuerier) Count(what ...string) *jHasOneCompositePkSelectBuilder {
+	if len(what) == 0 {
+		what = append(what, "*")
+	}
+	return c.Select("COUNT(" + strings.Join(what, ",") + ")")
+}
+
+// Insert a new HasOneCompositePk, if it has autoincrement primary key, the value will be set.
+// It stops on first error.
+func (c jHasOneCompositePkQuerier) Insert(items ...*HasOneCompositePk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		query := c.db.InsertInto(JHasOneCompositePkModel.Table()).Columns(
+
+			`x`,
+
+			`related_p`,
+
+			`related_k`,
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
+
+			query = query.Returning(
+
+				`id`,
+			)
+
+			var auto0 int64
+
+			err = query.Load(
+
+				&auto0,
+			)
+
+			data.ID = auto0
+
+		} else {
+			res, err = query.Exec()
+
+			if err == nil {
+				id, err2 := res.LastInsertId()
+				if err2 != nil {
+					return res, err2
+				}
+				data.ID = id
+			}
+
+		}
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// InsertBulk inserts multiple items into the database.
+// It does not post update any auto increment field.
+// It builds an insert query of multiple rows and send it on the underlying connection.
+func (c jHasOneCompositePkQuerier) InsertBulk(items ...*HasOneCompositePk) error {
+	panic("todo")
+}
+
+// Update a HasOneCompositePk. It stops on first error.
+func (c jHasOneCompositePkQuerier) Update(items ...*HasOneCompositePk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		query := c.db.Update(JHasOneCompositePkModel.Table())
+
+		query = query.Set(`x`, data.X)
+
+		query = query.Set(`related_p`, data.RelatedP)
+
+		query = query.Set(`related_k`, data.RelatedK)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
+		}
+
+	}
+	return res, err
+}
+
+// UpdateBulk updates multiple items into the database.
+// It builds an update query of multiple rows and send it on the underlying connection.
+func (c jHasOneCompositePkQuerier) UpdateBulk(items ...*HasOneCompositePk) error {
+	panic("todo")
+}
+
+//Delete returns a delete builder
+func (c jHasOneCompositePkQuerier) Delete() *jHasOneCompositePkDeleteBuilder {
+	return &jHasOneCompositePkDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHasOneCompositePkModel.Table()),
+		},
+	}
+}
+
+//DeleteByPk deletes one HasOneCompositePk by its PKs
+func (c jHasOneCompositePkQuerier) DeleteByPk(ID int64) error {
+	_, err := c.Delete().Where(
+
+		JHasOneCompositePkModel.ID.Eq(ID),
+	).Exec()
+	return err
+}
+
+// DeleteAll given HasOneCompositePk
+func (c jHasOneCompositePkQuerier) DeleteAll(items ...*HasOneCompositePk) (sql.Result, error) {
+	q := c.Delete().Where(
+		JHasOneCompositePkModel.In(items...),
+	)
+	return q.Exec()
+}
+
+//Find one HasOneCompositePk using its PKs
+func (c jHasOneCompositePkQuerier) Find(ID int64) (*HasOneCompositePk, error) {
+	return c.Select().Where(
+
+		JHasOneCompositePkModel.ID.Eq(ID),
+	).Read()
+}
+
+// JoinRelated adds a JOIN to HasOneCompositePk.Related
+func (c *jHasOneCompositePkSelectBuilder) JoinRelated(
+	AsRelated string,
+) *jHasOneCompositePkSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JHasOneCompositePkModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JCompositePkModel.Table())
+	if AsRelated != "" {
+		foreiTable = dialect.QuoteIdent(AsRelated)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("related_p"),
+		foreiTable, dialect.QuoteIdent("p"),
+	)
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("related_k"),
+		foreiTable, dialect.QuoteIdent("k"),
+	)
+
+	if AsRelated == "" {
+		return c.Join(dbr.I(JCompositePkModel.Table()), on)
+	}
+	return c.Join(dbr.I(JCompositePkModel.Table()).As(AsRelated), on)
+}
+
+// LeftJoinRelated adds a LEFT JOIN to HasOneCompositePk.Related
+func (c *jHasOneCompositePkSelectBuilder) LeftJoinRelated(
+	AsRelated string,
+) *jHasOneCompositePkSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := JHasOneCompositePkModel.Table()
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JCompositePkModel.Table())
+	if AsRelated != "" {
+		foreiTable = dialect.QuoteIdent(AsRelated)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("related_p"),
+		foreiTable, dialect.QuoteIdent("p"),
+	)
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("related_k"),
+		foreiTable, dialect.QuoteIdent("k"),
+	)
+
+	if AsRelated == "" {
+		return c.LeftJoin(dbr.I(JCompositePkModel.Table()), on)
+	}
+	return c.LeftJoin(dbr.I(JCompositePkModel.Table()).As(AsRelated), on)
+}
+
+// // RightJoinRelated adds a RIGHT JOIN to HasOneCompositePk.Related
+// func (c *jHasOneCompositePkSelectBuilder) RightJoinRelated(
+// 	AsRelated string,
+// ) *jHasOneCompositePkSelectBuilder {
+// 	dialect := runtime.GetDialect()
+// 	on := ""
+// 	localTable := dialect.QuoteIdent(JHasOneCompositePkModel.Table())
+// 	if c.as != "" {
+// 		localTable = dialect.QuoteIdent(c.as)
+// 	}
+// 	foreiTable := dialect.QuoteIdent(JCompositePkModel.Table())
+// 	if AsRelated != "" {
+// 		foreiTable = dialect.QuoteIdent(AsRelated)
+// 	}
+//
+// 	on += fmt.Sprintf("%v.%v = %v.%v",
+// 		localTable, dialect.QuoteIdent("related_p"),
+// 		foreiTable, dialect.QuoteIdent("p"),
+// 	)
+//
+// 	on += fmt.Sprintf("%v.%v = %v.%v",
+// 		localTable, dialect.QuoteIdent("related_k"),
+// 		foreiTable, dialect.QuoteIdent("k"),
+// 	)
+//
+// 	if AsRelated == "" {
+// 		return c.RightJoin(dbr.I(JCompositePkModel.Table()), on)
+// 	}
+// 	return c.RightJoin(dbr.I(JCompositePkModel.Table()).As(AsRelated), on)
+// }
+
+// FullJoinRelated adds a FULL JOIN to HasOneCompositePk.Related
+func (c *jHasOneCompositePkSelectBuilder) FullJoinRelated(
+	AsRelated string,
+) *jHasOneCompositePkSelectBuilder {
+	dialect := runtime.GetDialect()
+	on := ""
+	localTable := dialect.QuoteIdent(JHasOneCompositePkModel.Table())
+	if c.as != "" {
+		localTable = dialect.QuoteIdent(c.as)
+	}
+	foreiTable := dialect.QuoteIdent(JCompositePkModel.Table())
+	if AsRelated != "" {
+		foreiTable = dialect.QuoteIdent(AsRelated)
+	}
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("related_p"),
+		foreiTable, dialect.QuoteIdent("p"),
+	)
+
+	on += fmt.Sprintf("%v.%v = %v.%v",
+		localTable, dialect.QuoteIdent("related_k"),
+		foreiTable, dialect.QuoteIdent("k"),
+	)
+
+	if AsRelated == "" {
+		return c.FullJoin(dbr.I(JCompositePkModel.Table()), on)
+	}
+	return c.FullJoin(dbr.I(JCompositePkModel.Table()).As(AsRelated), on)
+}
+
+// Related reads associated object
+func (g *HasOneCompositePk) Related(db dbr.SessionRunner) (*CompositePk, error) {
+	q := JCompositePk(db).Select()
+	q = q.Where(
+
+		JCompositePkModel.P.Eq(g.RelatedP),
+
+		JCompositePkModel.K.Eq(g.RelatedK),
+	)
+	return q.Read()
+}
+
+// SetRelated copies pk values to this object properties
+func (g *HasOneCompositePk) SetRelated(o *CompositePk) *HasOneCompositePk {
+
+	if o == nil {
+		g.RelatedP = nil
+	} else {
+
+		g.RelatedP = &o.P
+
+	}
+
+	if o == nil {
+		g.RelatedK = nil
+	} else {
+
+		g.RelatedK = &o.K
+
+	}
+
+	return g
+}
+
+// UnsetRelated set defaults values to this object properties
+func (g *HasOneCompositePk) UnsetRelated() *HasOneCompositePk {
+
+	var def0 *string
+
+	var def1 *string
+
+	g.RelatedP = def0
+
+	g.RelatedK = def1
+
+	g.related = nil
+
+	return g
+}
+
+type jHasManyCompositePkSetup struct {
+	Name       string
+	CreateStmt string
+	DropStmt   string
+	isView     bool
+}
+
+//Create applies the create table command to te underlying connection.
+func (c jHasManyCompositePkSetup) Create(db *dbr.Connection) error {
+	_, err := db.Exec(c.CreateStmt)
+	return runtime.NewSQLError(err, c.CreateStmt)
+}
+
+//Drop applies the drop table command to te underlying connection.
+func (c jHasManyCompositePkSetup) Drop(db *dbr.Connection) error {
+	_, err := db.Exec(c.DropStmt)
+	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jHasManyCompositePkSetup) IsView() bool {
+	return c.isView
+}
+
+// JHasManyCompositePkSetup helps to create/drop the schema
+func JHasManyCompositePkSetup() runtime.Setuper {
+	driver := runtime.GetCurrentDriver()
+
+	var create string
+	var drop string
+
+	if driver == drivers.Sqlite {
+		create = `CREATE TABLE IF NOT EXISTS has_many_composite_pk (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+x TEXT
+
+)`
+	} else if driver == drivers.Mysql {
+		create = `CREATE TABLE IF NOT EXISTS has_many_composite_pk (
+id INTEGER NOT NULL AUTO_INCREMENT,
+x TEXT,
+PRIMARY KEY (id) 
+
+)`
+	} else if driver == drivers.Pgsql {
+		create = `CREATE TABLE IF NOT EXISTS has_many_composite_pk (
+id SERIAL PRIMARY KEY,
+x TEXT
+
+)`
+	}
+
+	if driver == drivers.Sqlite {
+		drop = `DROP TABLE IF EXISTS has_many_composite_pk`
+	} else if driver == drivers.Mysql {
+		drop = `DROP TABLE IF EXISTS has_many_composite_pk`
+	} else if driver == drivers.Pgsql {
+		drop = `DROP TABLE IF EXISTS has_many_composite_pk`
+	}
+
+	return jHasManyCompositePkSetup{
+		Name:       `has_many_composite_pk`,
+		CreateStmt: create,
+		DropStmt:   drop,
+		isView:     !true,
+	}
+}
+
+// jHasManyCompositePkModel provides helper to work with HasManyCompositePk data provider
+type jHasManyCompositePkModel struct {
+	as string
+
+	ID builder.ValuePropertyMeta
+
+	X builder.ValuePropertyMeta
+
+	Relateds builder.RelPropertyMeta
+}
+
+// Eq provided items.
+func (j jHasManyCompositePkModel) Eq(s ...*HasManyCompositePk) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHasManyCompositePkModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// In provided items.
+func (j jHasManyCompositePkModel) In(s ...*HasManyCompositePk) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHasManyCompositePkModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// As returns a copy with an alias.
+func (j jHasManyCompositePkModel) As(as string) jHasManyCompositePkModel {
+	j.as = as
+
+	j.ID.TableAlias = as
+
+	j.X.TableAlias = as
+
+	// j.Relateds.TableAlias = as
+
+	return j
+}
+
+// Table returns the sql table name
+func (j jHasManyCompositePkModel) Table() string {
+	return "has_many_composite_pk"
+}
+
+// Alias returns the current alias
+func (j jHasManyCompositePkModel) Alias() string {
+	if j.as == "" {
+		return j.Table()
+	}
+	return j.as
+}
+
+// Properties returns a map of property name => meta
+func (j jHasManyCompositePkModel) Properties() map[string]builder.MetaProvider {
+	ret := map[string]builder.MetaProvider{}
+
+	ret["ID"] = j.ID
+
+	ret["X"] = j.X
+
+	ret["Relateds"] = j.Relateds
+
+	return ret
+}
+
+// Fields returns given sql fields with appropriate aliasing.
+func (j jHasManyCompositePkModel) Fields(ins ...string) []string {
+	dialect := runtime.GetDialect()
+	if len(ins) == 0 {
+		ins = append(ins, "*")
+	}
+	for i, in := range ins {
+		if j.as != "" {
+			if in == "*" {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
+			} else {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
+			}
+		}
+	}
+	return ins
+}
+
+// JHasManyCompositePkModel provides helper to work with HasManyCompositePk data provider
+var JHasManyCompositePkModel = jHasManyCompositePkModel{
+
+	ID: builder.NewValueMeta(
+		`id`, `INTEGER`,
+		`ID`, `int64`,
+		true, true,
+	),
+
+	X: builder.NewValueMeta(
+		`x`, `TEXT`,
+		`X`, `string`,
+		false, false,
+	),
+
+	Relateds: builder.NewRelMeta(
+		`relateds`, `[]*CompositePk`,
+		``, `CompositePk.relateds`, ``,
+	),
+}
+
+type jHasManyCompositePkDeleteBuilder struct {
+	*builder.DeleteBuilder
+}
+
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jHasManyCompositePkDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHasManyCompositePkDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Where returns a jHasManyCompositePkDeleteBuilder instead of builder.DeleteBuilder.
+func (c *jHasManyCompositePkDeleteBuilder) Where(query interface{}, value ...interface{}) *jHasManyCompositePkDeleteBuilder {
+	c.DeleteBuilder.Where(query, value...)
+	return c
+}
+
+type jHasManyCompositePkSelectBuilder struct {
+	as string
+	*builder.SelectBuilder
+}
+
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jHasManyCompositePkSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHasManyCompositePkSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Read evaluates current select query and load the results into a HasManyCompositePk
+func (c *jHasManyCompositePkSelectBuilder) Read() (*HasManyCompositePk, error) {
+	var one HasManyCompositePk
+	err := c.LoadStruct(&one)
+	return &one, err
+}
+
+//ReadAll evaluates current select query and load the results into a slice of HasManyCompositePk
+func (c *jHasManyCompositePkSelectBuilder) ReadAll() ([]*HasManyCompositePk, error) {
+	var all []*HasManyCompositePk
+	_, err := c.LoadStructs(&all)
+	return all, err
+}
+
+//Where returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) Where(query interface{}, value ...interface{}) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.Where(query, value...)
+	return c
+}
+
+//GroupBy returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) GroupBy(col ...string) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) Having(query interface{}, value ...interface{}) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) Limit(n uint64) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) Offset(n uint64) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) OrderAsc(col string) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) OrderDesc(col string) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) OrderDir(col string, isAsc bool) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) OrderBy(col string) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Join returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) Join(table, on interface{}) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.Join(table, on)
+	return c
+}
+
+//LeftJoin returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) LeftJoin(table, on interface{}) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.LeftJoin(table, on)
+	return c
+}
+
+//RightJoin returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) RightJoin(table, on interface{}) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.RightJoin(table, on)
+	return c
+}
+
+//FullJoin returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) FullJoin(table, on interface{}) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.FullJoin(table, on)
+	return c
+}
+
+//Distinct returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) Distinct() *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.Distinct()
+	return c
+}
+
+// JHasManyCompositePk provides a basic querier
+func JHasManyCompositePk(db dbr.SessionRunner) jHasManyCompositePkQuerier {
+	return jHasManyCompositePkQuerier{
+		db: db,
+	}
+}
+
+type jHasManyCompositePkQuerier struct {
+	db dbr.SessionRunner
+	as string
+}
+
+//As set alias prior building.
+func (c jHasManyCompositePkQuerier) As(as string) jHasManyCompositePkQuerier {
+	c.as = as
+	return c
+}
+
+//Model returns a model with appropriate aliasing.
+func (c jHasManyCompositePkQuerier) Model() jHasManyCompositePkModel {
+	return JHasManyCompositePkModel.As(c.as)
+}
+
+//Select returns a HasManyCompositePk Select Builder.
+func (c jHasManyCompositePkQuerier) Select(what ...string) *jHasManyCompositePkSelectBuilder {
+	m := c.Model()
+	dialect := runtime.GetDialect()
+	from := dialect.QuoteIdent(m.Table())
+	if m.Alias() != "" && m.Alias() != m.Table() {
+		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias() != "" && m.Alias() != m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias + ".*")
+	}
+	return &jHasManyCompositePkSelectBuilder{
+		as: c.as,
+		SelectBuilder: &builder.SelectBuilder{
+			SelectBuilder: c.db.Select(what...).From(from),
+		},
+	}
+}
+
+//Where returns a HasManyCompositePk Select Builder.
+func (c jHasManyCompositePkQuerier) Where(query interface{}, value ...interface{}) *jHasManyCompositePkSelectBuilder {
+	return c.Select().Where(query, value...)
+}
+
+//Count returns a HasManyCompositePk Select Builder to count given expressions.
+func (c jHasManyCompositePkQuerier) Count(what ...string) *jHasManyCompositePkSelectBuilder {
+	if len(what) == 0 {
+		what = append(what, "*")
+	}
+	return c.Select("COUNT(" + strings.Join(what, ",") + ")")
+}
+
+// Insert a new HasManyCompositePk, if it has autoincrement primary key, the value will be set.
+// It stops on first error.
+func (c jHasManyCompositePkQuerier) Insert(items ...*HasManyCompositePk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		query := c.db.InsertInto(JHasManyCompositePkModel.Table()).Columns(
+
+			`x`,
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
+
+			query = query.Returning(
+
+				`id`,
+			)
+
+			var auto0 int64
+
+			err = query.Load(
+
+				&auto0,
+			)
+
+			data.ID = auto0
+
+		} else {
+			res, err = query.Exec()
+
+			if err == nil {
+				id, err2 := res.LastInsertId()
+				if err2 != nil {
+					return res, err2
+				}
+				data.ID = id
+			}
+
+		}
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// InsertBulk inserts multiple items into the database.
+// It does not post update any auto increment field.
+// It builds an insert query of multiple rows and send it on the underlying connection.
+func (c jHasManyCompositePkQuerier) InsertBulk(items ...*HasManyCompositePk) error {
+	panic("todo")
+}
+
+// Update a HasManyCompositePk. It stops on first error.
+func (c jHasManyCompositePkQuerier) Update(items ...*HasManyCompositePk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		query := c.db.Update(JHasManyCompositePkModel.Table())
+
+		query = query.Set(`x`, data.X)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
+		}
+
+	}
+	return res, err
+}
+
+// UpdateBulk updates multiple items into the database.
+// It builds an update query of multiple rows and send it on the underlying connection.
+func (c jHasManyCompositePkQuerier) UpdateBulk(items ...*HasManyCompositePk) error {
+	panic("todo")
+}
+
+//Delete returns a delete builder
+func (c jHasManyCompositePkQuerier) Delete() *jHasManyCompositePkDeleteBuilder {
+	return &jHasManyCompositePkDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHasManyCompositePkModel.Table()),
+		},
+	}
+}
+
+//DeleteByPk deletes one HasManyCompositePk by its PKs
+func (c jHasManyCompositePkQuerier) DeleteByPk(ID int64) error {
+	_, err := c.Delete().Where(
+
+		JHasManyCompositePkModel.ID.Eq(ID),
+	).Exec()
+	return err
+}
+
+// DeleteAll given HasManyCompositePk
+func (c jHasManyCompositePkQuerier) DeleteAll(items ...*HasManyCompositePk) (sql.Result, error) {
+	q := c.Delete().Where(
+		JHasManyCompositePkModel.In(items...),
+	)
+	return q.Exec()
+}
+
+//Find one HasManyCompositePk using its PKs
+func (c jHasManyCompositePkQuerier) Find(ID int64) (*HasManyCompositePk, error) {
+	return c.Select().Where(
+
+		JHasManyCompositePkModel.ID.Eq(ID),
+	).Read()
+}
+
+// Relateds returns a query builder to select Relateds linked to this HasManyCompositePk
+func (g *HasManyCompositePk) Relateds(db dbr.SessionRunner,
+	AsCompositePk, AsCompositePkrelatedsToHasManyCompositePkrelateds, AsHasManyCompositePk string,
+) *jCompositePkSelectBuilder {
+
+	leftTable := JCompositePkModel.Table()
+	var query *jCompositePkSelectBuilder
+	if AsCompositePk != "" {
+		leftTable = AsCompositePk
+		query = JCompositePk(db).As(AsCompositePk).Select(AsCompositePk + ".*")
+	} else {
+		query = JCompositePk(db).Select(leftTable + ".*")
+	}
+
+	midTable := JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()
+	{
+		on := ""
+		if AsCompositePkrelatedsToHasManyCompositePkrelateds != "" {
+			midTable = AsCompositePkrelatedsToHasManyCompositePkrelateds
+		}
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "compositepk_p",
+			leftTable, "p",
+		)
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "compositepk_k",
+			leftTable, "k",
+		)
+
+		if AsCompositePkrelatedsToHasManyCompositePkrelateds == "" {
+			query = query.Join(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()).As(AsCompositePkrelatedsToHasManyCompositePkrelateds), on)
+		}
+	}
+
+	rightTable := JHasManyCompositePkModel.Table()
+	{
+		on := ""
+		if AsHasManyCompositePk != "" {
+			rightTable = AsHasManyCompositePk
+		}
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "hasmanycompositepk_id",
+			rightTable, "id",
+		)
+
+		if AsHasManyCompositePk == "" {
+			query = query.Join(dbr.I(JHasManyCompositePkModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JHasManyCompositePkModel.Table()).As(AsHasManyCompositePk), on)
+		}
+	}
+
+	{
+		m := JHasManyCompositePkModel
+		if AsHasManyCompositePk != "" {
+			m = m.As(AsHasManyCompositePk)
+		}
+		query = query.Where(
+
+			m.ID.Eq(g.ID),
+		)
+	}
+
+	return query
+}
+
+//LinkWithRelateds writes new links with HasManyCompositePk.
+func (g *HasManyCompositePk) LinkWithRelateds(db dbr.SessionRunner, items ...*CompositePk) (sql.Result, error) {
+	toInsert := []*CompositePkrelatedsToHasManyCompositePkrelateds{}
+	for _, item := range items {
+		toInsert = append(toInsert, &CompositePkrelatedsToHasManyCompositePkrelateds{
+
+			CompositePkP: item.P,
+
+			CompositePkK: item.K,
+
+			HasManyCompositePkID: g.ID,
+		})
+	}
+	return JCompositePkrelatedsToHasManyCompositePkrelateds(db).Insert(toInsert...)
+}
+
+//UnlinkWithRelateds deletes given existing links with HasManyCompositePk.
+func (g *HasManyCompositePk) UnlinkWithRelateds(db dbr.SessionRunner, items ...*CompositePk) (sql.Result, error) {
+	toDelete := []*CompositePkrelatedsToHasManyCompositePkrelateds{}
+	for _, item := range items {
+		toDelete = append(toDelete, &CompositePkrelatedsToHasManyCompositePkrelateds{
+
+			CompositePkP: item.P,
+
+			CompositePkK: item.K,
+
+			HasManyCompositePkID: g.ID,
+		})
+	}
+	return JCompositePkrelatedsToHasManyCompositePkrelateds(db).DeleteAll(toDelete...)
+}
+
+//UnlinkAllRelateds deletes all existing links with HasManyCompositePk.
+func (g *HasManyCompositePk) UnlinkAllRelateds(db dbr.SessionRunner) (sql.Result, error) {
+	return JCompositePkrelatedsToHasManyCompositePkrelateds(db).Delete().Where(
+
+		JCompositePkrelatedsToHasManyCompositePkrelatedsModel.HasManyCompositePkID.Eq(g.ID),
+	).Exec()
+}
+
+//SetRelateds replaces existing links with HasManyCompositePk.
+func (g *HasManyCompositePk) SetRelateds(db dbr.SessionRunner, items ...*CompositePk) (sql.Result, error) {
+	if res, err := g.UnlinkAllRelateds(db); err != nil {
+		return res, err
+	}
+	return g.LinkWithRelateds(db, items...)
+}
+
+// JoinRelateds adds a JOIN to HasManyCompositePk.Relateds
+func (c *jHasManyCompositePkSelectBuilder) JoinRelateds(
+	AsCompositePkrelatedsToHasManyCompositePkrelateds, AsCompositePk string,
+) *jHasManyCompositePkSelectBuilder {
+
+	query := c
+
+	leftTable := JHasManyCompositePkModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()
+	if AsCompositePkrelatedsToHasManyCompositePkrelateds != "" {
+		midTable = AsCompositePkrelatedsToHasManyCompositePkrelateds
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "hasmanycompositepk_id",
+			leftTable, "id",
+		)
+
+		if AsCompositePkrelatedsToHasManyCompositePkrelateds == "" {
+			query = query.Join(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()).As(AsCompositePkrelatedsToHasManyCompositePkrelateds), on)
+		}
+	}
+
+	{
+		rightTable := JCompositePkModel.Table()
+		if AsCompositePk != "" {
+			rightTable = AsCompositePk
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "compositepk_p",
+			rightTable, "p",
+		)
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "compositepk_k",
+			rightTable, "k",
+		)
+
+		if AsCompositePk == "" {
+			query = query.Join(dbr.I(JCompositePkModel.Table()), on)
+		} else {
+			query = query.Join(dbr.I(JCompositePkModel.Table()).As(AsCompositePk), on)
+		}
+	}
+
+	return query
+}
+
+// LeftJoinRelateds adds a LEFT JOIN to HasManyCompositePk.Relateds
+func (c *jHasManyCompositePkSelectBuilder) LeftJoinRelateds(
+	AsCompositePkrelatedsToHasManyCompositePkrelateds, AsCompositePk string,
+) *jHasManyCompositePkSelectBuilder {
+
+	query := c
+
+	leftTable := JHasManyCompositePkModel.Table()
+	if c.as != "" {
+		leftTable = c.as
+	}
+
+	midTable := JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()
+	if AsCompositePkrelatedsToHasManyCompositePkrelateds != "" {
+		midTable = AsCompositePkrelatedsToHasManyCompositePkrelateds
+	}
+
+	{
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "hasmanycompositepk_id",
+			leftTable, "id",
+		)
+
+		if AsCompositePkrelatedsToHasManyCompositePkrelateds == "" {
+			query = query.LeftJoin(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()), on)
+		} else {
+			query = query.LeftJoin(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()).As(AsCompositePkrelatedsToHasManyCompositePkrelateds), on)
+		}
+	}
+
+	{
+		rightTable := JCompositePkModel.Table()
+		if AsCompositePk != "" {
+			rightTable = AsCompositePk
+		}
+		on := ""
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "compositepk_p",
+			rightTable, "p",
+		)
+
+		on += fmt.Sprintf("%v.%v = %v.%v",
+			midTable, "compositepk_k",
+			rightTable, "k",
+		)
+
+		if AsCompositePk == "" {
+			query = query.LeftJoin(dbr.I(JCompositePkModel.Table()), on)
+		} else {
+			query = query.LeftJoin(dbr.I(JCompositePkModel.Table()).As(AsCompositePk), on)
+		}
+	}
+
+	return query
+}
+
+// // RightJoinRelateds adds a RIGHT JOIN to HasManyCompositePk.Relateds
+// func (c *jHasManyCompositePkSelectBuilder) RightJoinRelateds(
+// 	AsCompositePkrelatedsToHasManyCompositePkrelateds, AsCompositePk string,
+// ) *jHasManyCompositePkSelectBuilder {
+//
+// 	query := c
+//
+// 	leftTable := JHasManyCompositePkModel.Table()
+// 	if c.as != "" {
+// 		leftTable = c.as
+// 	}
+//
+// 	midTable := JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()
+// 	if AsCompositePkrelatedsToHasManyCompositePkrelateds != "" {
+// 		midTable = AsCompositePkrelatedsToHasManyCompositePkrelateds
+// 	}
+//
+// 	{
+// 		on := ""
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "hasmanycompositepk_id",
+// 			leftTable, "id",
+// 			)
+//
+//
+// 		if AsCompositePkrelatedsToHasManyCompositePkrelateds == "" {
+// 			query = query.RightJoin(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()), on)
+// 		} else {
+// 			query = query.RightJoin(dbr.I(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()).As(AsCompositePkrelatedsToHasManyCompositePkrelateds), on)
+// 		}
+// 	}
+//
+// 	{
+// 		rightTable := JCompositePkModel.Table()
+// 		if AsCompositePk != "" {
+// 			rightTable = AsCompositePk
+// 		}
+// 		on := ""
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "compositepk_p",
+// 			rightTable, "p",
+// 			)
+//
+// 		on += fmt.Sprintf("%v.%v = %v.%v",
+// 			midTable, "compositepk_k",
+// 			rightTable, "k",
+// 			)
+//
+//
+// 		if AsCompositePk == "" {
+// 			query = query.RightJoin(dbr.I(JCompositePkModel.Table()), on)
+// 		} else {
+// 			query = query.RightJoin(dbr.I(JCompositePkModel.Table()).As(AsCompositePk), on)
+// 		}
+// 	}
+//
+// 	return query
+// }
 
 type jDateTypeSetup struct {
 	Name       string
@@ -3403,7 +7234,7 @@ func (c jDateTypeQuerier) Update(items ...*DateType) (sql.Result, error) {
 
 		query = query.Where("id = ?", data.ID)
 
-		if currentDate == nil { //TODO
+		if currentDate == nil {
 			query = query.Where("last_updated IS NULL")
 		} else {
 			query = query.Where("last_updated = ?", currentDate)
@@ -3411,9 +7242,11 @@ func (c jDateTypeQuerier) Update(items ...*DateType) (sql.Result, error) {
 
 		res, err = query.Exec()
 
-		if n, _ := res.RowsAffected(); n == 0 {
-			x := &builder.UpdateBuilder{UpdateBuilder: query}
-			err = runtime.NewNoRowsAffected(x.String())
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
 		}
 
 		if err == nil {
@@ -3841,4 +7674,959 @@ func (c jSampleViewQuerier) Count(what ...string) *jSampleViewSelectBuilder {
 		what = append(what, "*")
 	}
 	return c.Select("COUNT(" + strings.Join(what, ",") + ")")
+}
+
+type jHasManyTextPkrelatedsToTextPkrelatedsSetup struct {
+	Name       string
+	CreateStmt string
+	DropStmt   string
+	isView     bool
+}
+
+//Create applies the create table command to te underlying connection.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsSetup) Create(db *dbr.Connection) error {
+	_, err := db.Exec(c.CreateStmt)
+	return runtime.NewSQLError(err, c.CreateStmt)
+}
+
+//Drop applies the drop table command to te underlying connection.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsSetup) Drop(db *dbr.Connection) error {
+	_, err := db.Exec(c.DropStmt)
+	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsSetup) IsView() bool {
+	return c.isView
+}
+
+// JHasManyTextPkrelatedsToTextPkrelatedsSetup helps to create/drop the schema
+func JHasManyTextPkrelatedsToTextPkrelatedsSetup() runtime.Setuper {
+	driver := runtime.GetCurrentDriver()
+
+	var create string
+	var drop string
+
+	if driver == drivers.Sqlite {
+		create = `CREATE TABLE IF NOT EXISTS hasmanytextpk_relatedstotextpk_relateds (
+hasmanytextpk_id INTEGER,
+textpk_name TEXT,
+PRIMARY KEY (hasmanytextpk_id,textpk_name) 
+
+)`
+	} else if driver == drivers.Mysql {
+		create = `CREATE TABLE IF NOT EXISTS hasmanytextpk_relatedstotextpk_relateds (
+hasmanytextpk_id INTEGER NOT NULL,
+textpk_name VARCHAR(255) NOT NULL,
+PRIMARY KEY (hasmanytextpk_id,textpk_name) 
+
+)`
+	} else if driver == drivers.Pgsql {
+		create = `CREATE TABLE IF NOT EXISTS hasmanytextpk_relatedstotextpk_relateds (
+hasmanytextpk_id INTEGER,
+textpk_name TEXT,
+PRIMARY KEY (hasmanytextpk_id,textpk_name) 
+
+)`
+	}
+
+	if driver == drivers.Sqlite {
+		drop = `DROP TABLE IF EXISTS hasmanytextpk_relatedstotextpk_relateds`
+	} else if driver == drivers.Mysql {
+		drop = `DROP TABLE IF EXISTS hasmanytextpk_relatedstotextpk_relateds`
+	} else if driver == drivers.Pgsql {
+		drop = `DROP TABLE IF EXISTS hasmanytextpk_relatedstotextpk_relateds`
+	}
+
+	return jHasManyTextPkrelatedsToTextPkrelatedsSetup{
+		Name:       `hasmanytextpk_relatedstotextpk_relateds`,
+		CreateStmt: create,
+		DropStmt:   drop,
+		isView:     !true,
+	}
+}
+
+// jHasManyTextPkrelatedsToTextPkrelatedsModel provides helper to work with HasManyTextPkrelatedsToTextPkrelateds data provider
+type jHasManyTextPkrelatedsToTextPkrelatedsModel struct {
+	as string
+
+	HasManyTextPkID builder.ValuePropertyMeta
+
+	TextPkName builder.ValuePropertyMeta
+}
+
+// Eq provided items.
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Eq(s ...*HasManyTextPkrelatedsToTextPkrelateds) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHasManyTextPkrelatedsToTextPkrelatedsModel.HasManyTextPkID.Eq(t.HasManyTextPkID),
+
+			JHasManyTextPkrelatedsToTextPkrelatedsModel.TextPkName.Eq(t.TextPkName),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// In provided items.
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) In(s ...*HasManyTextPkrelatedsToTextPkrelateds) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHasManyTextPkrelatedsToTextPkrelatedsModel.HasManyTextPkID.Eq(t.HasManyTextPkID),
+
+			JHasManyTextPkrelatedsToTextPkrelatedsModel.TextPkName.Eq(t.TextPkName),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// As returns a copy with an alias.
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) As(as string) jHasManyTextPkrelatedsToTextPkrelatedsModel {
+	j.as = as
+
+	j.HasManyTextPkID.TableAlias = as
+
+	j.TextPkName.TableAlias = as
+
+	return j
+}
+
+// Table returns the sql table name
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Table() string {
+	return "hasmanytextpk_relatedstotextpk_relateds"
+}
+
+// Alias returns the current alias
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Alias() string {
+	if j.as == "" {
+		return j.Table()
+	}
+	return j.as
+}
+
+// Properties returns a map of property name => meta
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Properties() map[string]builder.MetaProvider {
+	ret := map[string]builder.MetaProvider{}
+
+	ret["HasManyTextPkID"] = j.HasManyTextPkID
+
+	ret["TextPkName"] = j.TextPkName
+
+	return ret
+}
+
+// Fields returns given sql fields with appropriate aliasing.
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Fields(ins ...string) []string {
+	dialect := runtime.GetDialect()
+	if len(ins) == 0 {
+		ins = append(ins, "*")
+	}
+	for i, in := range ins {
+		if j.as != "" {
+			if in == "*" {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
+			} else {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
+			}
+		}
+	}
+	return ins
+}
+
+// JHasManyTextPkrelatedsToTextPkrelatedsModel provides helper to work with HasManyTextPkrelatedsToTextPkrelateds data provider
+var JHasManyTextPkrelatedsToTextPkrelatedsModel = jHasManyTextPkrelatedsToTextPkrelatedsModel{
+
+	HasManyTextPkID: builder.NewValueMeta(
+		`hasmanytextpk_id`, `INTEGER`,
+		`HasManyTextPkID`, `int64`,
+		true, false,
+	),
+
+	TextPkName: builder.NewValueMeta(
+		`textpk_name`, `TEXT`,
+		`TextPkName`, `string`,
+		true, false,
+	),
+}
+
+// HasManyTextPkrelatedsToTextPkrelateds is automatically generated to handle a many to many relationship.
+type HasManyTextPkrelatedsToTextPkrelateds struct {
+	HasManyTextPkID int64
+
+	TextPkName string
+}
+
+type jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder struct {
+	*builder.DeleteBuilder
+}
+
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Where returns a jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder instead of builder.DeleteBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder) Where(query interface{}, value ...interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder {
+	c.DeleteBuilder.Where(query, value...)
+	return c
+}
+
+type jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder struct {
+	as string
+	*builder.SelectBuilder
+}
+
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Read evaluates current select query and load the results into a HasManyTextPkrelatedsToTextPkrelateds
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Read() (*HasManyTextPkrelatedsToTextPkrelateds, error) {
+	var one HasManyTextPkrelatedsToTextPkrelateds
+	err := c.LoadStruct(&one)
+	return &one, err
+}
+
+//ReadAll evaluates current select query and load the results into a slice of HasManyTextPkrelatedsToTextPkrelateds
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) ReadAll() ([]*HasManyTextPkrelatedsToTextPkrelateds, error) {
+	var all []*HasManyTextPkrelatedsToTextPkrelateds
+	_, err := c.LoadStructs(&all)
+	return all, err
+}
+
+//Where returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Where(query interface{}, value ...interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Where(query, value...)
+	return c
+}
+
+//GroupBy returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) GroupBy(col ...string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Having(query interface{}, value ...interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Limit(n uint64) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Offset(n uint64) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderAsc(col string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderDesc(col string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderDir(col string, isAsc bool) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderBy(col string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Join returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Join(table, on interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Join(table, on)
+	return c
+}
+
+//LeftJoin returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) LeftJoin(table, on interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.LeftJoin(table, on)
+	return c
+}
+
+//RightJoin returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) RightJoin(table, on interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.RightJoin(table, on)
+	return c
+}
+
+//FullJoin returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) FullJoin(table, on interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.FullJoin(table, on)
+	return c
+}
+
+//Distinct returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Distinct() *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Distinct()
+	return c
+}
+
+// JHasManyTextPkrelatedsToTextPkrelateds provides a basic querier
+func JHasManyTextPkrelatedsToTextPkrelateds(db dbr.SessionRunner) jHasManyTextPkrelatedsToTextPkrelatedsQuerier {
+	return jHasManyTextPkrelatedsToTextPkrelatedsQuerier{
+		db: db,
+	}
+}
+
+type jHasManyTextPkrelatedsToTextPkrelatedsQuerier struct {
+	db dbr.SessionRunner
+	as string
+}
+
+//As set alias prior building.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) As(as string) jHasManyTextPkrelatedsToTextPkrelatedsQuerier {
+	c.as = as
+	return c
+}
+
+//Model returns a model with appropriate aliasing.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Model() jHasManyTextPkrelatedsToTextPkrelatedsModel {
+	return JHasManyTextPkrelatedsToTextPkrelatedsModel.As(c.as)
+}
+
+//Select returns a HasManyTextPkrelatedsToTextPkrelateds Select Builder.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Select(what ...string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	m := c.Model()
+	dialect := runtime.GetDialect()
+	from := dialect.QuoteIdent(m.Table())
+	if m.Alias() != "" && m.Alias() != m.Table() {
+		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias() != "" && m.Alias() != m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias + ".*")
+	}
+	return &jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder{
+		as: c.as,
+		SelectBuilder: &builder.SelectBuilder{
+			SelectBuilder: c.db.Select(what...).From(from),
+		},
+	}
+}
+
+//Where returns a HasManyTextPkrelatedsToTextPkrelateds Select Builder.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Where(query interface{}, value ...interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	return c.Select().Where(query, value...)
+}
+
+//Count returns a HasManyTextPkrelatedsToTextPkrelateds Select Builder to count given expressions.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Count(what ...string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	if len(what) == 0 {
+		what = append(what, "*")
+	}
+	return c.Select("COUNT(" + strings.Join(what, ",") + ")")
+}
+
+// Insert a new HasManyTextPkrelatedsToTextPkrelateds, if it has autoincrement primary key, the value will be set.
+// It stops on first error.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Insert(items ...*HasManyTextPkrelatedsToTextPkrelateds) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		if runtime.Runs(drivers.Mysql) {
+
+			if len(data.TextPkName) > 255 {
+				return nil, fmt.Errorf("TextPkName: PRIMARY KEY length exceeded max=255, got=%v", len(data.TextPkName))
+			}
+
+		}
+
+		query := c.db.InsertInto(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()).Columns(
+
+			`hasmanytextpk_id`,
+
+			`textpk_name`,
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
+
+			res, err = query.Exec()
+
+		} else {
+			res, err = query.Exec()
+
+		}
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// InsertBulk inserts multiple items into the database.
+// It does not post update any auto increment field.
+// It builds an insert query of multiple rows and send it on the underlying connection.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) InsertBulk(items ...*HasManyTextPkrelatedsToTextPkrelateds) error {
+	panic("todo")
+}
+
+//Delete returns a delete builder
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Delete() *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder {
+	return &jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()),
+		},
+	}
+}
+
+//DeleteByPk deletes one HasManyTextPkrelatedsToTextPkrelateds by its PKs
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) DeleteByPk(HasManyTextPkID int64, TextPkName string) error {
+	_, err := c.Delete().Where(
+
+		JHasManyTextPkrelatedsToTextPkrelatedsModel.HasManyTextPkID.Eq(HasManyTextPkID),
+
+		JHasManyTextPkrelatedsToTextPkrelatedsModel.TextPkName.Eq(TextPkName),
+	).Exec()
+	return err
+}
+
+// DeleteAll given HasManyTextPkrelatedsToTextPkrelateds
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) DeleteAll(items ...*HasManyTextPkrelatedsToTextPkrelateds) (sql.Result, error) {
+	q := c.Delete().Where(
+		JHasManyTextPkrelatedsToTextPkrelatedsModel.In(items...),
+	)
+	return q.Exec()
+}
+
+//Find one HasManyTextPkrelatedsToTextPkrelateds using its PKs
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Find(HasManyTextPkID int64, TextPkName string) (*HasManyTextPkrelatedsToTextPkrelateds, error) {
+	return c.Select().Where(
+
+		JHasManyTextPkrelatedsToTextPkrelatedsModel.HasManyTextPkID.Eq(HasManyTextPkID),
+
+		JHasManyTextPkrelatedsToTextPkrelatedsModel.TextPkName.Eq(TextPkName),
+	).Read()
+}
+
+type jCompositePkrelatedsToHasManyCompositePkrelatedsSetup struct {
+	Name       string
+	CreateStmt string
+	DropStmt   string
+	isView     bool
+}
+
+//Create applies the create table command to te underlying connection.
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsSetup) Create(db *dbr.Connection) error {
+	_, err := db.Exec(c.CreateStmt)
+	return runtime.NewSQLError(err, c.CreateStmt)
+}
+
+//Drop applies the drop table command to te underlying connection.
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsSetup) Drop(db *dbr.Connection) error {
+	_, err := db.Exec(c.DropStmt)
+	return runtime.NewSQLError(err, c.DropStmt)
+}
+
+//IsView returns true if it is a view.
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsSetup) IsView() bool {
+	return c.isView
+}
+
+// JCompositePkrelatedsToHasManyCompositePkrelatedsSetup helps to create/drop the schema
+func JCompositePkrelatedsToHasManyCompositePkrelatedsSetup() runtime.Setuper {
+	driver := runtime.GetCurrentDriver()
+
+	var create string
+	var drop string
+
+	if driver == drivers.Sqlite {
+		create = `CREATE TABLE IF NOT EXISTS compositepk_relatedstohasmanycompositepk_relateds (
+hasmanycompositepk_id INTEGER,
+compositepk_p TEXT,
+compositepk_k TEXT,
+PRIMARY KEY (hasmanycompositepk_id,compositepk_p,compositepk_k) 
+
+)`
+	} else if driver == drivers.Mysql {
+		create = `CREATE TABLE IF NOT EXISTS compositepk_relatedstohasmanycompositepk_relateds (
+hasmanycompositepk_id INTEGER NOT NULL,
+compositepk_p VARCHAR(255) NOT NULL,
+compositepk_k VARCHAR(255) NOT NULL,
+PRIMARY KEY (hasmanycompositepk_id,compositepk_p,compositepk_k) 
+
+)`
+	} else if driver == drivers.Pgsql {
+		create = `CREATE TABLE IF NOT EXISTS compositepk_relatedstohasmanycompositepk_relateds (
+hasmanycompositepk_id INTEGER,
+compositepk_p TEXT,
+compositepk_k TEXT,
+PRIMARY KEY (hasmanycompositepk_id,compositepk_p,compositepk_k) 
+
+)`
+	}
+
+	if driver == drivers.Sqlite {
+		drop = `DROP TABLE IF EXISTS compositepk_relatedstohasmanycompositepk_relateds`
+	} else if driver == drivers.Mysql {
+		drop = `DROP TABLE IF EXISTS compositepk_relatedstohasmanycompositepk_relateds`
+	} else if driver == drivers.Pgsql {
+		drop = `DROP TABLE IF EXISTS compositepk_relatedstohasmanycompositepk_relateds`
+	}
+
+	return jCompositePkrelatedsToHasManyCompositePkrelatedsSetup{
+		Name:       `compositepk_relatedstohasmanycompositepk_relateds`,
+		CreateStmt: create,
+		DropStmt:   drop,
+		isView:     !true,
+	}
+}
+
+// jCompositePkrelatedsToHasManyCompositePkrelatedsModel provides helper to work with CompositePkrelatedsToHasManyCompositePkrelateds data provider
+type jCompositePkrelatedsToHasManyCompositePkrelatedsModel struct {
+	as string
+
+	HasManyCompositePkID builder.ValuePropertyMeta
+
+	CompositePkP builder.ValuePropertyMeta
+
+	CompositePkK builder.ValuePropertyMeta
+}
+
+// Eq provided items.
+func (j jCompositePkrelatedsToHasManyCompositePkrelatedsModel) Eq(s ...*CompositePkrelatedsToHasManyCompositePkrelateds) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JCompositePkrelatedsToHasManyCompositePkrelatedsModel.HasManyCompositePkID.Eq(t.HasManyCompositePkID),
+
+			JCompositePkrelatedsToHasManyCompositePkrelatedsModel.CompositePkP.Eq(t.CompositePkP),
+
+			JCompositePkrelatedsToHasManyCompositePkrelatedsModel.CompositePkK.Eq(t.CompositePkK),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// In provided items.
+func (j jCompositePkrelatedsToHasManyCompositePkrelatedsModel) In(s ...*CompositePkrelatedsToHasManyCompositePkrelateds) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JCompositePkrelatedsToHasManyCompositePkrelatedsModel.HasManyCompositePkID.Eq(t.HasManyCompositePkID),
+
+			JCompositePkrelatedsToHasManyCompositePkrelatedsModel.CompositePkP.Eq(t.CompositePkP),
+
+			JCompositePkrelatedsToHasManyCompositePkrelatedsModel.CompositePkK.Eq(t.CompositePkK),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// As returns a copy with an alias.
+func (j jCompositePkrelatedsToHasManyCompositePkrelatedsModel) As(as string) jCompositePkrelatedsToHasManyCompositePkrelatedsModel {
+	j.as = as
+
+	j.HasManyCompositePkID.TableAlias = as
+
+	j.CompositePkP.TableAlias = as
+
+	j.CompositePkK.TableAlias = as
+
+	return j
+}
+
+// Table returns the sql table name
+func (j jCompositePkrelatedsToHasManyCompositePkrelatedsModel) Table() string {
+	return "compositepk_relatedstohasmanycompositepk_relateds"
+}
+
+// Alias returns the current alias
+func (j jCompositePkrelatedsToHasManyCompositePkrelatedsModel) Alias() string {
+	if j.as == "" {
+		return j.Table()
+	}
+	return j.as
+}
+
+// Properties returns a map of property name => meta
+func (j jCompositePkrelatedsToHasManyCompositePkrelatedsModel) Properties() map[string]builder.MetaProvider {
+	ret := map[string]builder.MetaProvider{}
+
+	ret["HasManyCompositePkID"] = j.HasManyCompositePkID
+
+	ret["CompositePkP"] = j.CompositePkP
+
+	ret["CompositePkK"] = j.CompositePkK
+
+	return ret
+}
+
+// Fields returns given sql fields with appropriate aliasing.
+func (j jCompositePkrelatedsToHasManyCompositePkrelatedsModel) Fields(ins ...string) []string {
+	dialect := runtime.GetDialect()
+	if len(ins) == 0 {
+		ins = append(ins, "*")
+	}
+	for i, in := range ins {
+		if j.as != "" {
+			if in == "*" {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
+			} else {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
+			}
+		}
+	}
+	return ins
+}
+
+// JCompositePkrelatedsToHasManyCompositePkrelatedsModel provides helper to work with CompositePkrelatedsToHasManyCompositePkrelateds data provider
+var JCompositePkrelatedsToHasManyCompositePkrelatedsModel = jCompositePkrelatedsToHasManyCompositePkrelatedsModel{
+
+	HasManyCompositePkID: builder.NewValueMeta(
+		`hasmanycompositepk_id`, `INTEGER`,
+		`HasManyCompositePkID`, `int64`,
+		true, false,
+	),
+
+	CompositePkP: builder.NewValueMeta(
+		`compositepk_p`, `TEXT`,
+		`CompositePkP`, `string`,
+		true, false,
+	),
+
+	CompositePkK: builder.NewValueMeta(
+		`compositepk_k`, `TEXT`,
+		`CompositePkK`, `string`,
+		true, false,
+	),
+}
+
+// CompositePkrelatedsToHasManyCompositePkrelateds is automatically generated to handle a many to many relationship.
+type CompositePkrelatedsToHasManyCompositePkrelateds struct {
+	HasManyCompositePkID int64
+
+	CompositePkP string
+
+	CompositePkK string
+}
+
+type jCompositePkrelatedsToHasManyCompositePkrelatedsDeleteBuilder struct {
+	*builder.DeleteBuilder
+}
+
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Where returns a jCompositePkrelatedsToHasManyCompositePkrelatedsDeleteBuilder instead of builder.DeleteBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsDeleteBuilder) Where(query interface{}, value ...interface{}) *jCompositePkrelatedsToHasManyCompositePkrelatedsDeleteBuilder {
+	c.DeleteBuilder.Where(query, value...)
+	return c
+}
+
+type jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder struct {
+	as string
+	*builder.SelectBuilder
+}
+
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Read evaluates current select query and load the results into a CompositePkrelatedsToHasManyCompositePkrelateds
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) Read() (*CompositePkrelatedsToHasManyCompositePkrelateds, error) {
+	var one CompositePkrelatedsToHasManyCompositePkrelateds
+	err := c.LoadStruct(&one)
+	return &one, err
+}
+
+//ReadAll evaluates current select query and load the results into a slice of CompositePkrelatedsToHasManyCompositePkrelateds
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) ReadAll() ([]*CompositePkrelatedsToHasManyCompositePkrelateds, error) {
+	var all []*CompositePkrelatedsToHasManyCompositePkrelateds
+	_, err := c.LoadStructs(&all)
+	return all, err
+}
+
+//Where returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) Where(query interface{}, value ...interface{}) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.Where(query, value...)
+	return c
+}
+
+//GroupBy returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) GroupBy(col ...string) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) Having(query interface{}, value ...interface{}) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) Limit(n uint64) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) Offset(n uint64) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) OrderAsc(col string) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) OrderDesc(col string) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) OrderDir(col string, isAsc bool) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) OrderBy(col string) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Join returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) Join(table, on interface{}) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.Join(table, on)
+	return c
+}
+
+//LeftJoin returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) LeftJoin(table, on interface{}) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.LeftJoin(table, on)
+	return c
+}
+
+//RightJoin returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) RightJoin(table, on interface{}) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.RightJoin(table, on)
+	return c
+}
+
+//FullJoin returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) FullJoin(table, on interface{}) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.FullJoin(table, on)
+	return c
+}
+
+//Distinct returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) Distinct() *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.Distinct()
+	return c
+}
+
+// JCompositePkrelatedsToHasManyCompositePkrelateds provides a basic querier
+func JCompositePkrelatedsToHasManyCompositePkrelateds(db dbr.SessionRunner) jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier {
+	return jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier{
+		db: db,
+	}
+}
+
+type jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier struct {
+	db dbr.SessionRunner
+	as string
+}
+
+//As set alias prior building.
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) As(as string) jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier {
+	c.as = as
+	return c
+}
+
+//Model returns a model with appropriate aliasing.
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) Model() jCompositePkrelatedsToHasManyCompositePkrelatedsModel {
+	return JCompositePkrelatedsToHasManyCompositePkrelatedsModel.As(c.as)
+}
+
+//Select returns a CompositePkrelatedsToHasManyCompositePkrelateds Select Builder.
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) Select(what ...string) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	m := c.Model()
+	dialect := runtime.GetDialect()
+	from := dialect.QuoteIdent(m.Table())
+	if m.Alias() != "" && m.Alias() != m.Table() {
+		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias() != "" && m.Alias() != m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias + ".*")
+	}
+	return &jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder{
+		as: c.as,
+		SelectBuilder: &builder.SelectBuilder{
+			SelectBuilder: c.db.Select(what...).From(from),
+		},
+	}
+}
+
+//Where returns a CompositePkrelatedsToHasManyCompositePkrelateds Select Builder.
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) Where(query interface{}, value ...interface{}) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	return c.Select().Where(query, value...)
+}
+
+//Count returns a CompositePkrelatedsToHasManyCompositePkrelateds Select Builder to count given expressions.
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) Count(what ...string) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	if len(what) == 0 {
+		what = append(what, "*")
+	}
+	return c.Select("COUNT(" + strings.Join(what, ",") + ")")
+}
+
+// Insert a new CompositePkrelatedsToHasManyCompositePkrelateds, if it has autoincrement primary key, the value will be set.
+// It stops on first error.
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) Insert(items ...*CompositePkrelatedsToHasManyCompositePkrelateds) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		if runtime.Runs(drivers.Mysql) {
+
+			if len(data.CompositePkP) > 255 {
+				return nil, fmt.Errorf("CompositePkP: PRIMARY KEY length exceeded max=255, got=%v", len(data.CompositePkP))
+			}
+
+		}
+
+		if runtime.Runs(drivers.Mysql) {
+
+			if len(data.CompositePkK) > 255 {
+				return nil, fmt.Errorf("CompositePkK: PRIMARY KEY length exceeded max=255, got=%v", len(data.CompositePkK))
+			}
+
+		}
+
+		query := c.db.InsertInto(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()).Columns(
+
+			`hasmanycompositepk_id`,
+
+			`compositepk_p`,
+
+			`compositepk_k`,
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
+
+			res, err = query.Exec()
+
+		} else {
+			res, err = query.Exec()
+
+		}
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// InsertBulk inserts multiple items into the database.
+// It does not post update any auto increment field.
+// It builds an insert query of multiple rows and send it on the underlying connection.
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) InsertBulk(items ...*CompositePkrelatedsToHasManyCompositePkrelateds) error {
+	panic("todo")
+}
+
+//Delete returns a delete builder
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) Delete() *jCompositePkrelatedsToHasManyCompositePkrelatedsDeleteBuilder {
+	return &jCompositePkrelatedsToHasManyCompositePkrelatedsDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()),
+		},
+	}
+}
+
+//DeleteByPk deletes one CompositePkrelatedsToHasManyCompositePkrelateds by its PKs
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) DeleteByPk(HasManyCompositePkID int64, CompositePkP string, CompositePkK string) error {
+	_, err := c.Delete().Where(
+
+		JCompositePkrelatedsToHasManyCompositePkrelatedsModel.HasManyCompositePkID.Eq(HasManyCompositePkID),
+
+		JCompositePkrelatedsToHasManyCompositePkrelatedsModel.CompositePkP.Eq(CompositePkP),
+
+		JCompositePkrelatedsToHasManyCompositePkrelatedsModel.CompositePkK.Eq(CompositePkK),
+	).Exec()
+	return err
+}
+
+// DeleteAll given CompositePkrelatedsToHasManyCompositePkrelateds
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) DeleteAll(items ...*CompositePkrelatedsToHasManyCompositePkrelateds) (sql.Result, error) {
+	q := c.Delete().Where(
+		JCompositePkrelatedsToHasManyCompositePkrelatedsModel.In(items...),
+	)
+	return q.Exec()
+}
+
+//Find one CompositePkrelatedsToHasManyCompositePkrelateds using its PKs
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) Find(HasManyCompositePkID int64, CompositePkP string, CompositePkK string) (*CompositePkrelatedsToHasManyCompositePkrelateds, error) {
+	return c.Select().Where(
+
+		JCompositePkrelatedsToHasManyCompositePkrelatedsModel.HasManyCompositePkID.Eq(HasManyCompositePkID),
+
+		JCompositePkrelatedsToHasManyCompositePkrelatedsModel.CompositePkP.Eq(CompositePkP),
+
+		JCompositePkrelatedsToHasManyCompositePkrelatedsModel.CompositePkK.Eq(CompositePkK),
+	).Read()
 }

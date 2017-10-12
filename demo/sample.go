@@ -51,16 +51,59 @@ type BasicTypes struct {
 //TextPk have a text primary key column.
 //jedi:second_sample
 type TextPk struct {
-	Name        string `jedi:"@pk"` // PK on non integer
-	Description string
+	Name                string `jedi:"@pk"` // PK on non integer
+	Description         string
+	hasManyHasOneTextPk []*HasOneTextPk  `jedi:"@has_many=HasOneTextPk.related"`
+	relateds            []*HasManyTextPk `jedi:"@has_many=HasManyTextPk.relateds"`
+}
+
+//HasOneTextPk ...
+//todo: write tests
+//jedi:
+type HasOneTextPk struct {
+	ID          int64 `jedi:"@pk"`
+	X           string
+	related     *TextPk `jedi:"@has_one=TextPk"`
+	RelatedName *string
+}
+
+//HasManyTextPk ...
+//todo: write tests
+//jedi:
+type HasManyTextPk struct {
+	ID       int64 `jedi:"@pk"`
+	X        string
+	relateds []*TextPk `jedi:"@has_many=TextPk.relateds"`
 }
 
 //CompositePk have a text primary key column.
 //jedi:
 type CompositePk struct {
-	P           string `jedi:"@pk"`
-	K           string `jedi:"@pk"`
-	Description string
+	P                        string `jedi:"@pk"`
+	K                        string `jedi:"@pk"`
+	Description              string
+	hasManyHasOneCompositePk []*HasOneCompositePk  `jedi:"@has_many=HasOneCompositePk.related"`
+	relateds                 []*HasManyCompositePk `jedi:"@has_many=HasManyCompositePk.relateds"`
+}
+
+//HasOneCompositePk ...
+//todo: write tests
+//jedi:
+type HasOneCompositePk struct {
+	ID       int64 `jedi:"@pk"`
+	X        string
+	related  *CompositePk `jedi:"@has_one=CompositePk"`
+	RelatedP *string
+	RelatedK *string
+}
+
+//HasManyCompositePk ...
+//todo: write tests
+//jedi:
+type HasManyCompositePk struct {
+	ID       int64 `jedi:"@pk"`
+	X        string
+	relateds []*CompositePk `jedi:"@has_many=CompositePk.relateds"`
 }
 
 //DateType have dates properties.

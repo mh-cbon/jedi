@@ -75,7 +75,7 @@ func TestCompositePk(t *testing.T) {
 	t.Run("trigger error if the value len > 255 when mysql is the db engine", func(t *testing.T) {
 		_, err := JCompositePk(sess).Insert(&CompositePk{P: strings.Repeat("A", 256), K: strings.Repeat("B", 256)})
 		if jedi.Runs(drivers.Mysql) {
-			if err != nil {
+			if err == nil {
 				t.Fatal("err must not be nil, the value len exceed VARCHAR max (255)")
 			}
 		} else {
