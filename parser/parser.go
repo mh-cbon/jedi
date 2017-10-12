@@ -240,7 +240,7 @@ func itemGoType(s string) string {
 func hasManyAddColumns(join, left, right *model.Struct, leftProp, rightProp *model.Field) {
 	for _, r := range right.Pks() {
 		gType := itemGoType(right.Name)
-		sName := fmt.Sprintf("%v_%v", strings.ToLower(gType), strings.ToLower(r.Name))
+		sName := fmt.Sprintf("%v_%v", camelCaseToSnakeCase(gType), strings.ToLower(r.Name))
 		gName := fmt.Sprintf("%v%v", gType, r.Name)
 		join.Fields = append(join.Fields, &model.Field{
 			Name:    gName,
@@ -252,7 +252,7 @@ func hasManyAddColumns(join, left, right *model.Struct, leftProp, rightProp *mod
 	}
 	for _, l := range left.Pks() {
 		gType := itemGoType(left.Name)
-		sName := fmt.Sprintf("%v_%v", strings.ToLower(gType), strings.ToLower(l.Name))
+		sName := fmt.Sprintf("%v_%v", camelCaseToSnakeCase(gType), strings.ToLower(l.Name))
 		gName := fmt.Sprintf("%v%v", gType, l.Name)
 		join.Fields = append(join.Fields, &model.Field{
 			Name:    gName,

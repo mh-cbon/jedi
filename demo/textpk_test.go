@@ -84,6 +84,49 @@ func TestTextPk(t *testing.T) {
 			}
 		}
 	})
+	t.Run("can read has_one to many relations", func(t *testing.T) {
+		n := "rr"
+		JTextPk(sess).Insert(&TextPk{Name: n})
+		p := &HasOneTextPk{RelatedName: &n}
+		_, err := p.Related(sess)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("can link some related objects", func(t *testing.T) {
+		r := &HasManyTextPk{}
+		r1 := &HasManyTextPk{}
+		JHasManyTextPk(sess).Insert(r, r1)
+		p := &TextPk{Name: "rr"}
+		_, err := p.LinkWithRelateds(sess, r, r1)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("can read has_many to one relations", func(t *testing.T) {
+		p := &TextPk{Name: "rr"}
+		res, err := p.Relateds(sess, "", "", "").ReadAll()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(res) != 2 {
+			t.Fatal("must get 2 results")
+		}
+	})
+	t.Run("fails to link same objects twice", func(t *testing.T) {
+		p := &TextPk{}
+		_, err := p.LinkWithRelateds(sess, &HasManyTextPk{ID: 3}, &HasManyTextPk{ID: 3})
+		if err == nil {
+			t.Fatal("must fail: UNIQUE constraint failed")
+		}
+	})
+	t.Run("can unlink some related objects", func(t *testing.T) {
+		p := &TextPk{}
+		_, err := p.UnlinkWithRelateds(sess, &HasManyTextPk{ID: 1}, &HasManyTextPk{ID: 2})
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 	t.Run("can drop the schema", func(t *testing.T) {
 		if err := JTextPkSetup().Drop(conn); err != nil {
 			t.Fatal(err)

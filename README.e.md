@@ -21,7 +21,7 @@ Features
 - ‎‎✔ auto increment support
 - ‎‎✔ Always UTC date
 - ‎‎✔ text pk
-- ‎‎✔ composite pk
+- ‎‎✔/‎- composite pk
 - ‎✔ hasOne relation helper
 - ‎✔ hasMany2One relation helper
 - ‎‎✔/‎- hasMany2Many relation helper

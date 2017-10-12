@@ -889,6 +889,8 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 			m := J{{$m2m.Local.Name}}Model
 			if As{{$m2m.Local.Name}} != "" {
 				 m = m.As(As{{$m2m.Local.Name}})
+			} else {
+				m = m.As(m.Table())
 			}
 			query = query.Where(
 				{{range $i, $col := $m2m.Local.Pks}}

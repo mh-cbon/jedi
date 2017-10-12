@@ -1103,6 +1103,8 @@ func (g *Product) Categories(db dbr.SessionRunner,
 		m := JProductModel
 		if AsProduct != "" {
 			m = m.As(AsProduct)
+		} else {
+			m = m.As(m.Table())
 		}
 		query = query.Where(
 
@@ -1983,6 +1985,8 @@ func (g *Category) Products(db dbr.SessionRunner,
 		m := JCategoryModel
 		if AsCategory != "" {
 			m = m.As(AsCategory)
+		} else {
+			m = m.As(m.Table())
 		}
 		query = query.Where(
 

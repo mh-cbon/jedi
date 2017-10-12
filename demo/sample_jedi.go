@@ -2453,7 +2453,7 @@ func (g *TextPk) Relateds(db dbr.SessionRunner,
 		}
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "hasmanytextpk_id",
+			midTable, "has_many_text_pk_id",
 			leftTable, "id",
 		)
 
@@ -2472,7 +2472,7 @@ func (g *TextPk) Relateds(db dbr.SessionRunner,
 		}
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "textpk_name",
+			midTable, "text_pk_name",
 			rightTable, "name",
 		)
 
@@ -2487,6 +2487,8 @@ func (g *TextPk) Relateds(db dbr.SessionRunner,
 		m := JTextPkModel
 		if AsTextPk != "" {
 			m = m.As(AsTextPk)
+		} else {
+			m = m.As(m.Table())
 		}
 		query = query.Where(
 
@@ -2562,7 +2564,7 @@ func (c *jTextPkSelectBuilder) JoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "textpk_name",
+			midTable, "text_pk_name",
 			leftTable, "name",
 		)
 
@@ -2581,7 +2583,7 @@ func (c *jTextPkSelectBuilder) JoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "hasmanytextpk_id",
+			midTable, "has_many_text_pk_id",
 			rightTable, "id",
 		)
 
@@ -2616,7 +2618,7 @@ func (c *jTextPkSelectBuilder) LeftJoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "textpk_name",
+			midTable, "text_pk_name",
 			leftTable, "name",
 		)
 
@@ -2635,7 +2637,7 @@ func (c *jTextPkSelectBuilder) LeftJoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "hasmanytextpk_id",
+			midTable, "has_many_text_pk_id",
 			rightTable, "id",
 		)
 
@@ -2670,7 +2672,7 @@ func (c *jTextPkSelectBuilder) LeftJoinRelateds(
 // 		on := ""
 //
 // 		on += fmt.Sprintf("%v.%v = %v.%v",
-// 			midTable, "textpk_name",
+// 			midTable, "text_pk_name",
 // 			leftTable, "name",
 // 			)
 //
@@ -2690,7 +2692,7 @@ func (c *jTextPkSelectBuilder) LeftJoinRelateds(
 // 		on := ""
 //
 // 		on += fmt.Sprintf("%v.%v = %v.%v",
-// 			midTable, "hasmanytextpk_id",
+// 			midTable, "has_many_text_pk_id",
 // 			rightTable, "id",
 // 			)
 //
@@ -3987,7 +3989,7 @@ func (g *HasManyTextPk) Relateds(db dbr.SessionRunner,
 		}
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "textpk_name",
+			midTable, "text_pk_name",
 			leftTable, "name",
 		)
 
@@ -4006,7 +4008,7 @@ func (g *HasManyTextPk) Relateds(db dbr.SessionRunner,
 		}
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "hasmanytextpk_id",
+			midTable, "has_many_text_pk_id",
 			rightTable, "id",
 		)
 
@@ -4021,6 +4023,8 @@ func (g *HasManyTextPk) Relateds(db dbr.SessionRunner,
 		m := JHasManyTextPkModel
 		if AsHasManyTextPk != "" {
 			m = m.As(AsHasManyTextPk)
+		} else {
+			m = m.As(m.Table())
 		}
 		query = query.Where(
 
@@ -4096,7 +4100,7 @@ func (c *jHasManyTextPkSelectBuilder) JoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "hasmanytextpk_id",
+			midTable, "has_many_text_pk_id",
 			leftTable, "id",
 		)
 
@@ -4115,7 +4119,7 @@ func (c *jHasManyTextPkSelectBuilder) JoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "textpk_name",
+			midTable, "text_pk_name",
 			rightTable, "name",
 		)
 
@@ -4150,7 +4154,7 @@ func (c *jHasManyTextPkSelectBuilder) LeftJoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "hasmanytextpk_id",
+			midTable, "has_many_text_pk_id",
 			leftTable, "id",
 		)
 
@@ -4169,7 +4173,7 @@ func (c *jHasManyTextPkSelectBuilder) LeftJoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "textpk_name",
+			midTable, "text_pk_name",
 			rightTable, "name",
 		)
 
@@ -4204,7 +4208,7 @@ func (c *jHasManyTextPkSelectBuilder) LeftJoinRelateds(
 // 		on := ""
 //
 // 		on += fmt.Sprintf("%v.%v = %v.%v",
-// 			midTable, "hasmanytextpk_id",
+// 			midTable, "has_many_text_pk_id",
 // 			leftTable, "id",
 // 			)
 //
@@ -4224,7 +4228,7 @@ func (c *jHasManyTextPkSelectBuilder) LeftJoinRelateds(
 // 		on := ""
 //
 // 		on += fmt.Sprintf("%v.%v = %v.%v",
-// 			midTable, "textpk_name",
+// 			midTable, "text_pk_name",
 // 			rightTable, "name",
 // 			)
 //
@@ -4794,7 +4798,7 @@ func (g *CompositePk) Relateds(db dbr.SessionRunner,
 		}
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "hasmanycompositepk_id",
+			midTable, "has_many_composite_pk_id",
 			leftTable, "id",
 		)
 
@@ -4813,12 +4817,12 @@ func (g *CompositePk) Relateds(db dbr.SessionRunner,
 		}
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "compositepk_p",
+			midTable, "composite_pk_p",
 			rightTable, "p",
 		)
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "compositepk_k",
+			midTable, "composite_pk_k",
 			rightTable, "k",
 		)
 
@@ -4833,6 +4837,8 @@ func (g *CompositePk) Relateds(db dbr.SessionRunner,
 		m := JCompositePkModel
 		if AsCompositePk != "" {
 			m = m.As(AsCompositePk)
+		} else {
+			m = m.As(m.Table())
 		}
 		query = query.Where(
 
@@ -4916,12 +4922,12 @@ func (c *jCompositePkSelectBuilder) JoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "compositepk_p",
+			midTable, "composite_pk_p",
 			leftTable, "p",
 		)
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "compositepk_k",
+			midTable, "composite_pk_k",
 			leftTable, "k",
 		)
 
@@ -4940,7 +4946,7 @@ func (c *jCompositePkSelectBuilder) JoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "hasmanycompositepk_id",
+			midTable, "has_many_composite_pk_id",
 			rightTable, "id",
 		)
 
@@ -4975,12 +4981,12 @@ func (c *jCompositePkSelectBuilder) LeftJoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "compositepk_p",
+			midTable, "composite_pk_p",
 			leftTable, "p",
 		)
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "compositepk_k",
+			midTable, "composite_pk_k",
 			leftTable, "k",
 		)
 
@@ -4999,7 +5005,7 @@ func (c *jCompositePkSelectBuilder) LeftJoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "hasmanycompositepk_id",
+			midTable, "has_many_composite_pk_id",
 			rightTable, "id",
 		)
 
@@ -5034,12 +5040,12 @@ func (c *jCompositePkSelectBuilder) LeftJoinRelateds(
 // 		on := ""
 //
 // 		on += fmt.Sprintf("%v.%v = %v.%v",
-// 			midTable, "compositepk_p",
+// 			midTable, "composite_pk_p",
 // 			leftTable, "p",
 // 			)
 //
 // 		on += fmt.Sprintf("%v.%v = %v.%v",
-// 			midTable, "compositepk_k",
+// 			midTable, "composite_pk_k",
 // 			leftTable, "k",
 // 			)
 //
@@ -5059,7 +5065,7 @@ func (c *jCompositePkSelectBuilder) LeftJoinRelateds(
 // 		on := ""
 //
 // 		on += fmt.Sprintf("%v.%v = %v.%v",
-// 			midTable, "hasmanycompositepk_id",
+// 			midTable, "has_many_composite_pk_id",
 // 			rightTable, "id",
 // 			)
 //
@@ -6429,12 +6435,12 @@ func (g *HasManyCompositePk) Relateds(db dbr.SessionRunner,
 		}
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "compositepk_p",
+			midTable, "composite_pk_p",
 			leftTable, "p",
 		)
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "compositepk_k",
+			midTable, "composite_pk_k",
 			leftTable, "k",
 		)
 
@@ -6453,7 +6459,7 @@ func (g *HasManyCompositePk) Relateds(db dbr.SessionRunner,
 		}
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "hasmanycompositepk_id",
+			midTable, "has_many_composite_pk_id",
 			rightTable, "id",
 		)
 
@@ -6468,6 +6474,8 @@ func (g *HasManyCompositePk) Relateds(db dbr.SessionRunner,
 		m := JHasManyCompositePkModel
 		if AsHasManyCompositePk != "" {
 			m = m.As(AsHasManyCompositePk)
+		} else {
+			m = m.As(m.Table())
 		}
 		query = query.Where(
 
@@ -6547,7 +6555,7 @@ func (c *jHasManyCompositePkSelectBuilder) JoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "hasmanycompositepk_id",
+			midTable, "has_many_composite_pk_id",
 			leftTable, "id",
 		)
 
@@ -6566,12 +6574,12 @@ func (c *jHasManyCompositePkSelectBuilder) JoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "compositepk_p",
+			midTable, "composite_pk_p",
 			rightTable, "p",
 		)
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "compositepk_k",
+			midTable, "composite_pk_k",
 			rightTable, "k",
 		)
 
@@ -6606,7 +6614,7 @@ func (c *jHasManyCompositePkSelectBuilder) LeftJoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "hasmanycompositepk_id",
+			midTable, "has_many_composite_pk_id",
 			leftTable, "id",
 		)
 
@@ -6625,12 +6633,12 @@ func (c *jHasManyCompositePkSelectBuilder) LeftJoinRelateds(
 		on := ""
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "compositepk_p",
+			midTable, "composite_pk_p",
 			rightTable, "p",
 		)
 
 		on += fmt.Sprintf("%v.%v = %v.%v",
-			midTable, "compositepk_k",
+			midTable, "composite_pk_k",
 			rightTable, "k",
 		)
 
@@ -6665,7 +6673,7 @@ func (c *jHasManyCompositePkSelectBuilder) LeftJoinRelateds(
 // 		on := ""
 //
 // 		on += fmt.Sprintf("%v.%v = %v.%v",
-// 			midTable, "hasmanycompositepk_id",
+// 			midTable, "has_many_composite_pk_id",
 // 			leftTable, "id",
 // 			)
 //
@@ -6685,12 +6693,12 @@ func (c *jHasManyCompositePkSelectBuilder) LeftJoinRelateds(
 // 		on := ""
 //
 // 		on += fmt.Sprintf("%v.%v = %v.%v",
-// 			midTable, "compositepk_p",
+// 			midTable, "composite_pk_p",
 // 			rightTable, "p",
 // 			)
 //
 // 		on += fmt.Sprintf("%v.%v = %v.%v",
-// 			midTable, "compositepk_k",
+// 			midTable, "composite_pk_k",
 // 			rightTable, "k",
 // 			)
 //
@@ -7709,23 +7717,23 @@ func JHasManyTextPkrelatedsToTextPkrelatedsSetup() runtime.Setuper {
 
 	if driver == drivers.Sqlite {
 		create = `CREATE TABLE IF NOT EXISTS hasmanytextpk_relatedstotextpk_relateds (
-hasmanytextpk_id INTEGER,
-textpk_name TEXT,
-PRIMARY KEY (hasmanytextpk_id,textpk_name) 
+has_many_text_pk_id INTEGER,
+text_pk_name TEXT,
+PRIMARY KEY (has_many_text_pk_id,text_pk_name) 
 
 )`
 	} else if driver == drivers.Mysql {
 		create = `CREATE TABLE IF NOT EXISTS hasmanytextpk_relatedstotextpk_relateds (
-hasmanytextpk_id INTEGER NOT NULL,
-textpk_name VARCHAR(255) NOT NULL,
-PRIMARY KEY (hasmanytextpk_id,textpk_name) 
+has_many_text_pk_id INTEGER NOT NULL,
+text_pk_name VARCHAR(255) NOT NULL,
+PRIMARY KEY (has_many_text_pk_id,text_pk_name) 
 
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS hasmanytextpk_relatedstotextpk_relateds (
-hasmanytextpk_id INTEGER,
-textpk_name TEXT,
-PRIMARY KEY (hasmanytextpk_id,textpk_name) 
+has_many_text_pk_id INTEGER,
+text_pk_name TEXT,
+PRIMARY KEY (has_many_text_pk_id,text_pk_name) 
 
 )`
 	}
@@ -7840,13 +7848,13 @@ func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Fields(ins ...string) []str
 var JHasManyTextPkrelatedsToTextPkrelatedsModel = jHasManyTextPkrelatedsToTextPkrelatedsModel{
 
 	HasManyTextPkID: builder.NewValueMeta(
-		`hasmanytextpk_id`, `INTEGER`,
+		`has_many_text_pk_id`, `INTEGER`,
 		`HasManyTextPkID`, `int64`,
 		true, false,
 	),
 
 	TextPkName: builder.NewValueMeta(
-		`textpk_name`, `TEXT`,
+		`text_pk_name`, `TEXT`,
 		`TextPkName`, `string`,
 		true, false,
 	),
@@ -8072,9 +8080,9 @@ func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Insert(items ...*HasManyT
 
 		query := c.db.InsertInto(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()).Columns(
 
-			`hasmanytextpk_id`,
+			`has_many_text_pk_id`,
 
-			`textpk_name`,
+			`text_pk_name`,
 		).Record(data)
 		if runtime.Runs(drivers.Pgsql) {
 
@@ -8169,26 +8177,26 @@ func JCompositePkrelatedsToHasManyCompositePkrelatedsSetup() runtime.Setuper {
 
 	if driver == drivers.Sqlite {
 		create = `CREATE TABLE IF NOT EXISTS compositepk_relatedstohasmanycompositepk_relateds (
-hasmanycompositepk_id INTEGER,
-compositepk_p TEXT,
-compositepk_k TEXT,
-PRIMARY KEY (hasmanycompositepk_id,compositepk_p,compositepk_k) 
+has_many_composite_pk_id INTEGER,
+composite_pk_p TEXT,
+composite_pk_k TEXT,
+PRIMARY KEY (has_many_composite_pk_id,composite_pk_p,composite_pk_k) 
 
 )`
 	} else if driver == drivers.Mysql {
 		create = `CREATE TABLE IF NOT EXISTS compositepk_relatedstohasmanycompositepk_relateds (
-hasmanycompositepk_id INTEGER NOT NULL,
-compositepk_p VARCHAR(255) NOT NULL,
-compositepk_k VARCHAR(255) NOT NULL,
-PRIMARY KEY (hasmanycompositepk_id,compositepk_p,compositepk_k) 
+has_many_composite_pk_id INTEGER NOT NULL,
+composite_pk_p VARCHAR(255) NOT NULL,
+composite_pk_k VARCHAR(255) NOT NULL,
+PRIMARY KEY (has_many_composite_pk_id,composite_pk_p,composite_pk_k) 
 
 )`
 	} else if driver == drivers.Pgsql {
 		create = `CREATE TABLE IF NOT EXISTS compositepk_relatedstohasmanycompositepk_relateds (
-hasmanycompositepk_id INTEGER,
-compositepk_p TEXT,
-compositepk_k TEXT,
-PRIMARY KEY (hasmanycompositepk_id,compositepk_p,compositepk_k) 
+has_many_composite_pk_id INTEGER,
+composite_pk_p TEXT,
+composite_pk_k TEXT,
+PRIMARY KEY (has_many_composite_pk_id,composite_pk_p,composite_pk_k) 
 
 )`
 	}
@@ -8313,19 +8321,19 @@ func (j jCompositePkrelatedsToHasManyCompositePkrelatedsModel) Fields(ins ...str
 var JCompositePkrelatedsToHasManyCompositePkrelatedsModel = jCompositePkrelatedsToHasManyCompositePkrelatedsModel{
 
 	HasManyCompositePkID: builder.NewValueMeta(
-		`hasmanycompositepk_id`, `INTEGER`,
+		`has_many_composite_pk_id`, `INTEGER`,
 		`HasManyCompositePkID`, `int64`,
 		true, false,
 	),
 
 	CompositePkP: builder.NewValueMeta(
-		`compositepk_p`, `TEXT`,
+		`composite_pk_p`, `TEXT`,
 		`CompositePkP`, `string`,
 		true, false,
 	),
 
 	CompositePkK: builder.NewValueMeta(
-		`compositepk_k`, `TEXT`,
+		`composite_pk_k`, `TEXT`,
 		`CompositePkK`, `string`,
 		true, false,
 	),
@@ -8561,11 +8569,11 @@ func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) Insert(items ..
 
 		query := c.db.InsertInto(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()).Columns(
 
-			`hasmanycompositepk_id`,
+			`has_many_composite_pk_id`,
 
-			`compositepk_p`,
+			`composite_pk_p`,
 
-			`compositepk_k`,
+			`composite_pk_k`,
 		).Record(data)
 		if runtime.Runs(drivers.Pgsql) {
 
