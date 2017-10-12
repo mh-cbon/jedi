@@ -233,8 +233,8 @@ type Category struct {
 
 ```go
 type Product struct {
-	ID       int64      		`jedi:"@pk"`
-	categories []*Category 	`jedi:"@has_many=Category.products, @on=CatToProd"`
+	ID         int64          `jedi:"@pk"`
+	categories []*Category  `jedi:"@has_many=Category.products, @on=CatToProd"`
 	//...
 }
 type Category struct {
@@ -243,8 +243,8 @@ type Category struct {
 	//...
 }
 type CatToProd struct {
-	ProductsID       		int64      `jedi:"@pk"`
-	CategoriesID       	int64      `jedi:"@pk"`
+	ProductsID   int64 `jedi:"@pk"`
+	CategoriesID int64 `jedi:"@pk"`
 	//...
 }
 ```
@@ -296,7 +296,7 @@ package main
 
 import (
 	_ "github.com/mattn/go-sqlite3"
-	jedi "github.com/mh-cbon/jedi/runtime"
+	"github.com/gocraft/dbr"
 )
 
 func main () {
@@ -309,7 +309,7 @@ func main () {
 
 ### Find
 
-Every querier about types having primary keys implements a `Find(...pk) (type, error)` method.
+Every querier about types having primary keys implements a `Find(pk...) (type, error)` method.
 
 It reads one instance by its pk.
 
@@ -334,6 +334,8 @@ If the object has declared an `AUTO INCREMENT` field, the property is updated.
 
 An `integer primary key` field is `AUTO INCREMENT`.
 
+If a property is declared as `@last_updated` then its value will be set appropriately.
+
 ```go
 func main () {
 	// ...
@@ -353,6 +355,9 @@ func main () {
 To update data in the database, the type declared must have primary keys.
 
 The `Update(obj type) (sql.Result, error)` method attempts to write existing object into the database.
+
+If a property is declared as `@last_updated` then its value will be set appropriately, __also__,
+it is automatically added as a condition to the update query.
 
 ```go
 func main () {
@@ -427,7 +432,7 @@ See also dbr documentation for `Load`/`LoadStructs` etc.
 func main () {
 	// ...
 	todo, err := JTodo(sess).
-		Select("task.*"). // input sql values.
+		Select(JTodoModel.Fields("*")). // you might also use raw string.
 		Where(JTodoModel.Task.Like("%whatever%")). // set some conditions
 		Read() // get all results found
 	if err != nil {
@@ -441,7 +446,8 @@ See also `Limit`/`Offset` ect in dbr documentation.
 
 ### Where
 
-The `Where(query interface{}, value ...interface{}) <type>SelectBuilder` is a shorthand for `Querier(sess).Select().Where()`
+The `Where(query interface{}, value ...interface{}) <type>SelectBuilder`
+is a shorthand for `Querier(sess).Select("model.*").Where()`
 
 ```go
 func main () {
@@ -495,7 +501,7 @@ When you define a string field as being part of the PK,
 
 Error reference : `BLOB/TEXT column 'XXX' used in key specification without a key length`
 
-Ass an addition `jedi` will add special checks in the `Insert`/`Update` procedure to trigger an error
+As an addition `jedi` will add special checks in the `Insert`/`Update` procedure to trigger an error
 if you pass in a string with a length greater than 255 when `mysql` is the driver being used.
 
 This is to ensure consistency independently of the underlying driver.
@@ -532,7 +538,11 @@ type Product struct {
 The `@has_one` tag attribute defines a `one to one` relationship.
 
 The type declaring the `@has_one` attribute must also declare the
-imported primary keys respecting the convention `<local property name | ucfirst><foreign primary key name>`
+imported primary keys respecting the convention `<local property name | ucfirst><foreign primary key name>`.
+
+Imported primary keys and the actual relation property must have the same type of go value.
+
+They must be either both `pointer` or both `value`.
 
 ```go
 //Product is a sku representation.
@@ -784,8 +794,6 @@ type W struct {
 ```
 
 ### view-drop
-
-### view-create
 
 The `view-drop` let you define the `DROP` query of the view,
 
