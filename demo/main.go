@@ -15,9 +15,9 @@ import (
 )
 
 // go install && go generate demo/*.go
+// JDRIVER="mysql" JDSN="root:@/test?parseTime=true" go test demo/*.go
 // go run demo/* --driver postgres --dsn="user=test2 pwd=test2 dbname=test2 sslmode=disable"
 // go run demo/* --driver=mysql --dsn="root:@/test?parseTime=true"
-// JDRIVER="mysql" JDSN="root:@/test?parseTime=true" go test demo/*_test.go
 func main() {
 
 	var dsn string
