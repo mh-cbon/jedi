@@ -28,6 +28,7 @@ type PropertyMeta struct {
 	hasOne  string
 	hasMany string
 	On      string
+	RelType string
 }
 
 // IsRel returns true when thep roperty is a relation ship.
@@ -128,6 +129,7 @@ type RelPropertyMeta struct {
 func NewRelMeta(
 	goName, goType string,
 	hasOne, hasMany, On string,
+	RelType string,
 ) RelPropertyMeta {
 	return RelPropertyMeta{
 		PropertyMeta: PropertyMeta{

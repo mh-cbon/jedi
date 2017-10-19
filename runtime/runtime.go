@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/gocraft/dbr"
 	"github.com/gocraft/dbr/dialect"
@@ -102,4 +103,9 @@ func GetDialect() dbr.Dialect {
 		return dialect.PostgreSQL
 	}
 	return nil
+}
+
+//DumpSchema generated automatically.
+func DumpSchema(out io.Writer) {
+
 }

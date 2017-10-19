@@ -47,6 +47,7 @@ type Field struct {
 	On          string // for has many 2 many, define the middle table
 	HasMany     string // for has many, define the target property
 	HasOne      string // for has one, define the target property
+	RelType     string // has_one / has_many / has_many2many
 	IsPk        bool   // the field is part of the primary key
 	IsAI        bool   // the field is auto incremented.
 	IsNullable  bool   // the field is nullable because its go type is nilable.

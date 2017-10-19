@@ -229,6 +229,7 @@ var J{{.current.Name}}Model = j{{.current.Name}}Model{
 		{{$col.Name | ucfirst}}: builder.NewRelMeta(
 				{{$col.Name | quote}}, {{$col.GoType | quote}},
 				{{$col.HasOne | quote}}, {{$col.HasMany | quote}}, {{$col.On | quote}},
+				{{$col.RelType | quote}},
 		),
 	{{end}}
 }
@@ -590,12 +591,6 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 				{{end}}
 				res, err = query.Exec()
 
-				if err == nil {
-					if n, _ := res.RowsAffected(); n == 0 {
-						x := &builder.UpdateBuilder{UpdateBuilder: query}
-						err = runtime.NewNoRowsAffected(x.String())
-					}
-				}
 				{{range $i, $col := .current.Fields | dateTypes}}
 					{{if $col.LastUpdated}}
 						if err == nil {
@@ -604,6 +599,66 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 							{{else}}
 							data.{{$col.Name}} = newDate
 							{{end}}
+						}
+					{{end}}
+				{{end}}
+			}
+			return res, err
+		}
+		// MustUpdate a {{.current.Name}}. It stops on first error. It errors if an update query does not affect row.
+		func (c j{{.current.Name}}Querier) MustUpdate(items ...*{{.current.Name}}) (sql.Result,error) {
+			var res sql.Result
+			var err error
+			for _, data := range items {
+				{{range $i, $col := .current.Fields | dateTypes}}
+					{{if $col.LastUpdated}}
+						currentDate := data.{{$col.Name}}
+						newDate := time.Now().UTC().Truncate(time.Microsecond)
+						{{if $col.IsStar}}
+						if currentDate != nil {
+							y := currentDate.Truncate(time.Microsecond)
+							currentDate = &y
+						}
+						{{else}}
+						currentDate = currentDate.Truncate(time.Microsecond)
+						{{end}}
+					{{end}}
+				{{end}}
+				res, err = c.Update(data)
+				if err == nil {
+					if n, _ := res.RowsAffected(); n == 0 {
+						query := c.db.Update(J{{.current.Name}}Model.Table())
+						{{range $i, $col := .current.Fields | notPk | withSQLType | withGoName}}
+							{{if $col.LastUpdated}}
+								query = query.Set({{.SQLName | quote}}, newDate)
+							{{else}}
+								query = query.Set({{.SQLName | quote}}, data.{{.Name}})
+							{{end}}
+						{{end}}
+						{{range $i, $col := .current.Fields | isPk}}
+							query = query.Where("{{$col.SQLName}} = ?", data.{{$col.Name}})
+						{{end}}
+						{{range $i, $col := .current.Fields | dateTypes}}
+							{{if $col.LastUpdated}}
+								{{if $col.IsStar}}
+								if currentDate == nil {
+									query = query.Where("{{$col.SQLName}} IS NULL")
+								} else {
+									query = query.Where("{{$col.SQLName}} = ?", currentDate)
+								}
+								{{else}}
+								query = query.Where("{{$col.SQLName}} = ?", currentDate)
+								{{end}}
+							{{end}}
+						{{end}}
+						x := &builder.UpdateBuilder{UpdateBuilder: query}
+						err = runtime.NewNoRowsAffected(x.String())
+					}
+				}
+				{{range $i, $col := .current.Fields | dateTypes}}
+					{{if $col.LastUpdated}}
+						if err != nil {
+							data.{{$col.Name}} = currentDate
 						}
 					{{end}}
 				{{end}}
@@ -628,6 +683,17 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 		}
 	}
 
+	// MustDelete requires the query to affeect rows.
+	func (c j{{.current.Name}}Querier) MustDelete() *j{{.current.Name}}DeleteBuilder {
+		ret := &j{{.current.Name}}DeleteBuilder{
+			&builder.DeleteBuilder{
+				DeleteBuilder: c.db.DeleteFrom(J{{.current.Name}}Model.Table()),
+			},
+		}
+		ret.MustDelete()
+		return ret
+	}
+
 	{{ if .current.Fields | hasPkField }}
 		//DeleteByPk deletes one {{.current.Name}} by its PKs
 		func (c j{{.current.Name}}Querier) DeleteByPk({{.current.Fields | isPk | AsMethodParams}}) error {
@@ -645,6 +711,28 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 				J{{$.current.Name}}Model.In(items...),
 			)
 			return q.Exec()
+		}
+
+		// MustDeleteAll given {{.current.Name}}
+		func (c j{{.current.Name}}Querier) MustDeleteAll(items ...*{{.current.Name}}) (sql.Result, error) {
+			var res sql.Result
+			var err error
+			for _, d := range items {
+				res, err = c.DeleteAll(d)
+				if err != nil {
+					return res, err
+				}
+				if n, e := res.RowsAffected(); e!=nil{
+					return res, e
+				} else if n == 0 {
+					q := c.Delete().Where(
+						J{{$.current.Name}}Model.In(items...),
+					)
+					err = runtime.NewNoRowsAffected(q.String())
+					return res, err
+				}
+			}
+			return res, err
 		}
 
 		//Find one {{.current.Name}} using its PKs

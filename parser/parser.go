@@ -151,6 +151,7 @@ func Parse(file string) ([]*model.Struct, error) {
 							r.Name, g.Name, r.Name, f.Name)
 					}
 				}
+				f.RelType = "has_one"
 			}
 		}
 	}
@@ -187,6 +188,7 @@ func Parse(file string) ([]*model.Struct, error) {
 
 				if foreignProp.HasOne != "" {
 					// looking for many2many relations only
+					f.RelType = "has_many"
 					continue
 				}
 
@@ -218,6 +220,8 @@ func Parse(file string) ([]*model.Struct, error) {
 						hasManyAddColumns(todos[gType], r, foreign, f, foreignProp)
 					}
 				}
+
+				f.RelType = "has_many2many"
 			}
 		}
 	}

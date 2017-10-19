@@ -75,28 +75,41 @@ func TestLastUpdatedDate(t *testing.T) {
 			)
 		}
 	})
-	t.Run("update returns error if the LastUpdated value does not match", func(t *testing.T) {
+	t.Run("update silently fails if the query does not affect rows", func(t *testing.T) {
 		t1, err := JDateType(sess).Find(1)
 		if err != nil {
 			t.Fatal(err)
 		}
 		t1.LastUpdated = nil
 		_, err = JDateType(sess).Update(t1)
-		if err == nil {
-			t.Fatalf("Data update must fail, got err= %v", err)
+		if err != nil {
+			t.Fatalf("Data update must not fail, got err= %v", err)
 		}
 	})
-	t.Run("update returns error if the LastUpdated value does not match 2", func(t *testing.T) {
+	t.Run("MustUpdate returns an error if the query does not affect rows", func(t *testing.T) {
 		t1, err := JDateType(sess).Find(1)
 		if err != nil {
 			t.Fatal(err)
 		}
-		<-time.After(time.Millisecond)
+		t1.LastUpdated = nil
+		_, err = JDateType(sess).MustUpdate(t1)
+		if err == nil {
+			t.Fatalf("Data update must fail, got err= %v", err)
+		}
+	})
+	t.Run("update truncates @last_updated properties to 6 digits", func(t *testing.T) {
+		t1, err := JDateType(sess).Find(1)
+		if err != nil {
+			t.Fatal(err)
+		}
 		c := time.Now()
 		t1.LastUpdated = &c
 		_, err = JDateType(sess).Update(t1)
-		if err == nil {
-			t.Fatalf("Data update must fail, got err= %v", err)
+		if err != nil {
+			t.Fatalf("Data update must not fail, got err= %v", err)
+		}
+		if t1.LastUpdated.Equal(c.UTC()) {
+			t.Fatalf("Values must not match %v %v", t1.LastUpdated, c.UTC())
 		}
 	})
 	t.Run("insert then update", func(t *testing.T) {

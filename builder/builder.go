@@ -1,6 +1,8 @@
 package builder
 
 import (
+	"database/sql"
+
 	"github.com/gocraft/dbr"
 	"github.com/mh-cbon/jedi/runtime"
 )
@@ -39,6 +41,7 @@ func (s *SelectBuilder) String() string {
 //DeleteBuilder ...
 type DeleteBuilder struct {
 	*dbr.DeleteBuilder
+	mustDelete bool
 }
 
 //String returns the sql string for current dialect. It returns empty string if the build returns an error.
@@ -59,6 +62,27 @@ func (d *DeleteBuilder) Build(b dbr.Buffer) error {
 func (d *DeleteBuilder) Where(query interface{}, value ...interface{}) *DeleteBuilder {
 	d.DeleteBuilder.Where(query, value...)
 	return d
+}
+
+// MustDelete requires the query to affeect rows.
+func (d *DeleteBuilder) MustDelete() *DeleteBuilder {
+	d.mustDelete = true
+	return d
+}
+
+// Exec the query. If MustDelete=true, returns an error when the query does not affect rows.
+func (d *DeleteBuilder) Exec() (sql.Result, error) {
+	res, err := d.DeleteBuilder.Exec()
+	if d.mustDelete {
+		if err == nil {
+			if n, e := res.RowsAffected(); e != nil {
+				err = e
+			} else if n == 0 {
+				err = runtime.NewNoRowsAffected(d.String())
+			}
+		}
+	}
+	return res, err
 }
 
 //UpdateBuilder ...

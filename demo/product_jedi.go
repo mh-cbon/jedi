@@ -278,26 +278,31 @@ var JProductModel = jProductModel{
 	Categories: builder.NewRelMeta(
 		`categories`, `[]*Category`,
 		``, `Category.products`, ``,
+		`has_many2many`,
 	),
 
 	Brand: builder.NewRelMeta(
 		`brand`, `*Brand`,
 		`Brand.products`, ``, ``,
+		`has_one`,
 	),
 
 	Brand2: builder.NewRelMeta(
 		`brand2`, `*Brand`,
 		`Brand.products2`, ``, ``,
+		`has_one`,
 	),
 
 	Master: builder.NewRelMeta(
 		`master`, `*Product`,
 		`Product.master`, ``, ``,
+		`has_one`,
 	),
 
 	Variances: builder.NewRelMeta(
 		`variances`, `[]*Product`,
 		``, `Product.master`, ``,
+		`has_many`,
 	),
 }
 
@@ -576,8 +581,31 @@ func (c jProductQuerier) Update(items ...*Product) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+	}
+	return res, err
+}
+
+// MustUpdate a Product. It stops on first error. It errors if an update query does not affect row.
+func (c jProductQuerier) MustUpdate(items ...*Product) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		res, err = c.Update(data)
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
+				query := c.db.Update(JProductModel.Table())
+
+				query = query.Set(`sku`, data.SKU)
+
+				query = query.Set(`brand_id`, data.BrandID)
+
+				query = query.Set(`brand2_id`, data.Brand2ID)
+
+				query = query.Set(`master_id`, data.MasterID)
+
+				query = query.Where("id = ?", data.ID)
+
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
@@ -602,6 +630,17 @@ func (c jProductQuerier) Delete() *jProductDeleteBuilder {
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jProductQuerier) MustDelete() *jProductDeleteBuilder {
+	ret := &jProductDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JProductModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one Product by its PKs
 func (c jProductQuerier) DeleteByPk(ID int64) error {
 	_, err := c.Delete().Where(
@@ -617,6 +656,28 @@ func (c jProductQuerier) DeleteAll(items ...*Product) (sql.Result, error) {
 		JProductModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given Product
+func (c jProductQuerier) MustDeleteAll(items ...*Product) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JProductModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one Product using its PKs
@@ -1612,6 +1673,7 @@ var JCategoryModel = jCategoryModel{
 	Products: builder.NewRelMeta(
 		`products`, `[]*Product`,
 		``, `Product.categories`, ``,
+		`has_many2many`,
 	),
 }
 
@@ -1878,8 +1940,25 @@ func (c jCategoryQuerier) Update(items ...*Category) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+	}
+	return res, err
+}
+
+// MustUpdate a Category. It stops on first error. It errors if an update query does not affect row.
+func (c jCategoryQuerier) MustUpdate(items ...*Category) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		res, err = c.Update(data)
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
+				query := c.db.Update(JCategoryModel.Table())
+
+				query = query.Set(`name`, data.Name)
+
+				query = query.Where("id = ?", data.ID)
+
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
@@ -1904,6 +1983,17 @@ func (c jCategoryQuerier) Delete() *jCategoryDeleteBuilder {
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jCategoryQuerier) MustDelete() *jCategoryDeleteBuilder {
+	ret := &jCategoryDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JCategoryModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one Category by its PKs
 func (c jCategoryQuerier) DeleteByPk(ID int64) error {
 	_, err := c.Delete().Where(
@@ -1919,6 +2009,28 @@ func (c jCategoryQuerier) DeleteAll(items ...*Category) (sql.Result, error) {
 		JCategoryModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given Category
+func (c jCategoryQuerier) MustDeleteAll(items ...*Category) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JCategoryModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one Category using its PKs
@@ -2389,11 +2501,13 @@ var JBrandModel = jBrandModel{
 	Products: builder.NewRelMeta(
 		`products`, `[]*Product`,
 		``, `Product.brand`, ``,
+		`has_many`,
 	),
 
 	Products2: builder.NewRelMeta(
 		`products2`, `[]*Product`,
 		``, `Product.brand2`, ``,
+		`has_many`,
 	),
 }
 
@@ -2660,8 +2774,25 @@ func (c jBrandQuerier) Update(items ...*Brand) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+	}
+	return res, err
+}
+
+// MustUpdate a Brand. It stops on first error. It errors if an update query does not affect row.
+func (c jBrandQuerier) MustUpdate(items ...*Brand) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		res, err = c.Update(data)
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
+				query := c.db.Update(JBrandModel.Table())
+
+				query = query.Set(`name`, data.Name)
+
+				query = query.Where("id = ?", data.ID)
+
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
@@ -2686,6 +2817,17 @@ func (c jBrandQuerier) Delete() *jBrandDeleteBuilder {
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jBrandQuerier) MustDelete() *jBrandDeleteBuilder {
+	ret := &jBrandDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JBrandModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one Brand by its PKs
 func (c jBrandQuerier) DeleteByPk(ID int64) error {
 	_, err := c.Delete().Where(
@@ -2701,6 +2843,28 @@ func (c jBrandQuerier) DeleteAll(items ...*Brand) (sql.Result, error) {
 		JBrandModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given Brand
+func (c jBrandQuerier) MustDeleteAll(items ...*Brand) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JBrandModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one Brand using its PKs
@@ -3356,6 +3520,17 @@ func (c jCategoryproductsToProductcategoriesQuerier) Delete() *jCategoryproducts
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jCategoryproductsToProductcategoriesQuerier) MustDelete() *jCategoryproductsToProductcategoriesDeleteBuilder {
+	ret := &jCategoryproductsToProductcategoriesDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JCategoryproductsToProductcategoriesModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one CategoryproductsToProductcategories by its PKs
 func (c jCategoryproductsToProductcategoriesQuerier) DeleteByPk(CategoryID int64, ProductID int64) error {
 	_, err := c.Delete().Where(
@@ -3373,6 +3548,28 @@ func (c jCategoryproductsToProductcategoriesQuerier) DeleteAll(items ...*Categor
 		JCategoryproductsToProductcategoriesModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given CategoryproductsToProductcategories
+func (c jCategoryproductsToProductcategoriesQuerier) MustDeleteAll(items ...*CategoryproductsToProductcategories) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JCategoryproductsToProductcategoriesModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one CategoryproductsToProductcategories using its PKs

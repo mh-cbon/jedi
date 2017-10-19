@@ -168,9 +168,19 @@ func TestCRUD(t *testing.T) {
 			t.Fatalf("Data update is invalid got SKU=%v, want SKU=update3", p3.SKU)
 		}
 	})
-	t.Run("update fails if the query did not update rows", func(t *testing.T) {
+	t.Run("update does not fails if the query did not update rows", func(t *testing.T) {
 		p1 := &Product{SKU: "update1", ID: 10}
 		res, err := JProduct(sess).Update(p1)
+		if n, _ := res.RowsAffected(); n != 0 {
+			t.Fatalf("update affected %v rows", n)
+		}
+		if err != nil {
+			t.Fatalf("Data update must not fail: err was %v", err)
+		}
+	})
+	t.Run("MustUpdate fails if the query did not update rows", func(t *testing.T) {
+		p1 := &Product{SKU: "update1", ID: 10}
+		res, err := JProduct(sess).MustUpdate(p1)
 		if n, _ := res.RowsAffected(); n != 0 {
 			t.Fatalf("update affected %v rows", n)
 		}
@@ -202,7 +212,17 @@ func TestCRUD(t *testing.T) {
 			t.Fatalf("Data read must fail, got err=%v", err)
 		}
 	})
-	t.Run("delete many data", func(t *testing.T) {
+	t.Run("MustDelete data raise an error if the query did not affect rows", func(t *testing.T) {
+		if _, err := JProduct(sess).Find(3); err == nil {
+			t.Fatalf("Data read must fail got err=%v", err)
+		}
+		if res, err := JProduct(sess).MustDelete().Where("id = ?", 3).Exec(); err == nil {
+			t.Fatalf("Data delete must fail, got err=%v", err)
+		} else if n, _ := res.RowsAffected(); n != 0 {
+			t.Fatalf("Data delete must affect 0 rows, got n=%v", n)
+		}
+	})
+	t.Run("DeleteAll many data", func(t *testing.T) {
 		if _, err := JProduct(sess).Find(1); err != nil {
 			t.Fatalf("Data read must not fail got err=%v", err)
 		}
@@ -219,6 +239,24 @@ func TestCRUD(t *testing.T) {
 		}
 		if _, err := JProduct(sess).Find(2); err == nil {
 			t.Fatalf("Data read must fail, got err=%v", err)
+		}
+	})
+	t.Run("DeleteAll does not fail if no rows were affected", func(t *testing.T) {
+		if _, err := JProduct(sess).Find(100); err == nil {
+			t.Fatalf("Data read must fail got err=%v", err)
+		}
+		if res, err := JProduct(sess).DeleteAll(&Product{ID: 100}); err != nil {
+			t.Fatalf("DeleteAll must not fail, got err=%v", err)
+		} else if n, _ := res.RowsAffected(); n != 0 {
+			t.Fatalf("DeleteAll must affect 0 rows, got n=%v", n)
+		}
+	})
+	t.Run("MustDeleteAll does not fail if no rows were affected", func(t *testing.T) {
+		if _, err := JProduct(sess).Find(100); err == nil {
+			t.Fatalf("Data read must fail got err=%v", err)
+		}
+		if _, err := JProduct(sess).MustDeleteAll(&Product{ID: 100}); err == nil {
+			t.Fatalf("MustDeleteAll must  fail, got err=%v", err)
 		}
 	})
 }

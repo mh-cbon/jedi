@@ -553,8 +553,31 @@ func (c jSampleQuerier) Update(items ...*Sample) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+	}
+	return res, err
+}
+
+// MustUpdate a Sample. It stops on first error. It errors if an update query does not affect row.
+func (c jSampleQuerier) MustUpdate(items ...*Sample) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		res, err = c.Update(data)
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
+				query := c.db.Update(JSampleModel.Table())
+
+				query = query.Set(`name`, data.Name)
+
+				query = query.Set(`description`, data.Description)
+
+				query = query.Set(`update_date`, data.UpdateDate)
+
+				query = query.Set(`removal_date`, data.RemovalDate)
+
+				query = query.Where("id = ?", data.ID)
+
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
@@ -579,6 +602,17 @@ func (c jSampleQuerier) Delete() *jSampleDeleteBuilder {
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jSampleQuerier) MustDelete() *jSampleDeleteBuilder {
+	ret := &jSampleDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JSampleModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one Sample by its PKs
 func (c jSampleQuerier) DeleteByPk(ID int64) error {
 	_, err := c.Delete().Where(
@@ -594,6 +628,28 @@ func (c jSampleQuerier) DeleteAll(items ...*Sample) (sql.Result, error) {
 		JSampleModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given Sample
+func (c jSampleQuerier) MustDeleteAll(items ...*Sample) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JSampleModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one Sample using its PKs
@@ -1037,8 +1093,25 @@ func (c jBasicPKQuerier) Update(items ...*BasicPK) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+	}
+	return res, err
+}
+
+// MustUpdate a BasicPK. It stops on first error. It errors if an update query does not affect row.
+func (c jBasicPKQuerier) MustUpdate(items ...*BasicPK) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		res, err = c.Update(data)
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
+				query := c.db.Update(JBasicPKModel.Table())
+
+				query = query.Set(`whatever`, data.Whatever)
+
+				query = query.Where("id = ?", data.ID)
+
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
@@ -1063,6 +1136,17 @@ func (c jBasicPKQuerier) Delete() *jBasicPKDeleteBuilder {
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jBasicPKQuerier) MustDelete() *jBasicPKDeleteBuilder {
+	ret := &jBasicPKDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JBasicPKModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one BasicPK by its PKs
 func (c jBasicPKQuerier) DeleteByPk(ID int64) error {
 	_, err := c.Delete().Where(
@@ -1078,6 +1162,28 @@ func (c jBasicPKQuerier) DeleteAll(items ...*BasicPK) (sql.Result, error) {
 		JBasicPKModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given BasicPK
+func (c jBasicPKQuerier) MustDeleteAll(items ...*BasicPK) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JBasicPKModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one BasicPK using its PKs
@@ -1882,8 +1988,63 @@ func (c jBasicTypesQuerier) Update(items ...*BasicTypes) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+	}
+	return res, err
+}
+
+// MustUpdate a BasicTypes. It stops on first error. It errors if an update query does not affect row.
+func (c jBasicTypesQuerier) MustUpdate(items ...*BasicTypes) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		res, err = c.Update(data)
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
+				query := c.db.Update(JBasicTypesModel.Table())
+
+				query = query.Set(`string`, data.String)
+
+				query = query.Set(`string_p`, data.StringP)
+
+				query = query.Set(`intfield`, data.Int)
+
+				query = query.Set(`int_p`, data.IntP)
+
+				query = query.Set(`int32`, data.Int32)
+
+				query = query.Set(`int32_p`, data.Int32P)
+
+				query = query.Set(`int64`, data.Int64)
+
+				query = query.Set(`int64_p`, data.Int64P)
+
+				query = query.Set(`u_int`, data.UInt)
+
+				query = query.Set(`u_int_p`, data.UIntP)
+
+				query = query.Set(`u_int32`, data.UInt32)
+
+				query = query.Set(`u_int32_p`, data.UInt32P)
+
+				query = query.Set(`u_int64`, data.UInt64)
+
+				query = query.Set(`u_int64_p`, data.UInt64P)
+
+				query = query.Set(`bool`, data.Bool)
+
+				query = query.Set(`bool_p`, data.BoolP)
+
+				query = query.Set(`float32`, data.Float32)
+
+				query = query.Set(`float32_p`, data.Float32P)
+
+				query = query.Set(`float64`, data.Float64)
+
+				query = query.Set(`float64_p`, data.Float64P)
+
+				query = query.Where("id = ?", data.ID)
+
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
@@ -1908,6 +2069,17 @@ func (c jBasicTypesQuerier) Delete() *jBasicTypesDeleteBuilder {
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jBasicTypesQuerier) MustDelete() *jBasicTypesDeleteBuilder {
+	ret := &jBasicTypesDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JBasicTypesModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one BasicTypes by its PKs
 func (c jBasicTypesQuerier) DeleteByPk(ID int64) error {
 	_, err := c.Delete().Where(
@@ -1923,6 +2095,28 @@ func (c jBasicTypesQuerier) DeleteAll(items ...*BasicTypes) (sql.Result, error) 
 		JBasicTypesModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given BasicTypes
+func (c jBasicTypesQuerier) MustDeleteAll(items ...*BasicTypes) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JBasicTypesModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one BasicTypes using its PKs
@@ -2119,11 +2313,13 @@ var JTextPkModel = jTextPkModel{
 	HasManyHasOneTextPk: builder.NewRelMeta(
 		`hasManyHasOneTextPk`, `[]*HasOneTextPk`,
 		``, `HasOneTextPk.related`, ``,
+		`has_many`,
 	),
 
 	Relateds: builder.NewRelMeta(
 		`relateds`, `[]*HasManyTextPk`,
 		``, `HasManyTextPk.relateds`, ``,
+		`has_many2many`,
 	),
 }
 
@@ -2380,8 +2576,25 @@ func (c jTextPkQuerier) Update(items ...*TextPk) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+	}
+	return res, err
+}
+
+// MustUpdate a TextPk. It stops on first error. It errors if an update query does not affect row.
+func (c jTextPkQuerier) MustUpdate(items ...*TextPk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		res, err = c.Update(data)
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
+				query := c.db.Update(JTextPkModel.Table())
+
+				query = query.Set(`description`, data.Description)
+
+				query = query.Where("name = ?", data.Name)
+
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
@@ -2406,6 +2619,17 @@ func (c jTextPkQuerier) Delete() *jTextPkDeleteBuilder {
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jTextPkQuerier) MustDelete() *jTextPkDeleteBuilder {
+	ret := &jTextPkDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JTextPkModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one TextPk by its PKs
 func (c jTextPkQuerier) DeleteByPk(Name string) error {
 	_, err := c.Delete().Where(
@@ -2421,6 +2645,28 @@ func (c jTextPkQuerier) DeleteAll(items ...*TextPk) (sql.Result, error) {
 		JTextPkModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given TextPk
+func (c jTextPkQuerier) MustDeleteAll(items ...*TextPk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JTextPkModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one TextPk using its PKs
@@ -3011,6 +3257,7 @@ var JHasOneTextPkModel = jHasOneTextPkModel{
 	Related: builder.NewRelMeta(
 		`related`, `*TextPk`,
 		`TextPk`, ``, ``,
+		`has_one`,
 	),
 }
 
@@ -3281,8 +3528,27 @@ func (c jHasOneTextPkQuerier) Update(items ...*HasOneTextPk) (sql.Result, error)
 
 		res, err = query.Exec()
 
+	}
+	return res, err
+}
+
+// MustUpdate a HasOneTextPk. It stops on first error. It errors if an update query does not affect row.
+func (c jHasOneTextPkQuerier) MustUpdate(items ...*HasOneTextPk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		res, err = c.Update(data)
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
+				query := c.db.Update(JHasOneTextPkModel.Table())
+
+				query = query.Set(`x`, data.X)
+
+				query = query.Set(`related_name`, data.RelatedName)
+
+				query = query.Where("id = ?", data.ID)
+
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
@@ -3307,6 +3573,17 @@ func (c jHasOneTextPkQuerier) Delete() *jHasOneTextPkDeleteBuilder {
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jHasOneTextPkQuerier) MustDelete() *jHasOneTextPkDeleteBuilder {
+	ret := &jHasOneTextPkDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHasOneTextPkModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one HasOneTextPk by its PKs
 func (c jHasOneTextPkQuerier) DeleteByPk(ID int64) error {
 	_, err := c.Delete().Where(
@@ -3322,6 +3599,28 @@ func (c jHasOneTextPkQuerier) DeleteAll(items ...*HasOneTextPk) (sql.Result, err
 		JHasOneTextPkModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given HasOneTextPk
+func (c jHasOneTextPkQuerier) MustDeleteAll(items ...*HasOneTextPk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JHasOneTextPkModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one HasOneTextPk using its PKs
@@ -3650,6 +3949,7 @@ var JHasManyTextPkModel = jHasManyTextPkModel{
 	Relateds: builder.NewRelMeta(
 		`relateds`, `[]*TextPk`,
 		``, `TextPk.relateds`, ``,
+		`has_many2many`,
 	),
 }
 
@@ -3916,8 +4216,25 @@ func (c jHasManyTextPkQuerier) Update(items ...*HasManyTextPk) (sql.Result, erro
 
 		res, err = query.Exec()
 
+	}
+	return res, err
+}
+
+// MustUpdate a HasManyTextPk. It stops on first error. It errors if an update query does not affect row.
+func (c jHasManyTextPkQuerier) MustUpdate(items ...*HasManyTextPk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		res, err = c.Update(data)
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
+				query := c.db.Update(JHasManyTextPkModel.Table())
+
+				query = query.Set(`x`, data.X)
+
+				query = query.Where("id = ?", data.ID)
+
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
@@ -3942,6 +4259,17 @@ func (c jHasManyTextPkQuerier) Delete() *jHasManyTextPkDeleteBuilder {
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jHasManyTextPkQuerier) MustDelete() *jHasManyTextPkDeleteBuilder {
+	ret := &jHasManyTextPkDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHasManyTextPkModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one HasManyTextPk by its PKs
 func (c jHasManyTextPkQuerier) DeleteByPk(ID int64) error {
 	_, err := c.Delete().Where(
@@ -3957,6 +4285,28 @@ func (c jHasManyTextPkQuerier) DeleteAll(items ...*HasManyTextPk) (sql.Result, e
 		JHasManyTextPkModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given HasManyTextPk
+func (c jHasManyTextPkQuerier) MustDeleteAll(items ...*HasManyTextPk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JHasManyTextPkModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one HasManyTextPk using its PKs
@@ -4448,11 +4798,13 @@ var JCompositePkModel = jCompositePkModel{
 	HasManyHasOneCompositePk: builder.NewRelMeta(
 		`hasManyHasOneCompositePk`, `[]*HasOneCompositePk`,
 		``, `HasOneCompositePk.related`, ``,
+		`has_many`,
 	),
 
 	Relateds: builder.NewRelMeta(
 		`relateds`, `[]*HasManyCompositePk`,
 		``, `HasManyCompositePk.relateds`, ``,
+		`has_many2many`,
 	),
 }
 
@@ -4721,8 +5073,27 @@ func (c jCompositePkQuerier) Update(items ...*CompositePk) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+	}
+	return res, err
+}
+
+// MustUpdate a CompositePk. It stops on first error. It errors if an update query does not affect row.
+func (c jCompositePkQuerier) MustUpdate(items ...*CompositePk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		res, err = c.Update(data)
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
+				query := c.db.Update(JCompositePkModel.Table())
+
+				query = query.Set(`description`, data.Description)
+
+				query = query.Where("p = ?", data.P)
+
+				query = query.Where("k = ?", data.K)
+
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
@@ -4747,6 +5118,17 @@ func (c jCompositePkQuerier) Delete() *jCompositePkDeleteBuilder {
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jCompositePkQuerier) MustDelete() *jCompositePkDeleteBuilder {
+	ret := &jCompositePkDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JCompositePkModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one CompositePk by its PKs
 func (c jCompositePkQuerier) DeleteByPk(P string, K string) error {
 	_, err := c.Delete().Where(
@@ -4764,6 +5146,28 @@ func (c jCompositePkQuerier) DeleteAll(items ...*CompositePk) (sql.Result, error
 		JCompositePkModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given CompositePk
+func (c jCompositePkQuerier) MustDeleteAll(items ...*CompositePk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JCompositePkModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one CompositePk using its PKs
@@ -5419,6 +5823,7 @@ var JHasOneCompositePkModel = jHasOneCompositePkModel{
 	Related: builder.NewRelMeta(
 		`related`, `*CompositePk`,
 		`CompositePk`, ``, ``,
+		`has_one`,
 	),
 }
 
@@ -5693,8 +6098,29 @@ func (c jHasOneCompositePkQuerier) Update(items ...*HasOneCompositePk) (sql.Resu
 
 		res, err = query.Exec()
 
+	}
+	return res, err
+}
+
+// MustUpdate a HasOneCompositePk. It stops on first error. It errors if an update query does not affect row.
+func (c jHasOneCompositePkQuerier) MustUpdate(items ...*HasOneCompositePk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		res, err = c.Update(data)
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
+				query := c.db.Update(JHasOneCompositePkModel.Table())
+
+				query = query.Set(`x`, data.X)
+
+				query = query.Set(`related_p`, data.RelatedP)
+
+				query = query.Set(`related_k`, data.RelatedK)
+
+				query = query.Where("id = ?", data.ID)
+
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
@@ -5719,6 +6145,17 @@ func (c jHasOneCompositePkQuerier) Delete() *jHasOneCompositePkDeleteBuilder {
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jHasOneCompositePkQuerier) MustDelete() *jHasOneCompositePkDeleteBuilder {
+	ret := &jHasOneCompositePkDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHasOneCompositePkModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one HasOneCompositePk by its PKs
 func (c jHasOneCompositePkQuerier) DeleteByPk(ID int64) error {
 	_, err := c.Delete().Where(
@@ -5734,6 +6171,28 @@ func (c jHasOneCompositePkQuerier) DeleteAll(items ...*HasOneCompositePk) (sql.R
 		JHasOneCompositePkModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given HasOneCompositePk
+func (c jHasOneCompositePkQuerier) MustDeleteAll(items ...*HasOneCompositePk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JHasOneCompositePkModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one HasOneCompositePk using its PKs
@@ -6096,6 +6555,7 @@ var JHasManyCompositePkModel = jHasManyCompositePkModel{
 	Relateds: builder.NewRelMeta(
 		`relateds`, `[]*CompositePk`,
 		``, `CompositePk.relateds`, ``,
+		`has_many2many`,
 	),
 }
 
@@ -6362,8 +6822,25 @@ func (c jHasManyCompositePkQuerier) Update(items ...*HasManyCompositePk) (sql.Re
 
 		res, err = query.Exec()
 
+	}
+	return res, err
+}
+
+// MustUpdate a HasManyCompositePk. It stops on first error. It errors if an update query does not affect row.
+func (c jHasManyCompositePkQuerier) MustUpdate(items ...*HasManyCompositePk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		res, err = c.Update(data)
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
+				query := c.db.Update(JHasManyCompositePkModel.Table())
+
+				query = query.Set(`x`, data.X)
+
+				query = query.Where("id = ?", data.ID)
+
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
@@ -6388,6 +6865,17 @@ func (c jHasManyCompositePkQuerier) Delete() *jHasManyCompositePkDeleteBuilder {
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jHasManyCompositePkQuerier) MustDelete() *jHasManyCompositePkDeleteBuilder {
+	ret := &jHasManyCompositePkDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHasManyCompositePkModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one HasManyCompositePk by its PKs
 func (c jHasManyCompositePkQuerier) DeleteByPk(ID int64) error {
 	_, err := c.Delete().Where(
@@ -6403,6 +6891,28 @@ func (c jHasManyCompositePkQuerier) DeleteAll(items ...*HasManyCompositePk) (sql
 		JHasManyCompositePkModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given HasManyCompositePk
+func (c jHasManyCompositePkQuerier) MustDeleteAll(items ...*HasManyCompositePk) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JHasManyCompositePkModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one HasManyCompositePk using its PKs
@@ -7251,16 +7761,57 @@ func (c jDateTypeQuerier) Update(items ...*DateType) (sql.Result, error) {
 		res, err = query.Exec()
 
 		if err == nil {
+
+			data.LastUpdated = &newDate
+
+		}
+
+	}
+	return res, err
+}
+
+// MustUpdate a DateType. It stops on first error. It errors if an update query does not affect row.
+func (c jDateTypeQuerier) MustUpdate(items ...*DateType) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		currentDate := data.LastUpdated
+		newDate := time.Now().UTC().Truncate(time.Microsecond)
+
+		if currentDate != nil {
+			y := currentDate.Truncate(time.Microsecond)
+			currentDate = &y
+		}
+
+		res, err = c.Update(data)
+		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
+				query := c.db.Update(JDateTypeModel.Table())
+
+				query = query.Set(`t`, data.T)
+
+				query = query.Set(`tp`, data.TP)
+
+				query = query.Set(`not_utc`, data.NotUTC)
+
+				query = query.Set(`last_updated`, newDate)
+
+				query = query.Where("id = ?", data.ID)
+
+				if currentDate == nil {
+					query = query.Where("last_updated IS NULL")
+				} else {
+					query = query.Where("last_updated = ?", currentDate)
+				}
+
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
-		if err == nil {
-
-			data.LastUpdated = &newDate
-
+		if err != nil {
+			data.LastUpdated = currentDate
 		}
 
 	}
@@ -7282,6 +7833,17 @@ func (c jDateTypeQuerier) Delete() *jDateTypeDeleteBuilder {
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jDateTypeQuerier) MustDelete() *jDateTypeDeleteBuilder {
+	ret := &jDateTypeDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JDateTypeModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one DateType by its PKs
 func (c jDateTypeQuerier) DeleteByPk(ID int64) error {
 	_, err := c.Delete().Where(
@@ -7297,6 +7859,28 @@ func (c jDateTypeQuerier) DeleteAll(items ...*DateType) (sql.Result, error) {
 		JDateTypeModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given DateType
+func (c jDateTypeQuerier) MustDeleteAll(items ...*DateType) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JDateTypeModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one DateType using its PKs
@@ -8115,6 +8699,17 @@ func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Delete() *jHasManyTextPkr
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) MustDelete() *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder {
+	ret := &jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one HasManyTextPkrelatedsToTextPkrelateds by its PKs
 func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) DeleteByPk(HasManyTextPkID int64, TextPkName string) error {
 	_, err := c.Delete().Where(
@@ -8132,6 +8727,28 @@ func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) DeleteAll(items ...*HasMa
 		JHasManyTextPkrelatedsToTextPkrelatedsModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given HasManyTextPkrelatedsToTextPkrelateds
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) MustDeleteAll(items ...*HasManyTextPkrelatedsToTextPkrelateds) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JHasManyTextPkrelatedsToTextPkrelatedsModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one HasManyTextPkrelatedsToTextPkrelateds using its PKs
@@ -8606,6 +9223,17 @@ func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) Delete() *jComp
 	}
 }
 
+// MustDelete requires the query to affeect rows.
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) MustDelete() *jCompositePkrelatedsToHasManyCompositePkrelatedsDeleteBuilder {
+	ret := &jCompositePkrelatedsToHasManyCompositePkrelatedsDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JCompositePkrelatedsToHasManyCompositePkrelatedsModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
 //DeleteByPk deletes one CompositePkrelatedsToHasManyCompositePkrelateds by its PKs
 func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) DeleteByPk(HasManyCompositePkID int64, CompositePkP string, CompositePkK string) error {
 	_, err := c.Delete().Where(
@@ -8625,6 +9253,28 @@ func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) DeleteAll(items
 		JCompositePkrelatedsToHasManyCompositePkrelatedsModel.In(items...),
 	)
 	return q.Exec()
+}
+
+// MustDeleteAll given CompositePkrelatedsToHasManyCompositePkrelateds
+func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) MustDeleteAll(items ...*CompositePkrelatedsToHasManyCompositePkrelateds) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JCompositePkrelatedsToHasManyCompositePkrelatedsModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
 }
 
 //Find one CompositePkrelatedsToHasManyCompositePkrelateds using its PKs
