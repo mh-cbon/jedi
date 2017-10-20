@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -97,6 +98,24 @@ var funcs = map[string]interface{}{
 		}
 		return ret
 	},
+	"notExported": func(fields []*model.Field) []*model.Field {
+		var ret []*model.Field
+		for _, c := range fields {
+			if !c.Exported() {
+				ret = append(ret, c)
+			}
+		}
+		return ret
+	},
+	"isExported": func(fields []*model.Field) []*model.Field {
+		var ret []*model.Field
+		for _, c := range fields {
+			if c.Exported() {
+				ret = append(ret, c)
+			}
+		}
+		return ret
+	},
 	"isPk": func(fields []*model.Field) []*model.Field {
 		var ret []*model.Field
 		for _, c := range fields {
@@ -110,6 +129,15 @@ var funcs = map[string]interface{}{
 		var ret []*model.Field
 		for _, c := range fields {
 			if c.SQLType == "TEXT" {
+				ret = append(ret, c)
+			}
+		}
+		return ret
+	},
+	"isRel": func(fields []*model.Field) []*model.Field {
+		var ret []*model.Field
+		for _, c := range fields {
+			if c.HasOne != "" || c.HasMany != "" {
 				ret = append(ret, c)
 			}
 		}
@@ -349,6 +377,24 @@ var funcs = map[string]interface{}{
 			}
 		}
 		return strings.Join(ret, ",")
+	},
+	"createIndex": func(driver string, index *model.Index, s model.Struct) string {
+		q := fmt.Sprintf("CREATE INDEX %v ", index.Name)
+		if index.Unique {
+			q = fmt.Sprintf("CREATE UNIQUE INDEX %v ", index.Name)
+		}
+		q += fmt.Sprintf("ON %v ", s.SQLName)
+		t := []string{}
+		for _, c := range index.Fields {
+			f := s.GetFieldByName(c)
+			if strings.HasSuffix(f.GoType, "string") && driver != drivers.Sqlite {
+				t = append(t, f.SQLName+"(255)")
+			} else {
+				t = append(t, f.SQLName)
+			}
+		}
+		q += fmt.Sprintf("(%v) ", strings.Join(t, ","))
+		return q
 	},
 	"createTable": func(driver string, s model.Struct) string {
 		cols := ""

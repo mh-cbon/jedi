@@ -6,6 +6,7 @@ import (
 
 // templates exported for the generator
 var (
+	Registry    *template.Template
 	Prolog      *template.Template
 	Struct      *template.Template
 	HelpersDecl *template.Template
@@ -13,6 +14,18 @@ var (
 )
 
 func init() {
+
+	Registry = template.Must(template.New("registry").Funcs(funcs).Parse(`
+// Generated with mh-cbon/jedi. Do not edit by hand.
+package {{.PackageName}}
+
+import (
+	"github.com/mh-cbon/jedi/runtime"
+)
+
+//Jedi is a runtime registry to jedi types.
+var Jedi []runtime.Setupable
+`))
 
 	Prolog = template.Must(template.New("prolog").Funcs(funcs).Parse(`
 // Generated with mh-cbon/jedi. Do not edit by hand.
@@ -36,37 +49,14 @@ var _ = fmt.Sprintf
 var _ = dbrdialect.PostgreSQL
 
 func init(){
-	runtime.Register(
-		{{range $i, $s := $.all}}
-		J{{.Name}}Setup,
-		{{end}}
-	)
+	{{range $i, $s := $.all}}
+	Jedi = append(Jedi, J{{.Name}}Setup)
+	{{end}}
 }
-
 `))
 
 	Struct = template.Must(template.New("struct").Funcs(funcs).Parse(`
-type j{{.current.Name}}Setup struct {
-	Name string
-	CreateStmt string
-	DropStmt string
-	isView bool
-}
 
-//Create applies the create table command to te underlying connection.
-func (c j{{.current.Name}}Setup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-//Drop applies the drop table command to te underlying connection.
-func (c j{{.current.Name}}Setup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-//IsView returns true if it is a view.
-func (c j{{.current.Name}}Setup) IsView() bool {
-	return c.isView
-}
 
 // J{{.current.Name}}Setup helps to create/drop the schema
 func J{{.current.Name}}Setup() runtime.Setuper {
@@ -122,25 +112,43 @@ func J{{.current.Name}}Setup() runtime.Setuper {
 		{{end}}
 	{{end}}
 
-	return j{{.current.Name}}Setup {
+	var indexes []string
+
+	if driver==drivers.Sqlite {
+		{{range $i, $index := .current.Indexes}}
+		indexes = append(indexes, {{$.current | createIndex "sqlite3" $index | quote}})
+		{{end}}
+	} else if driver==drivers.Mysql {
+		{{range $i, $index := .current.Indexes}}
+		indexes = append(indexes, {{$.current | createIndex "mysql" $index | quote}})
+		{{end}}
+	} else if driver==drivers.Pgsql {
+		{{range $i, $index := .current.Indexes}}
+		indexes = append(indexes, {{$.current | createIndex "postgres" $index | quote}})
+		{{end}}
+	}
+
+	return runtime.Table {
 		Name: {{.current.SQLName | quote}},
 		CreateStmt: create,
 		DropStmt: drop,
-		isView: !{{empty .current.SQLViewSelect .current.SQLViewCreate}},
+		View: !{{empty .current.SQLViewSelect .current.SQLViewCreate}},
+		Indexes: indexes,
 	}
 }
 
 // j{{.current.Name}}Model provides helper to work with {{.current.Name}} data provider
 type j{{.current.Name}}Model struct {
 	as string
-	{{range $i, $col := .current.Fields | withSQLType}}
+	{{range $i, $col := .current.Fields | isExported}}
 		{{$col.Name}} builder.ValuePropertyMeta
 	{{end}}
-	{{range $i, $col := .current.Fields | withoutSQLType}}
+	{{range $i, $col := .current.Fields | notExported | isRel}}
 		{{$col.Name | ucfirst}} builder.RelPropertyMeta
 	{{end}}
 }
 
+{{if .current.Fields | hasPkField}}
 // Eq provided items.
 func (j j{{.current.Name}}Model) Eq(s ...*{{.current.Name}}) dbr.Builder{
 	ors := []dbr.Builder{}
@@ -165,6 +173,8 @@ func (j j{{.current.Name}}Model) In(s ...*{{.current.Name}}) dbr.Builder{
 	}
 	return dbr.Or(ors...)
 }
+{{end}}
+
 // As returns a copy with an alias.
 func (j j{{.current.Name}}Model) As (as string) j{{.current.Name}}Model{
 	j.as = as
@@ -281,6 +291,7 @@ type j{{.current.Name}}SelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a {{.current.Name}}
 func (c *j{{.current.Name}}SelectBuilder) Read() (*{{.current.Name}}, error) {
 	var one {{.current.Name}}
@@ -336,6 +347,11 @@ func (c *j{{.current.Name}}SelectBuilder) OrderDir(col string, isAsc bool) *j{{.
 //OrderBy returns a j{{.current.Name}}SelectBuilder instead of builder.SelectBuilder.
 func (c *j{{.current.Name}}SelectBuilder) OrderBy(col string) *j{{.current.Name}}SelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+//Paginate returns a j{{.current.Name}}SelectBuilder instead of builder.SelectBuilder.
+func (c *j{{.current.Name}}SelectBuilder) Paginate(page, perPage uint64) *j{{.current.Name}}SelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 //Join returns a j{{.current.Name}}SelectBuilder instead of builder.SelectBuilder.
@@ -446,6 +462,15 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 					{{else}}
 					data.{{$col.Name}} = data.{{$col.Name}}.Truncate(time.Microsecond)
 					{{end}}
+				{{else if $col.Insert}}
+					{{if $col.IsStar}}
+					if data.{{$col.Name}}==nil {
+						x := time.Now()
+						data.{{$col.Name}} = &x
+					}
+					{{else}}
+					data.{{$col.Name}} = time.Now()
+					{{end}}
 				{{end}}
 			{{end}}
 			{{range $i, $col := .current.Fields | dateTypes}}
@@ -476,6 +501,12 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 					}
 					{{end}}
 				}
+			{{end}}
+			{{if .current.InsertHook}}
+			err = data.beforeInsert()
+			if err != nil {
+				return nil, err
+			}
 			{{end}}
 			query := c.db.InsertInto(J{{.current.Name}}Model.Table()).Columns(
 				{{range $i, $col := .current.Fields | notAI | withSQLType | withGoName}}
@@ -565,6 +596,12 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 						{{end}}
 					{{end}}
 				{{end}}
+				{{if .current.UpdateHook}}
+				err = data.beforeUpdate()
+				if err != nil {
+					return nil, err
+				}
+				{{end}}
 				query := c.db.Update(J{{.current.Name}}Model.Table())
 				{{range $i, $col := .current.Fields | notPk | withSQLType | withGoName}}
 					{{if $col.LastUpdated}}
@@ -602,6 +639,10 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 						}
 					{{end}}
 				{{end}}
+
+				if err != nil {
+					return res, err
+				}
 			}
 			return res, err
 		}
@@ -610,6 +651,18 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 			var res sql.Result
 			var err error
 			for _, data := range items {
+				{{range $i, $col := .current.Fields | dateTypes}}
+					{{if $col.UTC}}
+						{{if $col.IsStar}}
+						if data.{{$col.Name}} != nil{
+							x := data.{{$col.Name}}.UTC()
+							data.{{$col.Name}} = &x
+						}
+						{{else}}
+						data.{{$col.Name}} = data.{{$col.Name}}.UTC()
+						{{end}}
+					{{end}}
+				{{end}}
 				{{range $i, $col := .current.Fields | dateTypes}}
 					{{if $col.LastUpdated}}
 						currentDate := data.{{$col.Name}}
@@ -624,44 +677,60 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 						{{end}}
 					{{end}}
 				{{end}}
-				res, err = c.Update(data)
+				{{if .current.UpdateHook}}
+				err = data.beforeUpdate()
+				if err != nil {
+					return nil, err
+				}
+				{{end}}
+				query := c.db.Update(J{{.current.Name}}Model.Table())
+				{{range $i, $col := .current.Fields | notPk | withSQLType | withGoName}}
+					{{if $col.LastUpdated}}
+						query = query.Set({{.SQLName | quote}}, newDate)
+					{{else}}
+						query = query.Set({{.SQLName | quote}}, data.{{.Name}})
+					{{end}}
+				{{end}}
+				{{range $i, $col := .current.Fields | isPk}}
+					query = query.Where("{{$col.SQLName}} = ?", data.{{$col.Name}})
+				{{end}}
+				{{range $i, $col := .current.Fields | dateTypes}}
+					{{if $col.LastUpdated}}
+						{{if $col.IsStar}}
+						if currentDate == nil {
+							query = query.Where("{{$col.SQLName}} IS NULL")
+						} else {
+							query = query.Where("{{$col.SQLName}} = ?", currentDate)
+						}
+						{{else}}
+						query = query.Where("{{$col.SQLName}} = ?", currentDate)
+						{{end}}
+					{{end}}
+				{{end}}
+				res, err = query.Exec()
+
 				if err == nil {
 					if n, _ := res.RowsAffected(); n == 0 {
-						query := c.db.Update(J{{.current.Name}}Model.Table())
-						{{range $i, $col := .current.Fields | notPk | withSQLType | withGoName}}
-							{{if $col.LastUpdated}}
-								query = query.Set({{.SQLName | quote}}, newDate)
-							{{else}}
-								query = query.Set({{.SQLName | quote}}, data.{{.Name}})
-							{{end}}
-						{{end}}
-						{{range $i, $col := .current.Fields | isPk}}
-							query = query.Where("{{$col.SQLName}} = ?", data.{{$col.Name}})
-						{{end}}
-						{{range $i, $col := .current.Fields | dateTypes}}
-							{{if $col.LastUpdated}}
-								{{if $col.IsStar}}
-								if currentDate == nil {
-									query = query.Where("{{$col.SQLName}} IS NULL")
-								} else {
-									query = query.Where("{{$col.SQLName}} = ?", currentDate)
-								}
-								{{else}}
-								query = query.Where("{{$col.SQLName}} = ?", currentDate)
-								{{end}}
-							{{end}}
-						{{end}}
 						x := &builder.UpdateBuilder{UpdateBuilder: query}
 						err = runtime.NewNoRowsAffected(x.String())
 					}
 				}
+
 				{{range $i, $col := .current.Fields | dateTypes}}
 					{{if $col.LastUpdated}}
-						if err != nil {
-							data.{{$col.Name}} = currentDate
+						if err == nil {
+							{{if $col.IsStar}}
+							data.{{$col.Name}} = &newDate
+							{{else}}
+							data.{{$col.Name}} = newDate
+							{{end}}
 						}
 					{{end}}
 				{{end}}
+
+				if err != nil {
+					return res, err
+				}
 			}
 			return res, err
 		}

@@ -24,6 +24,12 @@ func (s *SelectBuilder) ReadInt64() (int64, error) {
 	return ret, s.LoadValue(&ret)
 }
 
+//ReadUint64 tries to load an uint64
+func (s *SelectBuilder) ReadUint64() (uint64, error) {
+	var ret uint64
+	return ret, s.LoadValue(&ret)
+}
+
 //Build builds the sql string into given buffer using current dialect
 func (s *SelectBuilder) Build(b dbr.Buffer) error {
 	return s.SelectBuilder.Build(runtime.GetDialect(), b)

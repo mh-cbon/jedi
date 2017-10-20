@@ -6,7 +6,7 @@ package main
 //jedi:
 type Product struct {
 	ID         int64       `jedi:"@pk"`
-	SKU        string      //todo: see if can be pk (string not int)
+	SKU        string      `jedi:"@unique"`
 	categories []*Category `jedi:"@has_many=Category.products"`
 	brand      *Brand      `jedi:"@has_one=Brand.products"`
 	BrandID    *int64      // in case of has_one, you declare the exported keys.
@@ -22,7 +22,7 @@ type Product struct {
 type Category struct {
 	ID       int64      `jedi:"@pk"`
 	products []*Product `jedi:"@has_many=Product.categories"`
-	Name     string
+	Name     string     `jedi:"@index"`
 }
 
 //Brand is a product brand representation.

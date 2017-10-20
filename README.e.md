@@ -17,6 +17,7 @@ Compatibility
 Features
 - ‎✔ Table create / drop
 - ‎✔ View create / drop
+- ‎✔/- Index / Unique / Composite
 - ‎✔ CRUD operations
 - ‎‎✔ auto increment support
 - ‎‎✔ Always UTC date
@@ -67,9 +68,11 @@ The generated go code is written into files such as `<original file name>_jedi.g
 
 Every `jedi` types is automatically registered at runtime.
 
-Call `jedi.Setup(conn, forceSchemaReset)` to setup jedi driver and schema at runtime.
+Call `jedi.Setup(conn, ...[]Registry)` to setup jedi driver.
 
-When `forceSchemaReset=true` the schema is dropped then created.
+Pass in multiple jedi `Registry` to setup their schema on the underlying connection.
+
+When the registry is provided the schema is dropped then created table by table.
 
 ```go
 package main
@@ -90,7 +93,7 @@ func main () {
 	defer os.Remove(dsn)
 
 	forceSchemaReset := true
-	if err := jedi.Setup(conn, forceSchemaReset); err != nil {
+	if err := jedi.Setup(conn, Jedi); err != nil {
 		panic(err)
 	}
 	//...
@@ -271,6 +274,49 @@ type DateType struct {
 }
 ```
 
+#### insert
+
+`jedi:"@insert"` tag defines the `time.Time` property to automatically being set when the struct is inserted.
+
+```go
+type DateType struct {
+	//...
+	CreatedDate *time.Time `jedi:"@insert"`
+}
+```
+
+#### index
+
+`jedi:"@index"` tag defines the property as being part of an index.
+
+To make a composite index, name the index in the tag of each property: `jedi:"@index=nameIndex"`
+
+```go
+type DateType struct {
+	//...
+	SKU string `jedi:"@index=skucode"`
+	Code string `jedi:"@index=skucode"`
+}
+```
+
+On `mysql`, a `TEXT` field will have an index length of `255`.
+
+#### unique
+
+`jedi:"@unique"` tag defines the property as being part of an unique index.
+
+To make a composite unique index, name the index in the tag of each property: `jedi:"@unique=nameIndex"`
+
+```go
+type DateType struct {
+	//...
+	SKU string `jedi:"@unique=skucode"`
+	Code string `jedi:"@unique=skucode"`
+}
+```
+
+On `mysql`, a `TEXT` field will have an index length of `255`.
+
 # Jedi CRUD
 
 `jedi` provides `CRUD` and more via a specialized querier type.
@@ -363,6 +409,21 @@ it is automatically added as a condition to the update query.
 func main () {
 	// ...
 	res, err := JTodo(sess).Update(&Todo{ID:1})
+	if err != nil {
+		panic(err)
+	}
+	log.Println(res.RowsAffected())
+}
+```
+
+### MustUpdate
+
+The `MustUpdate` variation will return an error if the query did not affect any rows.
+
+```go
+func main () {
+	// ...
+	res, err := JTodo(sess).MustUpdate(&Todo{ID:1})
 	if err != nil {
 		panic(err)
 	}
@@ -471,6 +532,40 @@ func main () {
 	// ...
 	res, err := JTodo(sess).
 		Delete().Where(JTodoModel.Task.Like("%whatever%")).Exec()
+	if err != nil {
+		panic(err)
+	}
+	log.Println(res.RowsAffected())
+}
+```
+
+### Delete
+
+The `Delete() <type>DeleteBuilder` is a query builder to remove data.
+
+It s a shorthand for `DELETE FROM XXXX`
+
+```go
+func main () {
+	// ...
+	res, err := JTodo(sess).
+		Delete().Where(JTodoModel.Task.Like("%whatever%")).Exec()
+	if err != nil {
+		panic(err)
+	}
+	log.Println(res.RowsAffected())
+}
+```
+
+### MustDelete
+
+The `MustDelete()` variation returns an error if the query did not affect rows.
+
+```go
+func main () {
+	// ...
+	res, err := JTodo(sess).
+		MustDelete().Where(JTodoModel.Task.Like("%whatever%")).Exec()
 	if err != nil {
 		panic(err)
 	}
@@ -748,6 +843,15 @@ func (c *jCategorySelectBuilder) JoinProducts(
 func (c *jCategorySelectBuilder) LeftJoinProducts(
 	AsCategoryproductsToProductcategories, AsProduct string,
 ) *jCategorySelectBuilder {}
+```
+
+# Working with hooks
+
+You can delcare `beforeInsert` / `beforeUpdate` methods on your type to hook the insert / update operations.
+
+```go
+func (p *Product) beforeInsert() error {return nil}
+func (p *Product) beforeUpdate() error {return nil}
 ```
 
 # Working with views

@@ -24,7 +24,7 @@ func getConnFromEnv(t *testing.T, forceSetup bool) *dbr.Connection {
 	if err != nil {
 		t.Fatalf("Connection setup failed: %v", err)
 	}
-	if err := jedi.Setup(conn, forceSetup); err != nil {
+	if err := jedi.Setup(conn, Jedi); err != nil {
 		t.Fatal(err)
 	}
 	return conn

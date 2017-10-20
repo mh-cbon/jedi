@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gocraft/dbr"
+	"github.com/mh-cbon/jedi/runtime"
 )
 
 //MetaProvider is an interface to mix Value and Rel Property meta.
@@ -85,6 +86,16 @@ func (i ValuePropertyMeta) Aliased() string {
 	return ret
 }
 
+// IsNull is `col IS NULL`.
+func (i ValuePropertyMeta) IsNull() dbr.Builder {
+	return runtime.IsNull(i.Aliased())
+}
+
+// IsNotNull is `col IS NOT NULL`.
+func (i ValuePropertyMeta) IsNotNull() dbr.Builder {
+	return runtime.IsNotNull(i.Aliased())
+}
+
 // Eq is `col = value`.
 func (i ValuePropertyMeta) Eq(v interface{}) dbr.Builder {
 	return dbr.Eq(i.Aliased(), v)
@@ -117,7 +128,7 @@ func (i ValuePropertyMeta) Lte(v interface{}) dbr.Builder {
 
 // Like is `col LIKE %value%`.
 func (i ValuePropertyMeta) Like(v interface{}) dbr.Builder {
-	return Like(i.Aliased(), v)
+	return runtime.Like(i.Aliased(), v)
 }
 
 // RelPropertyMeta represents a relationship property.

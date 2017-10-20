@@ -109,6 +109,22 @@ func processFile(path, filename, pack string) error {
 		return nil
 	}
 
+	data := map[string]interface{}{
+		"PackageName": filepath.Base(pack),
+		"all":         structs,
+	}
+
+	{
+		out, err2 := os.Create(filepath.Join(path, "registry_jedi.go"))
+		if err2 != nil {
+			return err2
+		}
+		defer out.Close()
+		if err2 = gen.Registry.Execute(out, data); err2 != nil {
+			return err2
+		}
+	}
+
 	base := strings.TrimSuffix(filename, ".go")
 	out, err := os.Create(filepath.Join(path, base+"_jedi.go"))
 	if err != nil {
@@ -116,10 +132,6 @@ func processFile(path, filename, pack string) error {
 	}
 	defer out.Close()
 
-	data := map[string]interface{}{
-		"PackageName": filepath.Base(pack),
-		"all":         structs,
-	}
 	if err = gen.Prolog.Execute(out, data); err != nil {
 		return err
 	}

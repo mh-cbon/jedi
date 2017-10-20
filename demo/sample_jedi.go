@@ -19,58 +19,35 @@ var _ = fmt.Sprintf
 var _ = dbrdialect.PostgreSQL
 
 func init() {
-	runtime.Register(
 
-		JSampleSetup,
+	Jedi = append(Jedi, JSampleSetup)
 
-		JBasicPKSetup,
+	Jedi = append(Jedi, JBasicPKSetup)
 
-		JBasicTypesSetup,
+	Jedi = append(Jedi, JBasicTypesSetup)
 
-		JTextPkSetup,
+	Jedi = append(Jedi, JTextPkSetup)
 
-		JHasOneTextPkSetup,
+	Jedi = append(Jedi, JHasOneTextPkSetup)
 
-		JHasManyTextPkSetup,
+	Jedi = append(Jedi, JHasManyTextPkSetup)
 
-		JCompositePkSetup,
+	Jedi = append(Jedi, JCompositePkSetup)
 
-		JHasOneCompositePkSetup,
+	Jedi = append(Jedi, JHasOneCompositePkSetup)
 
-		JHasManyCompositePkSetup,
+	Jedi = append(Jedi, JHasManyCompositePkSetup)
 
-		JDateTypeSetup,
+	Jedi = append(Jedi, JDateTypeSetup)
 
-		JSampleViewSetup,
+	Jedi = append(Jedi, JSampleViewSetup)
 
-		JHasManyTextPkrelatedsToTextPkrelatedsSetup,
+	Jedi = append(Jedi, JHookDemoSetup)
 
-		JCompositePkrelatedsToHasManyCompositePkrelatedsSetup,
-	)
-}
+	Jedi = append(Jedi, JHasManyTextPkrelatedsToTextPkrelatedsSetup)
 
-type jSampleSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
+	Jedi = append(Jedi, JCompositePkrelatedsToHasManyCompositePkrelatedsSetup)
 
-//Create applies the create table command to te underlying connection.
-func (c jSampleSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jSampleSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jSampleSetup) IsView() bool {
-	return c.isView
 }
 
 // JSampleSetup helps to create/drop the schema
@@ -118,11 +95,22 @@ removal_date timestamp(6) NULL
 		drop = `DROP TABLE IF EXISTS sample`
 	}
 
-	return jSampleSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `sample`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -303,6 +291,7 @@ type jSampleSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a Sample
 func (c *jSampleSelectBuilder) Read() (*Sample, error) {
 	var one Sample
@@ -368,6 +357,12 @@ func (c *jSampleSelectBuilder) OrderDir(col string, isAsc bool) *jSampleSelectBu
 //OrderBy returns a jSampleSelectBuilder instead of builder.SelectBuilder.
 func (c *jSampleSelectBuilder) OrderBy(col string) *jSampleSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jSampleSelectBuilder instead of builder.SelectBuilder.
+func (c *jSampleSelectBuilder) Paginate(page, perPage uint64) *jSampleSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -553,6 +548,9 @@ func (c jSampleQuerier) Update(items ...*Sample) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -563,26 +561,37 @@ func (c jSampleQuerier) MustUpdate(items ...*Sample) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.Update(data)
+		data.UpdateDate = data.UpdateDate.UTC()
+
+		if data.RemovalDate != nil {
+			x := data.RemovalDate.UTC()
+			data.RemovalDate = &x
+		}
+
+		query := c.db.Update(JSampleModel.Table())
+
+		query = query.Set(`name`, data.Name)
+
+		query = query.Set(`description`, data.Description)
+
+		query = query.Set(`update_date`, data.UpdateDate)
+
+		query = query.Set(`removal_date`, data.RemovalDate)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
-				query := c.db.Update(JSampleModel.Table())
-
-				query = query.Set(`name`, data.Name)
-
-				query = query.Set(`description`, data.Description)
-
-				query = query.Set(`update_date`, data.UpdateDate)
-
-				query = query.Set(`removal_date`, data.RemovalDate)
-
-				query = query.Where("id = ?", data.ID)
-
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -660,30 +669,6 @@ func (c jSampleQuerier) Find(ID int64) (*Sample, error) {
 	).Read()
 }
 
-type jBasicPKSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jBasicPKSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jBasicPKSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jBasicPKSetup) IsView() bool {
-	return c.isView
-}
-
 // JBasicPKSetup helps to create/drop the schema
 func JBasicPKSetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -720,11 +705,22 @@ whatever TEXT
 		drop = `DROP TABLE IF EXISTS basic_pk`
 	}
 
-	return jBasicPKSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `basic_pk`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -869,6 +865,7 @@ type jBasicPKSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a BasicPK
 func (c *jBasicPKSelectBuilder) Read() (*BasicPK, error) {
 	var one BasicPK
@@ -934,6 +931,12 @@ func (c *jBasicPKSelectBuilder) OrderDir(col string, isAsc bool) *jBasicPKSelect
 //OrderBy returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
 func (c *jBasicPKSelectBuilder) OrderBy(col string) *jBasicPKSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jBasicPKSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicPKSelectBuilder) Paginate(page, perPage uint64) *jBasicPKSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -1093,6 +1096,9 @@ func (c jBasicPKQuerier) Update(items ...*BasicPK) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -1103,20 +1109,24 @@ func (c jBasicPKQuerier) MustUpdate(items ...*BasicPK) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.Update(data)
+		query := c.db.Update(JBasicPKModel.Table())
+
+		query = query.Set(`whatever`, data.Whatever)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
-				query := c.db.Update(JBasicPKModel.Table())
-
-				query = query.Set(`whatever`, data.Whatever)
-
-				query = query.Where("id = ?", data.ID)
-
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -1192,30 +1202,6 @@ func (c jBasicPKQuerier) Find(ID int64) (*BasicPK, error) {
 
 		JBasicPKModel.ID.Eq(ID),
 	).Read()
-}
-
-type jBasicTypesSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jBasicTypesSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jBasicTypesSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jBasicTypesSetup) IsView() bool {
-	return c.isView
 }
 
 // JBasicTypesSetup helps to create/drop the schema
@@ -1311,11 +1297,22 @@ float64_p FLOAT NULL
 		drop = `DROP TABLE IF EXISTS basic_types`
 	}
 
-	return jBasicTypesSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `basic_types`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -1688,6 +1685,7 @@ type jBasicTypesSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a BasicTypes
 func (c *jBasicTypesSelectBuilder) Read() (*BasicTypes, error) {
 	var one BasicTypes
@@ -1753,6 +1751,12 @@ func (c *jBasicTypesSelectBuilder) OrderDir(col string, isAsc bool) *jBasicTypes
 //OrderBy returns a jBasicTypesSelectBuilder instead of builder.SelectBuilder.
 func (c *jBasicTypesSelectBuilder) OrderBy(col string) *jBasicTypesSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jBasicTypesSelectBuilder instead of builder.SelectBuilder.
+func (c *jBasicTypesSelectBuilder) Paginate(page, perPage uint64) *jBasicTypesSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -1988,6 +1992,9 @@ func (c jBasicTypesQuerier) Update(items ...*BasicTypes) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -1998,58 +2005,62 @@ func (c jBasicTypesQuerier) MustUpdate(items ...*BasicTypes) (sql.Result, error)
 	var err error
 	for _, data := range items {
 
-		res, err = c.Update(data)
+		query := c.db.Update(JBasicTypesModel.Table())
+
+		query = query.Set(`string`, data.String)
+
+		query = query.Set(`string_p`, data.StringP)
+
+		query = query.Set(`intfield`, data.Int)
+
+		query = query.Set(`int_p`, data.IntP)
+
+		query = query.Set(`int32`, data.Int32)
+
+		query = query.Set(`int32_p`, data.Int32P)
+
+		query = query.Set(`int64`, data.Int64)
+
+		query = query.Set(`int64_p`, data.Int64P)
+
+		query = query.Set(`u_int`, data.UInt)
+
+		query = query.Set(`u_int_p`, data.UIntP)
+
+		query = query.Set(`u_int32`, data.UInt32)
+
+		query = query.Set(`u_int32_p`, data.UInt32P)
+
+		query = query.Set(`u_int64`, data.UInt64)
+
+		query = query.Set(`u_int64_p`, data.UInt64P)
+
+		query = query.Set(`bool`, data.Bool)
+
+		query = query.Set(`bool_p`, data.BoolP)
+
+		query = query.Set(`float32`, data.Float32)
+
+		query = query.Set(`float32_p`, data.Float32P)
+
+		query = query.Set(`float64`, data.Float64)
+
+		query = query.Set(`float64_p`, data.Float64P)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
-				query := c.db.Update(JBasicTypesModel.Table())
-
-				query = query.Set(`string`, data.String)
-
-				query = query.Set(`string_p`, data.StringP)
-
-				query = query.Set(`intfield`, data.Int)
-
-				query = query.Set(`int_p`, data.IntP)
-
-				query = query.Set(`int32`, data.Int32)
-
-				query = query.Set(`int32_p`, data.Int32P)
-
-				query = query.Set(`int64`, data.Int64)
-
-				query = query.Set(`int64_p`, data.Int64P)
-
-				query = query.Set(`u_int`, data.UInt)
-
-				query = query.Set(`u_int_p`, data.UIntP)
-
-				query = query.Set(`u_int32`, data.UInt32)
-
-				query = query.Set(`u_int32_p`, data.UInt32P)
-
-				query = query.Set(`u_int64`, data.UInt64)
-
-				query = query.Set(`u_int64_p`, data.UInt64P)
-
-				query = query.Set(`bool`, data.Bool)
-
-				query = query.Set(`bool_p`, data.BoolP)
-
-				query = query.Set(`float32`, data.Float32)
-
-				query = query.Set(`float32_p`, data.Float32P)
-
-				query = query.Set(`float64`, data.Float64)
-
-				query = query.Set(`float64_p`, data.Float64P)
-
-				query = query.Where("id = ?", data.ID)
-
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -2127,30 +2138,6 @@ func (c jBasicTypesQuerier) Find(ID int64) (*BasicTypes, error) {
 	).Read()
 }
 
-type jTextPkSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jTextPkSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jTextPkSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jTextPkSetup) IsView() bool {
-	return c.isView
-}
-
 // JTextPkSetup helps to create/drop the schema
 func JTextPkSetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -2189,11 +2176,22 @@ PRIMARY KEY (name)
 		drop = `DROP TABLE IF EXISTS second_sample`
 	}
 
-	return jTextPkSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `second_sample`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -2362,6 +2360,7 @@ type jTextPkSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a TextPk
 func (c *jTextPkSelectBuilder) Read() (*TextPk, error) {
 	var one TextPk
@@ -2427,6 +2426,12 @@ func (c *jTextPkSelectBuilder) OrderDir(col string, isAsc bool) *jTextPkSelectBu
 //OrderBy returns a jTextPkSelectBuilder instead of builder.SelectBuilder.
 func (c *jTextPkSelectBuilder) OrderBy(col string) *jTextPkSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jTextPkSelectBuilder) Paginate(page, perPage uint64) *jTextPkSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -2576,6 +2581,9 @@ func (c jTextPkQuerier) Update(items ...*TextPk) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -2586,20 +2594,24 @@ func (c jTextPkQuerier) MustUpdate(items ...*TextPk) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.Update(data)
+		query := c.db.Update(JTextPkModel.Table())
+
+		query = query.Set(`description`, data.Description)
+
+		query = query.Where("name = ?", data.Name)
+
+		res, err = query.Exec()
+
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
-				query := c.db.Update(JTextPkModel.Table())
-
-				query = query.Set(`description`, data.Description)
-
-				query = query.Where("name = ?", data.Name)
-
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -3064,30 +3076,6 @@ func (c *jTextPkSelectBuilder) LeftJoinHasManyHasOneTextPk(
 // 	return c.RightJoin(dbr.I(JHasOneTextPkModel.Table()).As(AsHasManyHasOneTextPk), on)
 // }
 
-type jHasOneTextPkSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jHasOneTextPkSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jHasOneTextPkSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jHasOneTextPkSetup) IsView() bool {
-	return c.isView
-}
-
 // JHasOneTextPkSetup helps to create/drop the schema
 func JHasOneTextPkSetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -3127,11 +3115,22 @@ related_name TEXT NULL
 		drop = `DROP TABLE IF EXISTS has_one_text_pk`
 	}
 
-	return jHasOneTextPkSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `has_one_text_pk`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -3300,6 +3299,7 @@ type jHasOneTextPkSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a HasOneTextPk
 func (c *jHasOneTextPkSelectBuilder) Read() (*HasOneTextPk, error) {
 	var one HasOneTextPk
@@ -3365,6 +3365,12 @@ func (c *jHasOneTextPkSelectBuilder) OrderDir(col string, isAsc bool) *jHasOneTe
 //OrderBy returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
 func (c *jHasOneTextPkSelectBuilder) OrderBy(col string) *jHasOneTextPkSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jHasOneTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneTextPkSelectBuilder) Paginate(page, perPage uint64) *jHasOneTextPkSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -3528,6 +3534,9 @@ func (c jHasOneTextPkQuerier) Update(items ...*HasOneTextPk) (sql.Result, error)
 
 		res, err = query.Exec()
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -3538,22 +3547,26 @@ func (c jHasOneTextPkQuerier) MustUpdate(items ...*HasOneTextPk) (sql.Result, er
 	var err error
 	for _, data := range items {
 
-		res, err = c.Update(data)
+		query := c.db.Update(JHasOneTextPkModel.Table())
+
+		query = query.Set(`x`, data.X)
+
+		query = query.Set(`related_name`, data.RelatedName)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
-				query := c.db.Update(JHasOneTextPkModel.Table())
-
-				query = query.Set(`x`, data.X)
-
-				query = query.Set(`related_name`, data.RelatedName)
-
-				query = query.Where("id = ?", data.ID)
-
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -3771,30 +3784,6 @@ func (g *HasOneTextPk) UnsetRelated() *HasOneTextPk {
 	return g
 }
 
-type jHasManyTextPkSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jHasManyTextPkSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jHasManyTextPkSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jHasManyTextPkSetup) IsView() bool {
-	return c.isView
-}
-
 // JHasManyTextPkSetup helps to create/drop the schema
 func JHasManyTextPkSetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -3831,11 +3820,22 @@ x TEXT
 		drop = `DROP TABLE IF EXISTS has_many_text_pk`
 	}
 
-	return jHasManyTextPkSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `has_many_text_pk`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -3992,6 +3992,7 @@ type jHasManyTextPkSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a HasManyTextPk
 func (c *jHasManyTextPkSelectBuilder) Read() (*HasManyTextPk, error) {
 	var one HasManyTextPk
@@ -4057,6 +4058,12 @@ func (c *jHasManyTextPkSelectBuilder) OrderDir(col string, isAsc bool) *jHasMany
 //OrderBy returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
 func (c *jHasManyTextPkSelectBuilder) OrderBy(col string) *jHasManyTextPkSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jHasManyTextPkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkSelectBuilder) Paginate(page, perPage uint64) *jHasManyTextPkSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -4216,6 +4223,9 @@ func (c jHasManyTextPkQuerier) Update(items ...*HasManyTextPk) (sql.Result, erro
 
 		res, err = query.Exec()
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -4226,20 +4236,24 @@ func (c jHasManyTextPkQuerier) MustUpdate(items ...*HasManyTextPk) (sql.Result, 
 	var err error
 	for _, data := range items {
 
-		res, err = c.Update(data)
+		query := c.db.Update(JHasManyTextPkModel.Table())
+
+		query = query.Set(`x`, data.X)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
-				query := c.db.Update(JHasManyTextPkModel.Table())
-
-				query = query.Set(`x`, data.X)
-
-				query = query.Where("id = ?", data.ID)
-
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -4593,30 +4607,6 @@ func (c *jHasManyTextPkSelectBuilder) LeftJoinRelateds(
 // 	return query
 // }
 
-type jCompositePkSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jCompositePkSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jCompositePkSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jCompositePkSetup) IsView() bool {
-	return c.isView
-}
-
 // JCompositePkSetup helps to create/drop the schema
 func JCompositePkSetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -4658,11 +4648,22 @@ PRIMARY KEY (p,k)
 		drop = `DROP TABLE IF EXISTS composite_pk`
 	}
 
-	return jCompositePkSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `composite_pk`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -4847,6 +4848,7 @@ type jCompositePkSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a CompositePk
 func (c *jCompositePkSelectBuilder) Read() (*CompositePk, error) {
 	var one CompositePk
@@ -4912,6 +4914,12 @@ func (c *jCompositePkSelectBuilder) OrderDir(col string, isAsc bool) *jComposite
 //OrderBy returns a jCompositePkSelectBuilder instead of builder.SelectBuilder.
 func (c *jCompositePkSelectBuilder) OrderBy(col string) *jCompositePkSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkSelectBuilder) Paginate(page, perPage uint64) *jCompositePkSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -5073,6 +5081,9 @@ func (c jCompositePkQuerier) Update(items ...*CompositePk) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -5083,22 +5094,26 @@ func (c jCompositePkQuerier) MustUpdate(items ...*CompositePk) (sql.Result, erro
 	var err error
 	for _, data := range items {
 
-		res, err = c.Update(data)
+		query := c.db.Update(JCompositePkModel.Table())
+
+		query = query.Set(`description`, data.Description)
+
+		query = query.Where("p = ?", data.P)
+
+		query = query.Where("k = ?", data.K)
+
+		res, err = query.Exec()
+
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
-				query := c.db.Update(JCompositePkModel.Table())
-
-				query = query.Set(`description`, data.Description)
-
-				query = query.Where("p = ?", data.P)
-
-				query = query.Where("k = ?", data.K)
-
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -5615,30 +5630,6 @@ func (c *jCompositePkSelectBuilder) LeftJoinHasManyHasOneCompositePk(
 // 	return c.RightJoin(dbr.I(JHasOneCompositePkModel.Table()).As(AsHasManyHasOneCompositePk), on)
 // }
 
-type jHasOneCompositePkSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jHasOneCompositePkSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jHasOneCompositePkSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jHasOneCompositePkSetup) IsView() bool {
-	return c.isView
-}
-
 // JHasOneCompositePkSetup helps to create/drop the schema
 func JHasOneCompositePkSetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -5681,11 +5672,22 @@ related_k TEXT NULL
 		drop = `DROP TABLE IF EXISTS has_one_composite_pk`
 	}
 
-	return jHasOneCompositePkSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `has_one_composite_pk`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -5866,6 +5868,7 @@ type jHasOneCompositePkSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a HasOneCompositePk
 func (c *jHasOneCompositePkSelectBuilder) Read() (*HasOneCompositePk, error) {
 	var one HasOneCompositePk
@@ -5931,6 +5934,12 @@ func (c *jHasOneCompositePkSelectBuilder) OrderDir(col string, isAsc bool) *jHas
 //OrderBy returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
 func (c *jHasOneCompositePkSelectBuilder) OrderBy(col string) *jHasOneCompositePkSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jHasOneCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasOneCompositePkSelectBuilder) Paginate(page, perPage uint64) *jHasOneCompositePkSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -6098,6 +6107,9 @@ func (c jHasOneCompositePkQuerier) Update(items ...*HasOneCompositePk) (sql.Resu
 
 		res, err = query.Exec()
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -6108,24 +6120,28 @@ func (c jHasOneCompositePkQuerier) MustUpdate(items ...*HasOneCompositePk) (sql.
 	var err error
 	for _, data := range items {
 
-		res, err = c.Update(data)
+		query := c.db.Update(JHasOneCompositePkModel.Table())
+
+		query = query.Set(`x`, data.X)
+
+		query = query.Set(`related_p`, data.RelatedP)
+
+		query = query.Set(`related_k`, data.RelatedK)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
-				query := c.db.Update(JHasOneCompositePkModel.Table())
-
-				query = query.Set(`x`, data.X)
-
-				query = query.Set(`related_p`, data.RelatedP)
-
-				query = query.Set(`related_k`, data.RelatedK)
-
-				query = query.Where("id = ?", data.ID)
-
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -6377,30 +6393,6 @@ func (g *HasOneCompositePk) UnsetRelated() *HasOneCompositePk {
 	return g
 }
 
-type jHasManyCompositePkSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jHasManyCompositePkSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jHasManyCompositePkSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jHasManyCompositePkSetup) IsView() bool {
-	return c.isView
-}
-
 // JHasManyCompositePkSetup helps to create/drop the schema
 func JHasManyCompositePkSetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -6437,11 +6429,22 @@ x TEXT
 		drop = `DROP TABLE IF EXISTS has_many_composite_pk`
 	}
 
-	return jHasManyCompositePkSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `has_many_composite_pk`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -6598,6 +6601,7 @@ type jHasManyCompositePkSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a HasManyCompositePk
 func (c *jHasManyCompositePkSelectBuilder) Read() (*HasManyCompositePk, error) {
 	var one HasManyCompositePk
@@ -6663,6 +6667,12 @@ func (c *jHasManyCompositePkSelectBuilder) OrderDir(col string, isAsc bool) *jHa
 //OrderBy returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
 func (c *jHasManyCompositePkSelectBuilder) OrderBy(col string) *jHasManyCompositePkSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jHasManyCompositePkSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyCompositePkSelectBuilder) Paginate(page, perPage uint64) *jHasManyCompositePkSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -6822,6 +6832,9 @@ func (c jHasManyCompositePkQuerier) Update(items ...*HasManyCompositePk) (sql.Re
 
 		res, err = query.Exec()
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -6832,20 +6845,24 @@ func (c jHasManyCompositePkQuerier) MustUpdate(items ...*HasManyCompositePk) (sq
 	var err error
 	for _, data := range items {
 
-		res, err = c.Update(data)
+		query := c.db.Update(JHasManyCompositePkModel.Table())
+
+		query = query.Set(`x`, data.X)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
-				query := c.db.Update(JHasManyCompositePkModel.Table())
-
-				query = query.Set(`x`, data.X)
-
-				query = query.Where("id = ?", data.ID)
-
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -7223,30 +7240,6 @@ func (c *jHasManyCompositePkSelectBuilder) LeftJoinRelateds(
 // 	return query
 // }
 
-type jDateTypeSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jDateTypeSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jDateTypeSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jDateTypeSetup) IsView() bool {
-	return c.isView
-}
-
 // JDateTypeSetup helps to create/drop the schema
 func JDateTypeSetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -7292,11 +7285,22 @@ last_updated timestamp(6) NULL
 		drop = `DROP TABLE IF EXISTS date_type`
 	}
 
-	return jDateTypeSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `date_type`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -7477,6 +7481,7 @@ type jDateTypeSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a DateType
 func (c *jDateTypeSelectBuilder) Read() (*DateType, error) {
 	var one DateType
@@ -7542,6 +7547,12 @@ func (c *jDateTypeSelectBuilder) OrderDir(col string, isAsc bool) *jDateTypeSele
 //OrderBy returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
 func (c *jDateTypeSelectBuilder) OrderBy(col string) *jDateTypeSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jDateTypeSelectBuilder instead of builder.SelectBuilder.
+func (c *jDateTypeSelectBuilder) Paginate(page, perPage uint64) *jDateTypeSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -7766,6 +7777,9 @@ func (c jDateTypeQuerier) Update(items ...*DateType) (sql.Result, error) {
 
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -7776,6 +7790,18 @@ func (c jDateTypeQuerier) MustUpdate(items ...*DateType) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
+		data.T = data.T.UTC()
+
+		if data.TP != nil {
+			x := data.TP.UTC()
+			data.TP = &x
+		}
+
+		if data.LastUpdated != nil {
+			x := data.LastUpdated.UTC()
+			data.LastUpdated = &x
+		}
+
 		currentDate := data.LastUpdated
 		newDate := time.Now().UTC().Truncate(time.Microsecond)
 
@@ -7784,36 +7810,42 @@ func (c jDateTypeQuerier) MustUpdate(items ...*DateType) (sql.Result, error) {
 			currentDate = &y
 		}
 
-		res, err = c.Update(data)
+		query := c.db.Update(JDateTypeModel.Table())
+
+		query = query.Set(`t`, data.T)
+
+		query = query.Set(`tp`, data.TP)
+
+		query = query.Set(`not_utc`, data.NotUTC)
+
+		query = query.Set(`last_updated`, newDate)
+
+		query = query.Where("id = ?", data.ID)
+
+		if currentDate == nil {
+			query = query.Where("last_updated IS NULL")
+		} else {
+			query = query.Where("last_updated = ?", currentDate)
+		}
+
+		res, err = query.Exec()
+
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
-				query := c.db.Update(JDateTypeModel.Table())
-
-				query = query.Set(`t`, data.T)
-
-				query = query.Set(`tp`, data.TP)
-
-				query = query.Set(`not_utc`, data.NotUTC)
-
-				query = query.Set(`last_updated`, newDate)
-
-				query = query.Where("id = ?", data.ID)
-
-				if currentDate == nil {
-					query = query.Where("last_updated IS NULL")
-				} else {
-					query = query.Where("last_updated = ?", currentDate)
-				}
-
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
-		if err != nil {
-			data.LastUpdated = currentDate
+		if err == nil {
+
+			data.LastUpdated = &newDate
+
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -7891,30 +7923,6 @@ func (c jDateTypeQuerier) Find(ID int64) (*DateType, error) {
 	).Read()
 }
 
-type jSampleViewSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jSampleViewSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jSampleViewSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jSampleViewSetup) IsView() bool {
-	return c.isView
-}
-
 // JSampleViewSetup helps to create/drop the schema
 func JSampleViewSetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -7950,11 +7958,22 @@ func JSampleViewSetup() runtime.Setuper {
 		drop = `DROP VIEW IF EXISTS sample_view`
 	}
 
-	return jSampleViewSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `sample_view`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !false,
+		View:       !false,
+		Indexes:    indexes,
 	}
 }
 
@@ -8111,6 +8130,7 @@ type jSampleViewSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a SampleView
 func (c *jSampleViewSelectBuilder) Read() (*SampleView, error) {
 	var one SampleView
@@ -8176,6 +8196,12 @@ func (c *jSampleViewSelectBuilder) OrderDir(col string, isAsc bool) *jSampleView
 //OrderBy returns a jSampleViewSelectBuilder instead of builder.SelectBuilder.
 func (c *jSampleViewSelectBuilder) OrderBy(col string) *jSampleViewSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jSampleViewSelectBuilder instead of builder.SelectBuilder.
+func (c *jSampleViewSelectBuilder) Paginate(page, perPage uint64) *jSampleViewSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -8268,28 +8294,554 @@ func (c jSampleViewQuerier) Count(what ...string) *jSampleViewSelectBuilder {
 	return c.Select("COUNT(" + strings.Join(what, ",") + ")")
 }
 
-type jHasManyTextPkrelatedsToTextPkrelatedsSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
+// JHookDemoSetup helps to create/drop the schema
+func JHookDemoSetup() runtime.Setuper {
+	driver := runtime.GetCurrentDriver()
+
+	var create string
+	var drop string
+
+	if driver == drivers.Sqlite {
+		create = `CREATE TABLE IF NOT EXISTS hook_demo (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+name TEXT
+
+)`
+	} else if driver == drivers.Mysql {
+		create = `CREATE TABLE IF NOT EXISTS hook_demo (
+id INTEGER NOT NULL AUTO_INCREMENT,
+name TEXT,
+PRIMARY KEY (id) 
+
+)`
+	} else if driver == drivers.Pgsql {
+		create = `CREATE TABLE IF NOT EXISTS hook_demo (
+id SERIAL PRIMARY KEY,
+name TEXT
+
+)`
+	}
+
+	if driver == drivers.Sqlite {
+		drop = `DROP TABLE IF EXISTS hook_demo`
+	} else if driver == drivers.Mysql {
+		drop = `DROP TABLE IF EXISTS hook_demo`
+	} else if driver == drivers.Pgsql {
+		drop = `DROP TABLE IF EXISTS hook_demo`
+	}
+
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
+		Name:       `hook_demo`,
+		CreateStmt: create,
+		DropStmt:   drop,
+		View:       !true,
+		Indexes:    indexes,
+	}
 }
 
-//Create applies the create table command to te underlying connection.
-func (c jHasManyTextPkrelatedsToTextPkrelatedsSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
+// jHookDemoModel provides helper to work with HookDemo data provider
+type jHookDemoModel struct {
+	as string
+
+	ID builder.ValuePropertyMeta
+
+	Name builder.ValuePropertyMeta
 }
 
-//Drop applies the drop table command to te underlying connection.
-func (c jHasManyTextPkrelatedsToTextPkrelatedsSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
+// Eq provided items.
+func (j jHookDemoModel) Eq(s ...*HookDemo) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHookDemoModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
 }
 
-//IsView returns true if it is a view.
-func (c jHasManyTextPkrelatedsToTextPkrelatedsSetup) IsView() bool {
-	return c.isView
+// In provided items.
+func (j jHookDemoModel) In(s ...*HookDemo) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHookDemoModel.ID.Eq(t.ID),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// As returns a copy with an alias.
+func (j jHookDemoModel) As(as string) jHookDemoModel {
+	j.as = as
+
+	j.ID.TableAlias = as
+
+	j.Name.TableAlias = as
+
+	return j
+}
+
+// Table returns the sql table name
+func (j jHookDemoModel) Table() string {
+	return "hook_demo"
+}
+
+// Alias returns the current alias
+func (j jHookDemoModel) Alias() string {
+	if j.as == "" {
+		return j.Table()
+	}
+	return j.as
+}
+
+// Properties returns a map of property name => meta
+func (j jHookDemoModel) Properties() map[string]builder.MetaProvider {
+	ret := map[string]builder.MetaProvider{}
+
+	ret["ID"] = j.ID
+
+	ret["Name"] = j.Name
+
+	return ret
+}
+
+// Fields returns given sql fields with appropriate aliasing.
+func (j jHookDemoModel) Fields(ins ...string) []string {
+	dialect := runtime.GetDialect()
+	if len(ins) == 0 {
+		ins = append(ins, "*")
+	}
+	for i, in := range ins {
+		if j.as != "" {
+			if in == "*" {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
+			} else {
+				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
+			}
+		}
+	}
+	return ins
+}
+
+// JHookDemoModel provides helper to work with HookDemo data provider
+var JHookDemoModel = jHookDemoModel{
+
+	ID: builder.NewValueMeta(
+		`id`, `INTEGER`,
+		`ID`, `int64`,
+		true, true,
+	),
+
+	Name: builder.NewValueMeta(
+		`name`, `TEXT`,
+		`Name`, `string`,
+		false, false,
+	),
+}
+
+type jHookDemoDeleteBuilder struct {
+	*builder.DeleteBuilder
+}
+
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jHookDemoDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHookDemoDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Where returns a jHookDemoDeleteBuilder instead of builder.DeleteBuilder.
+func (c *jHookDemoDeleteBuilder) Where(query interface{}, value ...interface{}) *jHookDemoDeleteBuilder {
+	c.DeleteBuilder.Where(query, value...)
+	return c
+}
+
+type jHookDemoSelectBuilder struct {
+	as string
+	*builder.SelectBuilder
+}
+
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jHookDemoSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHookDemoSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+
+//Read evaluates current select query and load the results into a HookDemo
+func (c *jHookDemoSelectBuilder) Read() (*HookDemo, error) {
+	var one HookDemo
+	err := c.LoadStruct(&one)
+	return &one, err
+}
+
+//ReadAll evaluates current select query and load the results into a slice of HookDemo
+func (c *jHookDemoSelectBuilder) ReadAll() ([]*HookDemo, error) {
+	var all []*HookDemo
+	_, err := c.LoadStructs(&all)
+	return all, err
+}
+
+//Where returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) Where(query interface{}, value ...interface{}) *jHookDemoSelectBuilder {
+	c.SelectBuilder.Where(query, value...)
+	return c
+}
+
+//GroupBy returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) GroupBy(col ...string) *jHookDemoSelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) Having(query interface{}, value ...interface{}) *jHookDemoSelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) Limit(n uint64) *jHookDemoSelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) Offset(n uint64) *jHookDemoSelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) OrderAsc(col string) *jHookDemoSelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) OrderDesc(col string) *jHookDemoSelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) OrderDir(col string, isAsc bool) *jHookDemoSelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) OrderBy(col string) *jHookDemoSelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) Paginate(page, perPage uint64) *jHookDemoSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
+	return c
+}
+
+//Join returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) Join(table, on interface{}) *jHookDemoSelectBuilder {
+	c.SelectBuilder.Join(table, on)
+	return c
+}
+
+//LeftJoin returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) LeftJoin(table, on interface{}) *jHookDemoSelectBuilder {
+	c.SelectBuilder.LeftJoin(table, on)
+	return c
+}
+
+//RightJoin returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) RightJoin(table, on interface{}) *jHookDemoSelectBuilder {
+	c.SelectBuilder.RightJoin(table, on)
+	return c
+}
+
+//FullJoin returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) FullJoin(table, on interface{}) *jHookDemoSelectBuilder {
+	c.SelectBuilder.FullJoin(table, on)
+	return c
+}
+
+//Distinct returns a jHookDemoSelectBuilder instead of builder.SelectBuilder.
+func (c *jHookDemoSelectBuilder) Distinct() *jHookDemoSelectBuilder {
+	c.SelectBuilder.Distinct()
+	return c
+}
+
+// JHookDemo provides a basic querier
+func JHookDemo(db dbr.SessionRunner) jHookDemoQuerier {
+	return jHookDemoQuerier{
+		db: db,
+	}
+}
+
+type jHookDemoQuerier struct {
+	db dbr.SessionRunner
+	as string
+}
+
+//As set alias prior building.
+func (c jHookDemoQuerier) As(as string) jHookDemoQuerier {
+	c.as = as
+	return c
+}
+
+//Model returns a model with appropriate aliasing.
+func (c jHookDemoQuerier) Model() jHookDemoModel {
+	return JHookDemoModel.As(c.as)
+}
+
+//Select returns a HookDemo Select Builder.
+func (c jHookDemoQuerier) Select(what ...string) *jHookDemoSelectBuilder {
+	m := c.Model()
+	dialect := runtime.GetDialect()
+	from := dialect.QuoteIdent(m.Table())
+	if m.Alias() != "" && m.Alias() != m.Table() {
+		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		alias := m.Table()
+		if m.Alias() != "" && m.Alias() != m.Table() {
+			alias = m.Alias()
+		}
+		what = m.Fields(alias + ".*")
+	}
+	return &jHookDemoSelectBuilder{
+		as: c.as,
+		SelectBuilder: &builder.SelectBuilder{
+			SelectBuilder: c.db.Select(what...).From(from),
+		},
+	}
+}
+
+//Where returns a HookDemo Select Builder.
+func (c jHookDemoQuerier) Where(query interface{}, value ...interface{}) *jHookDemoSelectBuilder {
+	return c.Select().Where(query, value...)
+}
+
+//Count returns a HookDemo Select Builder to count given expressions.
+func (c jHookDemoQuerier) Count(what ...string) *jHookDemoSelectBuilder {
+	if len(what) == 0 {
+		what = append(what, "*")
+	}
+	return c.Select("COUNT(" + strings.Join(what, ",") + ")")
+}
+
+// Insert a new HookDemo, if it has autoincrement primary key, the value will be set.
+// It stops on first error.
+func (c jHookDemoQuerier) Insert(items ...*HookDemo) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		err = data.beforeInsert()
+		if err != nil {
+			return nil, err
+		}
+
+		query := c.db.InsertInto(JHookDemoModel.Table()).Columns(
+
+			`name`,
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
+
+			query = query.Returning(
+
+				`id`,
+			)
+
+			var auto0 int64
+
+			err = query.Load(
+
+				&auto0,
+			)
+
+			data.ID = auto0
+
+		} else {
+			res, err = query.Exec()
+
+			if err == nil {
+				id, err2 := res.LastInsertId()
+				if err2 != nil {
+					return res, err2
+				}
+				data.ID = id
+			}
+
+		}
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// InsertBulk inserts multiple items into the database.
+// It does not post update any auto increment field.
+// It builds an insert query of multiple rows and send it on the underlying connection.
+func (c jHookDemoQuerier) InsertBulk(items ...*HookDemo) error {
+	panic("todo")
+}
+
+// Update a HookDemo. It stops on first error.
+func (c jHookDemoQuerier) Update(items ...*HookDemo) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		err = data.beforeUpdate()
+		if err != nil {
+			return nil, err
+		}
+
+		query := c.db.Update(JHookDemoModel.Table())
+
+		query = query.Set(`name`, data.Name)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// MustUpdate a HookDemo. It stops on first error. It errors if an update query does not affect row.
+func (c jHookDemoQuerier) MustUpdate(items ...*HookDemo) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		err = data.beforeUpdate()
+		if err != nil {
+			return nil, err
+		}
+
+		query := c.db.Update(JHookDemoModel.Table())
+
+		query = query.Set(`name`, data.Name)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
+		if err == nil {
+			if n, _ := res.RowsAffected(); n == 0 {
+				x := &builder.UpdateBuilder{UpdateBuilder: query}
+				err = runtime.NewNoRowsAffected(x.String())
+			}
+		}
+
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// UpdateBulk updates multiple items into the database.
+// It builds an update query of multiple rows and send it on the underlying connection.
+func (c jHookDemoQuerier) UpdateBulk(items ...*HookDemo) error {
+	panic("todo")
+}
+
+//Delete returns a delete builder
+func (c jHookDemoQuerier) Delete() *jHookDemoDeleteBuilder {
+	return &jHookDemoDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHookDemoModel.Table()),
+		},
+	}
+}
+
+// MustDelete requires the query to affeect rows.
+func (c jHookDemoQuerier) MustDelete() *jHookDemoDeleteBuilder {
+	ret := &jHookDemoDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHookDemoModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
+//DeleteByPk deletes one HookDemo by its PKs
+func (c jHookDemoQuerier) DeleteByPk(ID int64) error {
+	_, err := c.Delete().Where(
+
+		JHookDemoModel.ID.Eq(ID),
+	).Exec()
+	return err
+}
+
+// DeleteAll given HookDemo
+func (c jHookDemoQuerier) DeleteAll(items ...*HookDemo) (sql.Result, error) {
+	q := c.Delete().Where(
+		JHookDemoModel.In(items...),
+	)
+	return q.Exec()
+}
+
+// MustDeleteAll given HookDemo
+func (c jHookDemoQuerier) MustDeleteAll(items ...*HookDemo) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JHookDemoModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
+}
+
+//Find one HookDemo using its PKs
+func (c jHookDemoQuerier) Find(ID int64) (*HookDemo, error) {
+	return c.Select().Where(
+
+		JHookDemoModel.ID.Eq(ID),
+	).Read()
 }
 
 // JHasManyTextPkrelatedsToTextPkrelatedsSetup helps to create/drop the schema
@@ -8330,11 +8882,22 @@ PRIMARY KEY (has_many_text_pk_id,text_pk_name)
 		drop = `DROP TABLE IF EXISTS hasmanytextpk_relatedstotextpk_relateds`
 	}
 
-	return jHasManyTextPkrelatedsToTextPkrelatedsSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `hasmanytextpk_relatedstotextpk_relateds`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -8490,6 +9053,7 @@ type jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a HasManyTextPkrelatedsToTextPkrelateds
 func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Read() (*HasManyTextPkrelatedsToTextPkrelateds, error) {
 	var one HasManyTextPkrelatedsToTextPkrelateds
@@ -8555,6 +9119,12 @@ func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderDir(col strin
 //OrderBy returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
 func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderBy(col string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Paginate(page, perPage uint64) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -8761,30 +9331,6 @@ func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Find(HasManyTextPkID int6
 	).Read()
 }
 
-type jCompositePkrelatedsToHasManyCompositePkrelatedsSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jCompositePkrelatedsToHasManyCompositePkrelatedsSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jCompositePkrelatedsToHasManyCompositePkrelatedsSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jCompositePkrelatedsToHasManyCompositePkrelatedsSetup) IsView() bool {
-	return c.isView
-}
-
 // JCompositePkrelatedsToHasManyCompositePkrelatedsSetup helps to create/drop the schema
 func JCompositePkrelatedsToHasManyCompositePkrelatedsSetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -8826,11 +9372,22 @@ PRIMARY KEY (has_many_composite_pk_id,composite_pk_p,composite_pk_k)
 		drop = `DROP TABLE IF EXISTS compositepk_relatedstohasmanycompositepk_relateds`
 	}
 
-	return jCompositePkrelatedsToHasManyCompositePkrelatedsSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `compositepk_relatedstohasmanycompositepk_relateds`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -9004,6 +9561,7 @@ type jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a CompositePkrelatedsToHasManyCompositePkrelateds
 func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) Read() (*CompositePkrelatedsToHasManyCompositePkrelateds, error) {
 	var one CompositePkrelatedsToHasManyCompositePkrelateds
@@ -9069,6 +9627,12 @@ func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) OrderDir
 //OrderBy returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
 func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) OrderBy(col string) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder) Paginate(page, perPage uint64) *jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 

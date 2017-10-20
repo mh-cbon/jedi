@@ -40,7 +40,7 @@ func main() {
 	// prepare the schema
 	{
 		// setup jedi
-		err = jedi.Setup(conn, true)
+		err = jedi.Setup(conn, Jedi)
 		fail(err)
 
 		//fyi

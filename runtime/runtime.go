@@ -13,22 +13,22 @@ import (
 var CurrentDriver string
 
 // Open a connection, shorthand for dbr.Open
-func Open(driver, dsn string, log dbr.EventReceiver, force bool) (*dbr.Connection, error) {
+func Open(driver, dsn string, log dbr.EventReceiver, registries ...[]Setupable) (*dbr.Connection, error) {
 	conn, err := dbr.Open(driver, dsn, log)
 	if err != nil {
 		return conn, err
 	}
-	return conn, Setup(conn, force)
+	return conn, Setup(conn, registries...)
 }
 
 var toSetup []Setupable
 
 // Setup the current driver at runtime
-func Setup(conn *dbr.Connection, force bool) error {
+func Setup(conn *dbr.Connection, registries ...[]Setupable) error {
 	driver := fmt.Sprintf("%T", conn.Driver())
 	CurrentDriver = drivers.Drivers[driver] //must panic if not found.
-	if force {
-		for _, t := range toSetup {
+	for _, registry := range registries {
+		for _, t := range registry {
 			k := t()
 			if k.IsView() {
 				if err := k.Drop(conn); err != nil {
@@ -36,7 +36,7 @@ func Setup(conn *dbr.Connection, force bool) error {
 				}
 			}
 		}
-		for _, t := range toSetup {
+		for _, t := range registry {
 			k := t()
 			if !k.IsView() {
 				if err := k.Drop(conn); err != nil {
@@ -45,12 +45,18 @@ func Setup(conn *dbr.Connection, force bool) error {
 				if err := k.Create(conn); err != nil {
 					return err
 				}
+				if err := k.CreateIndexes(conn); err != nil {
+					return err
+				}
 			}
 		}
-		for _, t := range toSetup {
+		for _, t := range registry {
 			k := t()
 			if k.IsView() {
 				if err := k.Create(conn); err != nil {
+					return err
+				}
+				if err := k.CreateIndexes(conn); err != nil {
 					return err
 				}
 			}
@@ -63,16 +69,15 @@ func Setup(conn *dbr.Connection, force bool) error {
 type Setuper interface {
 	IsView() bool
 	Create(db *dbr.Connection) error
+	CreateIndexes(db *dbr.Connection) error
 	Drop(db *dbr.Connection) error
+	DropStatement() string
+	CreateStatement() string
+	IndexStatements() []string
 }
 
 // Setupable returns a Setuper
 type Setupable func() Setuper
-
-// Register the current driver at runtime
-func Register(m ...Setupable) {
-	toSetup = append(toSetup, m...)
-}
 
 // GetCurrentDriver panics if the driver is not setup
 func GetCurrentDriver() string {
@@ -106,6 +111,19 @@ func GetDialect() dbr.Dialect {
 }
 
 //DumpSchema generated automatically.
-func DumpSchema(out io.Writer) {
-
+func DumpSchema(out io.Writer, registries ...[]Setupable) {
+	for _, registry := range registries {
+		for _, t := range registry {
+			k := t()
+			fmt.Fprintf(out, "%v;\n", k.DropStatement())
+		}
+		for _, t := range registry {
+			k := t()
+			fmt.Fprint(out, "\n")
+			fmt.Fprintf(out, "%v;\n", k.CreateStatement())
+			for _, i := range k.IndexStatements() {
+				fmt.Fprintf(out, "%v;\n", i)
+			}
+		}
+	}
 }

@@ -121,6 +121,8 @@ func Parse(file string) ([]*model.Struct, error) {
 			s.SQLViewDrop = viewDrop
 			s.SQLTableCreate = tableCreate
 			s.SQLTableDrop = tableDrop
+			s.InsertHook = hasMethod(fileNode, s, "beforeInsert")
+			s.UpdateHook = hasMethod(fileNode, s, "beforeUpdate")
 			res = append(res, s)
 		}
 	}
@@ -133,30 +135,41 @@ func Parse(file string) ([]*model.Struct, error) {
 	}
 
 	// install has_one properties
-	for _, r := range res {
-		for _, f := range r.Fields {
-			if f.HasOne != "" {
-				foreign := findStruct(res, f.HasOne)
-				if foreign == nil {
-					log.Printf("jedi: has_one not found %#v in %#v\n", f.HasOne, r.Name)
-					continue
-				}
-				for _, pk := range foreign.Pks() {
-					rRequiredField := strings.Title(f.Name) + pk.Name
-					if g := r.GetFieldByName(rRequiredField); g == nil {
-						log.Printf("jedi: %v is missing a field %v.%v because it @has_one=%v\n",
-							r.Name, r.Name, rRequiredField, f.HasOne)
-					} else if g.IsStar() != f.IsStar() {
-						log.Printf("jedi: %v.%v / %v.%v must be both go pointer or both value\n",
-							r.Name, g.Name, r.Name, f.Name)
-					}
-				}
-				f.RelType = "has_one"
-			}
-		}
-	}
+	res = installHasOneRelations(res)
 
 	// install has_many properties
+	res = installHasManyRelations(res)
+
+	// setup indexes
+	res = installIndexes(res)
+
+	return res, nil
+}
+
+func hasMethod(file *ast.File, s *model.Struct, name string) bool {
+	for _, decl := range file.Decls {
+		f, ok := decl.(*ast.FuncDecl)
+		if !ok {
+			continue
+		}
+		if f.Name.String() != name {
+			continue
+		}
+		t := f.Recv.List[0].Type
+		if x, ok := t.(*ast.StarExpr); ok {
+			t = x.X
+		}
+		if x, ok := t.(*ast.Ident); !ok {
+			continue
+		} else if x.Name != s.Name {
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+func installHasManyRelations(res []*model.Struct) []*model.Struct {
 	todos := map[string]*model.Struct{}
 	for _, r := range res {
 		for _, f := range r.Fields {
@@ -228,8 +241,76 @@ func Parse(file string) ([]*model.Struct, error) {
 	for _, t := range todos {
 		res = append(res, t)
 	}
+	return res
+}
 
-	return res, nil
+func installHasOneRelations(res []*model.Struct) []*model.Struct {
+	for _, r := range res {
+		for _, f := range r.Fields {
+			if f.HasOne != "" {
+				foreign := findStruct(res, f.HasOne)
+				if foreign == nil {
+					log.Printf("jedi: has_one not found %#v in %#v\n", f.HasOne, r.Name)
+					continue
+				}
+				for _, pk := range foreign.Pks() {
+					rRequiredField := strings.Title(f.Name) + pk.Name
+					if g := r.GetFieldByName(rRequiredField); g == nil {
+						log.Printf("jedi: %v is missing a field %v.%v because it @has_one=%v\n",
+							r.Name, r.Name, rRequiredField, f.HasOne)
+					} else if g.IsStar() != f.IsStar() {
+						log.Printf("jedi: %v.%v / %v.%v must be both go pointer or both value\n",
+							r.Name, g.Name, r.Name, f.Name)
+					}
+				}
+				f.RelType = "has_one"
+			}
+		}
+	}
+	return res
+}
+
+func installIndexes(res []*model.Struct) []*model.Struct {
+	for _, r := range res {
+		for _, f := range r.Fields {
+			for _, name := range f.Index {
+				index := r.GetIndexByName(name)
+				if index == nil {
+					index = &model.Index{
+						Name: name,
+					}
+					r.Indexes = append(r.Indexes, index)
+				}
+				index.Fields = append(index.Fields, f.Name)
+			}
+			for _, name := range f.Unique {
+				index := r.GetIndexByName(name)
+				if index == nil {
+					index = &model.Index{
+						Name:   name,
+						Unique: true,
+					}
+					r.Indexes = append(r.Indexes, index)
+				} else {
+					if index.Unique == false {
+						log.Printf("jedi: %v.%v the Index %q was previsouly declared as non unique\n", r.Name, f.Name, name)
+					}
+					index.Unique = true
+				}
+				index.Fields = append(index.Fields, f.Name)
+			}
+		}
+		for _, index := range r.Indexes {
+			if len(index.Fields) == 1 && index.Name[:4] == "auto" {
+				if index.Unique {
+					index.Name = "unique_" + index.Fields[0]
+				} else {
+					index.Name = "index_" + index.Fields[0]
+				}
+			}
+		}
+	}
+	return res
 }
 
 func itemGoType(s string) string {
@@ -300,6 +381,7 @@ func findProp(all []*model.Struct, n string) *model.Field {
 }
 
 var trueString = "true"
+var falseString = "true"
 var byteString = "byte"
 var uint8String = "uint8"
 
@@ -340,26 +422,29 @@ func parseStructTypeSpec(ts *ast.TypeSpec, str *ast.StructType) (*model.Struct, 
 		}
 		typ := strGoType(f.Type)
 		styp := strSQLType(f.Type)
-		isPk := props["pk"] == trueString
-		if props["has_many"] == trueString {
-			props["has_many"] = strGoItemType(f.Type)
+		isPk := props.pk == trueString
+		if props.hasMany == trueString {
+			props.hasMany = strGoItemType(f.Type)
 		}
-		if props["has_one"] == trueString {
-			props["has_one"] = strGoItemType(f.Type)
+		if props.hasOne == trueString {
+			props.hasOne = strGoItemType(f.Type)
 		}
 		res.Fields = append(res.Fields, &model.Field{
 			Name:        name.String(),
 			GoType:      typ,
+			IsNullable:  strSQLNullable(f.Type),
 			SQLName:     column,
 			SQLType:     styp,
 			IsPk:        isPk,
 			IsAI:        isPk && styp == integerSQLString,
-			On:          props["on"],
-			HasMany:     props["has_many"],
-			HasOne:      props["has_one"],
-			IsNullable:  strSQLNullable(f.Type),
-			UTC:         props["utc"] == trueString,
-			LastUpdated: props["last_updated"] == trueString,
+			On:          props.on,
+			HasMany:     props.hasMany,
+			HasOne:      props.hasOne,
+			UTC:         props.utc == trueString,
+			LastUpdated: props.lastUpdated == trueString,
+			Insert:      props.insert == trueString,
+			Index:       props.index,
+			Unique:      props.unique,
 		})
 		n++
 	}
@@ -371,30 +456,89 @@ func parseStructTypeSpec(ts *ast.TypeSpec, str *ast.StructType) (*model.Struct, 
 	return res, nil
 }
 
-// parseStructFieldTag is used by both file and runtime parsers
-func parseStructFieldTag(tag string) (sqlName string, props map[string]string) {
-	props = map[string]string{
-		"pk":           "false",
-		"has_many":     "",
-		"has_one":      "",
-		"on":           "",
-		"utc":          trueString,
-		"last_updated": "false",
-	}
+type props struct {
+	pk          string
+	hasMany     string
+	hasOne      string
+	on          string
+	lastUpdated string
+	utc         string
+	insert      string
+	index       []string
+	unique      []string
+}
 
+var auto int
+
+// parseStructFieldTag is used by both file and runtime parsers
+func parseStructFieldTag(tag string) (sqlName string, prop props) {
 	parts := strings.Split(tag, ",")
 	if len(parts) == 0 || len(parts) > 2 {
 		return
 	}
+	//default.
+	prop.utc = trueString
 
 	for _, p := range parts {
 		p = strings.TrimSpace(p)
 		if strings.HasPrefix(p, "@") && len(p) > 1 {
 			u := strings.Split(p[1:], "=")
-			if len(u) > 1 {
-				props[u[0]] = u[1]
-			} else {
-				props[p[1:]] = trueString
+			if u[0] == "pk" {
+				prop.pk = trueString
+			} else if u[0] == "has_many" {
+				if len(u) == 1 {
+					prop.hasMany = trueString
+				} else {
+					prop.hasMany = u[1]
+				}
+			} else if u[0] == "has_one" {
+				if len(u) == 1 {
+					prop.hasOne = trueString
+				} else {
+					prop.hasOne = u[1]
+				}
+			} else if u[0] == "on" {
+				if len(u) == 1 {
+					prop.on = trueString
+				} else {
+					prop.on = u[1]
+				}
+			} else if u[0] == "utc" {
+				if len(u) == 1 {
+					prop.utc = trueString
+				} else {
+					prop.utc = u[1]
+				}
+			} else if u[0] == "last_updated" {
+				if len(u) == 1 {
+					prop.lastUpdated = trueString
+				} else {
+					prop.lastUpdated = u[1]
+				}
+			} else if u[0] == "insert" {
+				if len(u) == 1 {
+					prop.insert = trueString
+				} else {
+					prop.insert = u[1]
+				}
+			} else if u[0] == "index" {
+				var n string
+				if len(u) == 1 {
+					n = fmt.Sprintf(`auto%v`, auto)
+					auto++
+				} else {
+					n = u[1]
+				}
+				prop.index = append(prop.index, n)
+			} else if u[0] == "unique" {
+				var n string
+				if len(u) == 1 {
+					n = fmt.Sprintf(`auto%v`, auto)
+					auto++
+				} else {
+					n = u[1]
+				}
+				prop.unique = append(prop.unique, n)
 			}
 		} else if len(p) > 0 {
 			sqlName = p

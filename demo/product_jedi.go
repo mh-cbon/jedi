@@ -19,40 +19,15 @@ var _ = fmt.Sprintf
 var _ = dbrdialect.PostgreSQL
 
 func init() {
-	runtime.Register(
 
-		JProductSetup,
+	Jedi = append(Jedi, JProductSetup)
 
-		JCategorySetup,
+	Jedi = append(Jedi, JCategorySetup)
 
-		JBrandSetup,
+	Jedi = append(Jedi, JBrandSetup)
 
-		JCategoryproductsToProductcategoriesSetup,
-	)
-}
+	Jedi = append(Jedi, JCategoryproductsToProductcategoriesSetup)
 
-type jProductSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jProductSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jProductSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jProductSetup) IsView() bool {
-	return c.isView
 }
 
 // JProductSetup helps to create/drop the schema
@@ -100,11 +75,28 @@ master_id INTEGER NULL
 		drop = `DROP TABLE IF EXISTS product`
 	}
 
-	return jProductSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+		indexes = append(indexes, `CREATE UNIQUE INDEX unique_SKU ON product (sku) `)
+
+	} else if driver == drivers.Mysql {
+
+		indexes = append(indexes, `CREATE UNIQUE INDEX unique_SKU ON product (sku(255)) `)
+
+	} else if driver == drivers.Pgsql {
+
+		indexes = append(indexes, `CREATE UNIQUE INDEX unique_SKU ON product (sku(255)) `)
+
+	}
+
+	return runtime.Table{
 		Name:       `product`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -345,6 +337,7 @@ type jProductSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a Product
 func (c *jProductSelectBuilder) Read() (*Product, error) {
 	var one Product
@@ -410,6 +403,12 @@ func (c *jProductSelectBuilder) OrderDir(col string, isAsc bool) *jProductSelect
 //OrderBy returns a jProductSelectBuilder instead of builder.SelectBuilder.
 func (c *jProductSelectBuilder) OrderBy(col string) *jProductSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jProductSelectBuilder instead of builder.SelectBuilder.
+func (c *jProductSelectBuilder) Paginate(page, perPage uint64) *jProductSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -581,6 +580,9 @@ func (c jProductQuerier) Update(items ...*Product) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -591,26 +593,30 @@ func (c jProductQuerier) MustUpdate(items ...*Product) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.Update(data)
+		query := c.db.Update(JProductModel.Table())
+
+		query = query.Set(`sku`, data.SKU)
+
+		query = query.Set(`brand_id`, data.BrandID)
+
+		query = query.Set(`brand2_id`, data.Brand2ID)
+
+		query = query.Set(`master_id`, data.MasterID)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
-				query := c.db.Update(JProductModel.Table())
-
-				query = query.Set(`sku`, data.SKU)
-
-				query = query.Set(`brand_id`, data.BrandID)
-
-				query = query.Set(`brand2_id`, data.Brand2ID)
-
-				query = query.Set(`master_id`, data.MasterID)
-
-				query = query.Where("id = ?", data.ID)
-
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -1495,30 +1501,6 @@ func (c *jProductSelectBuilder) LeftJoinVariances(
 // 	return c.RightJoin(dbr.I(JProductModel.Table()).As(AsVariances), on)
 // }
 
-type jCategorySetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jCategorySetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jCategorySetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jCategorySetup) IsView() bool {
-	return c.isView
-}
-
 // JCategorySetup helps to create/drop the schema
 func JCategorySetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -1555,11 +1537,28 @@ name TEXT
 		drop = `DROP TABLE IF EXISTS category`
 	}
 
-	return jCategorySetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+		indexes = append(indexes, `CREATE INDEX index_Name ON category (name) `)
+
+	} else if driver == drivers.Mysql {
+
+		indexes = append(indexes, `CREATE INDEX index_Name ON category (name(255)) `)
+
+	} else if driver == drivers.Pgsql {
+
+		indexes = append(indexes, `CREATE INDEX index_Name ON category (name(255)) `)
+
+	}
+
+	return runtime.Table{
 		Name:       `category`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -1716,6 +1715,7 @@ type jCategorySelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a Category
 func (c *jCategorySelectBuilder) Read() (*Category, error) {
 	var one Category
@@ -1781,6 +1781,12 @@ func (c *jCategorySelectBuilder) OrderDir(col string, isAsc bool) *jCategorySele
 //OrderBy returns a jCategorySelectBuilder instead of builder.SelectBuilder.
 func (c *jCategorySelectBuilder) OrderBy(col string) *jCategorySelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jCategorySelectBuilder instead of builder.SelectBuilder.
+func (c *jCategorySelectBuilder) Paginate(page, perPage uint64) *jCategorySelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -1940,6 +1946,9 @@ func (c jCategoryQuerier) Update(items ...*Category) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -1950,20 +1959,24 @@ func (c jCategoryQuerier) MustUpdate(items ...*Category) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.Update(data)
+		query := c.db.Update(JCategoryModel.Table())
+
+		query = query.Set(`name`, data.Name)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
-				query := c.db.Update(JCategoryModel.Table())
-
-				query = query.Set(`name`, data.Name)
-
-				query = query.Where("id = ?", data.ID)
-
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -2317,30 +2330,6 @@ func (c *jCategorySelectBuilder) LeftJoinProducts(
 // 	return query
 // }
 
-type jBrandSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jBrandSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jBrandSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jBrandSetup) IsView() bool {
-	return c.isView
-}
-
 // JBrandSetup helps to create/drop the schema
 func JBrandSetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -2377,11 +2366,22 @@ name TEXT
 		drop = `DROP TABLE IF EXISTS brand`
 	}
 
-	return jBrandSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `brand`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -2550,6 +2550,7 @@ type jBrandSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a Brand
 func (c *jBrandSelectBuilder) Read() (*Brand, error) {
 	var one Brand
@@ -2615,6 +2616,12 @@ func (c *jBrandSelectBuilder) OrderDir(col string, isAsc bool) *jBrandSelectBuil
 //OrderBy returns a jBrandSelectBuilder instead of builder.SelectBuilder.
 func (c *jBrandSelectBuilder) OrderBy(col string) *jBrandSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jBrandSelectBuilder instead of builder.SelectBuilder.
+func (c *jBrandSelectBuilder) Paginate(page, perPage uint64) *jBrandSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 
@@ -2774,6 +2781,9 @@ func (c jBrandQuerier) Update(items ...*Brand) (sql.Result, error) {
 
 		res, err = query.Exec()
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -2784,20 +2794,24 @@ func (c jBrandQuerier) MustUpdate(items ...*Brand) (sql.Result, error) {
 	var err error
 	for _, data := range items {
 
-		res, err = c.Update(data)
+		query := c.db.Update(JBrandModel.Table())
+
+		query = query.Set(`name`, data.Name)
+
+		query = query.Where("id = ?", data.ID)
+
+		res, err = query.Exec()
+
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
-				query := c.db.Update(JBrandModel.Table())
-
-				query = query.Set(`name`, data.Name)
-
-				query = query.Where("id = ?", data.ID)
-
 				x := &builder.UpdateBuilder{UpdateBuilder: query}
 				err = runtime.NewNoRowsAffected(x.String())
 			}
 		}
 
+		if err != nil {
+			return res, err
+		}
 	}
 	return res, err
 }
@@ -3097,30 +3111,6 @@ func (c *jBrandSelectBuilder) LeftJoinProducts2(
 // 	return c.RightJoin(dbr.I(JProductModel.Table()).As(AsProducts2), on)
 // }
 
-type jCategoryproductsToProductcategoriesSetup struct {
-	Name       string
-	CreateStmt string
-	DropStmt   string
-	isView     bool
-}
-
-//Create applies the create table command to te underlying connection.
-func (c jCategoryproductsToProductcategoriesSetup) Create(db *dbr.Connection) error {
-	_, err := db.Exec(c.CreateStmt)
-	return runtime.NewSQLError(err, c.CreateStmt)
-}
-
-//Drop applies the drop table command to te underlying connection.
-func (c jCategoryproductsToProductcategoriesSetup) Drop(db *dbr.Connection) error {
-	_, err := db.Exec(c.DropStmt)
-	return runtime.NewSQLError(err, c.DropStmt)
-}
-
-//IsView returns true if it is a view.
-func (c jCategoryproductsToProductcategoriesSetup) IsView() bool {
-	return c.isView
-}
-
 // JCategoryproductsToProductcategoriesSetup helps to create/drop the schema
 func JCategoryproductsToProductcategoriesSetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -3159,11 +3149,22 @@ PRIMARY KEY (category_id,product_id)
 		drop = `DROP TABLE IF EXISTS category_productstoproduct_categories`
 	}
 
-	return jCategoryproductsToProductcategoriesSetup{
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
 		Name:       `category_productstoproduct_categories`,
 		CreateStmt: create,
 		DropStmt:   drop,
-		isView:     !true,
+		View:       !true,
+		Indexes:    indexes,
 	}
 }
 
@@ -3319,6 +3320,7 @@ type jCategoryproductsToProductcategoriesSelectBuilder struct {
 // 	}
 // 	return b.String()
 // }
+
 //Read evaluates current select query and load the results into a CategoryproductsToProductcategories
 func (c *jCategoryproductsToProductcategoriesSelectBuilder) Read() (*CategoryproductsToProductcategories, error) {
 	var one CategoryproductsToProductcategories
@@ -3384,6 +3386,12 @@ func (c *jCategoryproductsToProductcategoriesSelectBuilder) OrderDir(col string,
 //OrderBy returns a jCategoryproductsToProductcategoriesSelectBuilder instead of builder.SelectBuilder.
 func (c *jCategoryproductsToProductcategoriesSelectBuilder) OrderBy(col string) *jCategoryproductsToProductcategoriesSelectBuilder {
 	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jCategoryproductsToProductcategoriesSelectBuilder instead of builder.SelectBuilder.
+func (c *jCategoryproductsToProductcategoriesSelectBuilder) Paginate(page, perPage uint64) *jCategoryproductsToProductcategoriesSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
 	return c
 }
 

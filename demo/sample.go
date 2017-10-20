@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 //go:generate jedi
 
@@ -128,4 +131,18 @@ type SampleView struct {
 	ID          int64 `jedi:"@pk"` //you can configure the ok on the view, it adds some methods.
 	Name        string
 	Description string
+}
+
+//HookDemo demosntrates hooks.
+//jedi:
+type HookDemo struct {
+	ID   int64 `jedi:"@pk"`
+	Name string
+}
+
+func (p *HookDemo) beforeInsert() error {
+	return errors.New("It won t happen")
+}
+func (p *HookDemo) beforeUpdate() error {
+	return errors.New("It won t happen")
 }
