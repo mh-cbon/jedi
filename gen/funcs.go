@@ -387,7 +387,7 @@ var funcs = map[string]interface{}{
 		t := []string{}
 		for _, c := range index.Fields {
 			f := s.GetFieldByName(c)
-			if strings.HasSuffix(f.GoType, "string") && driver != drivers.Sqlite {
+			if strings.HasSuffix(f.GoType, "string") && driver == drivers.Mysql {
 				t = append(t, f.SQLName+"(255)")
 			} else {
 				t = append(t, f.SQLName)
