@@ -207,12 +207,14 @@ func (j jSampleModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -428,11 +430,12 @@ func (c jSampleQuerier) Select(what ...string) *jSampleSelectBuilder {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jSampleSelectBuilder{
 		as: c.as,
@@ -799,12 +802,14 @@ func (j jBasicPKModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -1002,11 +1007,12 @@ func (c jBasicPKQuerier) Select(what ...string) *jBasicPKSelectBuilder {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jBasicPKSelectBuilder{
 		as: c.as,
@@ -1505,12 +1511,14 @@ func (j jBasicTypesModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -1822,11 +1830,12 @@ func (c jBasicTypesQuerier) Select(what ...string) *jBasicTypesSelectBuilder {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jBasicTypesSelectBuilder{
 		as: c.as,
@@ -2282,12 +2291,14 @@ func (j jTextPkModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -2497,11 +2508,12 @@ func (c jTextPkQuerier) Select(what ...string) *jTextPkSelectBuilder {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jTextPkSelectBuilder{
 		as: c.as,
@@ -3221,12 +3233,14 @@ func (j jHasOneTextPkModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -3436,11 +3450,12 @@ func (c jHasOneTextPkQuerier) Select(what ...string) *jHasOneTextPkSelectBuilder
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jHasOneTextPkSelectBuilder{
 		as: c.as,
@@ -3920,12 +3935,14 @@ func (j jHasManyTextPkModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -4129,11 +4146,12 @@ func (c jHasManyTextPkQuerier) Select(what ...string) *jHasManyTextPkSelectBuild
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jHasManyTextPkSelectBuilder{
 		as: c.as,
@@ -4764,12 +4782,14 @@ func (j jCompositePkModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -4985,11 +5005,12 @@ func (c jCompositePkQuerier) Select(what ...string) *jCompositePkSelectBuilder {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jCompositePkSelectBuilder{
 		as: c.as,
@@ -5784,12 +5805,14 @@ func (j jHasOneCompositePkModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -6005,11 +6028,12 @@ func (c jHasOneCompositePkQuerier) Select(what ...string) *jHasOneCompositePkSel
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jHasOneCompositePkSelectBuilder{
 		as: c.as,
@@ -6529,12 +6553,14 @@ func (j jHasManyCompositePkModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -6738,11 +6764,12 @@ func (c jHasManyCompositePkQuerier) Select(what ...string) *jHasManyCompositePkS
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jHasManyCompositePkSelectBuilder{
 		as: c.as,
@@ -7397,12 +7424,14 @@ func (j jDateTypeModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -7618,11 +7647,12 @@ func (c jDateTypeQuerier) Select(what ...string) *jDateTypeSelectBuilder {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jDateTypeSelectBuilder{
 		as: c.as,
@@ -8058,12 +8088,14 @@ func (j jSampleViewModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -8267,11 +8299,12 @@ func (c jSampleViewQuerier) Select(what ...string) *jSampleViewSelectBuilder {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jSampleViewSelectBuilder{
 		as: c.as,
@@ -8424,12 +8457,14 @@ func (j jHookDemoModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -8627,11 +8662,12 @@ func (c jHookDemoQuerier) Select(what ...string) *jHookDemoSelectBuilder {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jHookDemoSelectBuilder{
 		as: c.as,
@@ -8980,12 +9016,14 @@ func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Fields(ins ...string) []str
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -9190,11 +9228,12 @@ func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Select(what ...string) *j
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder{
 		as: c.as,
@@ -9480,12 +9519,14 @@ func (j jCompositePkrelatedsToHasManyCompositePkrelatedsModel) Fields(ins ...str
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -9698,11 +9739,12 @@ func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) Select(what ...
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jCompositePkrelatedsToHasManyCompositePkrelatedsSelectBuilder{
 		as: c.as,

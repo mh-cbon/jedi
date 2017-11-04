@@ -87,7 +87,7 @@ master_id INTEGER NULL
 
 	} else if driver == drivers.Pgsql {
 
-		indexes = append(indexes, `CREATE UNIQUE INDEX unique_SKU ON product (sku(255)) `)
+		indexes = append(indexes, `CREATE UNIQUE INDEX unique_SKU ON product (sku) `)
 
 	}
 
@@ -223,12 +223,14 @@ func (j jProductModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -474,11 +476,12 @@ func (c jProductQuerier) Select(what ...string) *jProductSelectBuilder {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jProductSelectBuilder{
 		as: c.as,
@@ -1549,7 +1552,7 @@ name TEXT
 
 	} else if driver == drivers.Pgsql {
 
-		indexes = append(indexes, `CREATE INDEX index_Name ON category (name(255)) `)
+		indexes = append(indexes, `CREATE INDEX index_Name ON category (name) `)
 
 	}
 
@@ -1643,12 +1646,14 @@ func (j jCategoryModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -1852,11 +1857,12 @@ func (c jCategoryQuerier) Select(what ...string) *jCategorySelectBuilder {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jCategorySelectBuilder{
 		as: c.as,
@@ -2472,12 +2478,14 @@ func (j jBrandModel) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -2687,11 +2695,12 @@ func (c jBrandQuerier) Select(what ...string) *jBrandSelectBuilder {
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jBrandSelectBuilder{
 		as: c.as,
@@ -3247,12 +3256,14 @@ func (j jCategoryproductsToProductcategoriesModel) Fields(ins ...string) []strin
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -3457,11 +3468,12 @@ func (c jCategoryproductsToProductcategoriesQuerier) Select(what ...string) *jCa
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias() != "" && m.Alias() != m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias + ".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &jCategoryproductsToProductcategoriesSelectBuilder{
 		as: c.as,

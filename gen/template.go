@@ -215,12 +215,14 @@ func (j j{{.current.Name}}Model) Fields(ins ...string) []string {
 		ins = append(ins, "*")
 	}
 	for i, in := range ins {
+		p := j.Table()
 		if j.as != "" {
-			if in == "*" {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), in)
-			} else {
-				ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(j.as), dialect.QuoteIdent(in))
-			}
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
 		}
 	}
 	return ins
@@ -413,11 +415,12 @@ func (c j{{.current.Name}}Querier) Select(what ...string) *j{{.current.Name}}Sel
 		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
 	}
 	if len(what) == 0 {
-		alias := m.Table()
-		if m.Alias()!="" && m.Alias()!=m.Table() {
-			alias = m.Alias()
-		}
-		what = m.Fields(alias+".*")
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
 	}
 	return &j{{.current.Name}}SelectBuilder{
 		as: c.as,
