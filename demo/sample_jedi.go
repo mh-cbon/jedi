@@ -44,9 +44,9 @@ func init() {
 
 	Jedi = append(Jedi, JHookDemoSetup)
 
-	Jedi = append(Jedi, JHasManyTextPkrelatedsToTextPkrelatedsSetup)
-
 	Jedi = append(Jedi, JCompositePkrelatedsToHasManyCompositePkrelatedsSetup)
+
+	Jedi = append(Jedi, JHasManyTextPkrelatedsToTextPkrelatedsSetup)
 
 }
 
@@ -8880,496 +8880,6 @@ func (c jHookDemoQuerier) Find(ID int64) (*HookDemo, error) {
 	).Read()
 }
 
-// JHasManyTextPkrelatedsToTextPkrelatedsSetup helps to create/drop the schema
-func JHasManyTextPkrelatedsToTextPkrelatedsSetup() runtime.Setuper {
-	driver := runtime.GetCurrentDriver()
-
-	var create string
-	var drop string
-
-	if driver == drivers.Sqlite {
-		create = `CREATE TABLE IF NOT EXISTS hasmanytextpk_relatedstotextpk_relateds (
-has_many_text_pk_id INTEGER,
-text_pk_name TEXT,
-PRIMARY KEY (has_many_text_pk_id,text_pk_name) 
-
-)`
-	} else if driver == drivers.Mysql {
-		create = `CREATE TABLE IF NOT EXISTS hasmanytextpk_relatedstotextpk_relateds (
-has_many_text_pk_id INTEGER NOT NULL,
-text_pk_name VARCHAR(255) NOT NULL,
-PRIMARY KEY (has_many_text_pk_id,text_pk_name) 
-
-)`
-	} else if driver == drivers.Pgsql {
-		create = `CREATE TABLE IF NOT EXISTS hasmanytextpk_relatedstotextpk_relateds (
-has_many_text_pk_id INTEGER,
-text_pk_name TEXT,
-PRIMARY KEY (has_many_text_pk_id,text_pk_name) 
-
-)`
-	}
-
-	if driver == drivers.Sqlite {
-		drop = `DROP TABLE IF EXISTS hasmanytextpk_relatedstotextpk_relateds`
-	} else if driver == drivers.Mysql {
-		drop = `DROP TABLE IF EXISTS hasmanytextpk_relatedstotextpk_relateds`
-	} else if driver == drivers.Pgsql {
-		drop = `DROP TABLE IF EXISTS hasmanytextpk_relatedstotextpk_relateds`
-	}
-
-	var indexes []string
-
-	if driver == drivers.Sqlite {
-
-	} else if driver == drivers.Mysql {
-
-	} else if driver == drivers.Pgsql {
-
-	}
-
-	return runtime.Table{
-		Name:       `hasmanytextpk_relatedstotextpk_relateds`,
-		CreateStmt: create,
-		DropStmt:   drop,
-		View:       !true,
-		Indexes:    indexes,
-	}
-}
-
-// jHasManyTextPkrelatedsToTextPkrelatedsModel provides helper to work with HasManyTextPkrelatedsToTextPkrelateds data provider
-type jHasManyTextPkrelatedsToTextPkrelatedsModel struct {
-	as string
-
-	HasManyTextPkID builder.ValuePropertyMeta
-
-	TextPkName builder.ValuePropertyMeta
-}
-
-// Eq provided items.
-func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Eq(s ...*HasManyTextPkrelatedsToTextPkrelateds) dbr.Builder {
-	ors := []dbr.Builder{}
-	for _, t := range s {
-		ors = append(ors, dbr.And(
-
-			JHasManyTextPkrelatedsToTextPkrelatedsModel.HasManyTextPkID.Eq(t.HasManyTextPkID),
-
-			JHasManyTextPkrelatedsToTextPkrelatedsModel.TextPkName.Eq(t.TextPkName),
-		))
-	}
-	return dbr.Or(ors...)
-}
-
-// In provided items.
-func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) In(s ...*HasManyTextPkrelatedsToTextPkrelateds) dbr.Builder {
-	ors := []dbr.Builder{}
-	for _, t := range s {
-		ors = append(ors, dbr.And(
-
-			JHasManyTextPkrelatedsToTextPkrelatedsModel.HasManyTextPkID.Eq(t.HasManyTextPkID),
-
-			JHasManyTextPkrelatedsToTextPkrelatedsModel.TextPkName.Eq(t.TextPkName),
-		))
-	}
-	return dbr.Or(ors...)
-}
-
-// As returns a copy with an alias.
-func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) As(as string) jHasManyTextPkrelatedsToTextPkrelatedsModel {
-	j.as = as
-
-	j.HasManyTextPkID.TableAlias = as
-
-	j.TextPkName.TableAlias = as
-
-	return j
-}
-
-// Table returns the sql table name
-func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Table() string {
-	return "hasmanytextpk_relatedstotextpk_relateds"
-}
-
-// Alias returns the current alias
-func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Alias() string {
-	if j.as == "" {
-		return j.Table()
-	}
-	return j.as
-}
-
-// Properties returns a map of property name => meta
-func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Properties() map[string]builder.MetaProvider {
-	ret := map[string]builder.MetaProvider{}
-
-	ret["HasManyTextPkID"] = j.HasManyTextPkID
-
-	ret["TextPkName"] = j.TextPkName
-
-	return ret
-}
-
-// Fields returns given sql fields with appropriate aliasing.
-func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Fields(ins ...string) []string {
-	dialect := runtime.GetDialect()
-	if len(ins) == 0 {
-		ins = append(ins, "*")
-	}
-	for i, in := range ins {
-		p := j.Table()
-		if j.as != "" {
-			p = j.as
-		}
-		if in == "*" {
-			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
-		} else {
-			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
-		}
-	}
-	return ins
-}
-
-// JHasManyTextPkrelatedsToTextPkrelatedsModel provides helper to work with HasManyTextPkrelatedsToTextPkrelateds data provider
-var JHasManyTextPkrelatedsToTextPkrelatedsModel = jHasManyTextPkrelatedsToTextPkrelatedsModel{
-
-	HasManyTextPkID: builder.NewValueMeta(
-		`has_many_text_pk_id`, `INTEGER`,
-		`HasManyTextPkID`, `int64`,
-		true, false,
-	),
-
-	TextPkName: builder.NewValueMeta(
-		`text_pk_name`, `TEXT`,
-		`TextPkName`, `string`,
-		true, false,
-	),
-}
-
-// HasManyTextPkrelatedsToTextPkrelateds is automatically generated to handle a many to many relationship.
-type HasManyTextPkrelatedsToTextPkrelateds struct {
-	HasManyTextPkID int64
-
-	TextPkName string
-}
-
-type jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder struct {
-	*builder.DeleteBuilder
-}
-
-// //Build builds the sql string into given buffer using current dialect
-// func (c *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder) Build(b dbr.Buffer) error {
-// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
-// }
-// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
-// func (c *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder) String() string {
-// 	b := dbr.NewBuffer()
-// 	if err := c.Build(b); err != nil {
-// 		return ""
-// 	}
-// 	return b.String()
-// }
-//Where returns a jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder instead of builder.DeleteBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder) Where(query interface{}, value ...interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder {
-	c.DeleteBuilder.Where(query, value...)
-	return c
-}
-
-type jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder struct {
-	as string
-	*builder.SelectBuilder
-}
-
-// //Build builds the sql string using current dialect into given bufer
-// func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Build(b dbr.Buffer) error {
-// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
-// }
-// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
-// func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) String() string {
-// 	b := dbr.NewBuffer()
-// 	if err := c.Build(b); err != nil {
-// 		return ""
-// 	}
-// 	return b.String()
-// }
-
-//Read evaluates current select query and load the results into a HasManyTextPkrelatedsToTextPkrelateds
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Read() (*HasManyTextPkrelatedsToTextPkrelateds, error) {
-	var one HasManyTextPkrelatedsToTextPkrelateds
-	err := c.LoadStruct(&one)
-	return &one, err
-}
-
-//ReadAll evaluates current select query and load the results into a slice of HasManyTextPkrelatedsToTextPkrelateds
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) ReadAll() ([]*HasManyTextPkrelatedsToTextPkrelateds, error) {
-	var all []*HasManyTextPkrelatedsToTextPkrelateds
-	_, err := c.LoadStructs(&all)
-	return all, err
-}
-
-//Where returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Where(query interface{}, value ...interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.Where(query, value...)
-	return c
-}
-
-//GroupBy returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) GroupBy(col ...string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.GroupBy(col...)
-	return c
-}
-
-//Having returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Having(query interface{}, value ...interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.Having(query, value...)
-	return c
-}
-
-//Limit returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Limit(n uint64) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.Limit(n)
-	return c
-}
-
-//Offset returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Offset(n uint64) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.Offset(n)
-	return c
-}
-
-//OrderAsc returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderAsc(col string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.OrderAsc(col)
-	return c
-}
-
-//OrderDesc returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderDesc(col string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.OrderDesc(col)
-	return c
-}
-
-//OrderDir returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderDir(col string, isAsc bool) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.OrderDir(col, isAsc)
-	return c
-}
-
-//OrderBy returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderBy(col string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.OrderBy(col)
-	return c
-}
-
-//Paginate returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Paginate(page, perPage uint64) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.Paginate(page, perPage)
-	return c
-}
-
-//Join returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Join(table, on interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.Join(table, on)
-	return c
-}
-
-//LeftJoin returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) LeftJoin(table, on interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.LeftJoin(table, on)
-	return c
-}
-
-//RightJoin returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) RightJoin(table, on interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.RightJoin(table, on)
-	return c
-}
-
-//FullJoin returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) FullJoin(table, on interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.FullJoin(table, on)
-	return c
-}
-
-//Distinct returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
-func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Distinct() *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	c.SelectBuilder.Distinct()
-	return c
-}
-
-// JHasManyTextPkrelatedsToTextPkrelateds provides a basic querier
-func JHasManyTextPkrelatedsToTextPkrelateds(db dbr.SessionRunner) jHasManyTextPkrelatedsToTextPkrelatedsQuerier {
-	return jHasManyTextPkrelatedsToTextPkrelatedsQuerier{
-		db: db,
-	}
-}
-
-type jHasManyTextPkrelatedsToTextPkrelatedsQuerier struct {
-	db dbr.SessionRunner
-	as string
-}
-
-//As set alias prior building.
-func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) As(as string) jHasManyTextPkrelatedsToTextPkrelatedsQuerier {
-	c.as = as
-	return c
-}
-
-//Model returns a model with appropriate aliasing.
-func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Model() jHasManyTextPkrelatedsToTextPkrelatedsModel {
-	return JHasManyTextPkrelatedsToTextPkrelatedsModel.As(c.as)
-}
-
-//Select returns a HasManyTextPkrelatedsToTextPkrelateds Select Builder.
-func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Select(what ...string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	m := c.Model()
-	dialect := runtime.GetDialect()
-	from := dialect.QuoteIdent(m.Table())
-	if m.Alias() != "" && m.Alias() != m.Table() {
-		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
-	}
-	if len(what) == 0 {
-		// alias := m.Table()
-		// if m.Alias()!="" && m.Alias()!=m.Table() {
-		// 	alias = m.Alias()
-		// }
-		// what = m.Fields(alias+".*")
-		what = m.Fields("*")
-	}
-	return &jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder{
-		as: c.as,
-		SelectBuilder: &builder.SelectBuilder{
-			SelectBuilder: c.db.Select(what...).From(from),
-		},
-	}
-}
-
-//Where returns a HasManyTextPkrelatedsToTextPkrelateds Select Builder.
-func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Where(query interface{}, value ...interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	return c.Select().Where(query, value...)
-}
-
-//Count returns a HasManyTextPkrelatedsToTextPkrelateds Select Builder to count given expressions.
-func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Count(what ...string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
-	if len(what) == 0 {
-		what = append(what, "*")
-	}
-	return c.Select("COUNT(" + strings.Join(what, ",") + ")")
-}
-
-// Insert a new HasManyTextPkrelatedsToTextPkrelateds, if it has autoincrement primary key, the value will be set.
-// It stops on first error.
-func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Insert(items ...*HasManyTextPkrelatedsToTextPkrelateds) (sql.Result, error) {
-	var res sql.Result
-	var err error
-	for _, data := range items {
-
-		if runtime.Runs(drivers.Mysql) {
-
-			if len(data.TextPkName) > 255 {
-				return nil, fmt.Errorf("TextPkName: PRIMARY KEY length exceeded max=255, got=%v", len(data.TextPkName))
-			}
-
-		}
-
-		query := c.db.InsertInto(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()).Columns(
-
-			`has_many_text_pk_id`,
-
-			`text_pk_name`,
-		).Record(data)
-		if runtime.Runs(drivers.Pgsql) {
-
-			res, err = query.Exec()
-
-		} else {
-			res, err = query.Exec()
-
-		}
-		if err != nil {
-			return res, err
-		}
-	}
-	return res, err
-}
-
-// InsertBulk inserts multiple items into the database.
-// It does not post update any auto increment field.
-// It builds an insert query of multiple rows and send it on the underlying connection.
-func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) InsertBulk(items ...*HasManyTextPkrelatedsToTextPkrelateds) error {
-	panic("todo")
-}
-
-//Delete returns a delete builder
-func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Delete() *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder {
-	return &jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder{
-		&builder.DeleteBuilder{
-			DeleteBuilder: c.db.DeleteFrom(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()),
-		},
-	}
-}
-
-// MustDelete requires the query to affeect rows.
-func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) MustDelete() *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder {
-	ret := &jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder{
-		&builder.DeleteBuilder{
-			DeleteBuilder: c.db.DeleteFrom(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()),
-		},
-	}
-	ret.MustDelete()
-	return ret
-}
-
-//DeleteByPk deletes one HasManyTextPkrelatedsToTextPkrelateds by its PKs
-func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) DeleteByPk(HasManyTextPkID int64, TextPkName string) error {
-	_, err := c.Delete().Where(
-
-		JHasManyTextPkrelatedsToTextPkrelatedsModel.HasManyTextPkID.Eq(HasManyTextPkID),
-
-		JHasManyTextPkrelatedsToTextPkrelatedsModel.TextPkName.Eq(TextPkName),
-	).Exec()
-	return err
-}
-
-// DeleteAll given HasManyTextPkrelatedsToTextPkrelateds
-func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) DeleteAll(items ...*HasManyTextPkrelatedsToTextPkrelateds) (sql.Result, error) {
-	q := c.Delete().Where(
-		JHasManyTextPkrelatedsToTextPkrelatedsModel.In(items...),
-	)
-	return q.Exec()
-}
-
-// MustDeleteAll given HasManyTextPkrelatedsToTextPkrelateds
-func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) MustDeleteAll(items ...*HasManyTextPkrelatedsToTextPkrelateds) (sql.Result, error) {
-	var res sql.Result
-	var err error
-	for _, d := range items {
-		res, err = c.DeleteAll(d)
-		if err != nil {
-			return res, err
-		}
-		if n, e := res.RowsAffected(); e != nil {
-			return res, e
-		} else if n == 0 {
-			q := c.Delete().Where(
-				JHasManyTextPkrelatedsToTextPkrelatedsModel.In(items...),
-			)
-			err = runtime.NewNoRowsAffected(q.String())
-			return res, err
-		}
-	}
-	return res, err
-}
-
-//Find one HasManyTextPkrelatedsToTextPkrelateds using its PKs
-func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Find(HasManyTextPkID int64, TextPkName string) (*HasManyTextPkrelatedsToTextPkrelateds, error) {
-	return c.Select().Where(
-
-		JHasManyTextPkrelatedsToTextPkrelatedsModel.HasManyTextPkID.Eq(HasManyTextPkID),
-
-		JHasManyTextPkrelatedsToTextPkrelatedsModel.TextPkName.Eq(TextPkName),
-	).Read()
-}
-
 // JCompositePkrelatedsToHasManyCompositePkrelatedsSetup helps to create/drop the schema
 func JCompositePkrelatedsToHasManyCompositePkrelatedsSetup() runtime.Setuper {
 	driver := runtime.GetCurrentDriver()
@@ -9892,5 +9402,495 @@ func (c jCompositePkrelatedsToHasManyCompositePkrelatedsQuerier) Find(HasManyCom
 		JCompositePkrelatedsToHasManyCompositePkrelatedsModel.CompositePkP.Eq(CompositePkP),
 
 		JCompositePkrelatedsToHasManyCompositePkrelatedsModel.CompositePkK.Eq(CompositePkK),
+	).Read()
+}
+
+// JHasManyTextPkrelatedsToTextPkrelatedsSetup helps to create/drop the schema
+func JHasManyTextPkrelatedsToTextPkrelatedsSetup() runtime.Setuper {
+	driver := runtime.GetCurrentDriver()
+
+	var create string
+	var drop string
+
+	if driver == drivers.Sqlite {
+		create = `CREATE TABLE IF NOT EXISTS hasmanytextpk_relatedstotextpk_relateds (
+has_many_text_pk_id INTEGER,
+text_pk_name TEXT,
+PRIMARY KEY (has_many_text_pk_id,text_pk_name) 
+
+)`
+	} else if driver == drivers.Mysql {
+		create = `CREATE TABLE IF NOT EXISTS hasmanytextpk_relatedstotextpk_relateds (
+has_many_text_pk_id INTEGER NOT NULL,
+text_pk_name VARCHAR(255) NOT NULL,
+PRIMARY KEY (has_many_text_pk_id,text_pk_name) 
+
+)`
+	} else if driver == drivers.Pgsql {
+		create = `CREATE TABLE IF NOT EXISTS hasmanytextpk_relatedstotextpk_relateds (
+has_many_text_pk_id INTEGER,
+text_pk_name TEXT,
+PRIMARY KEY (has_many_text_pk_id,text_pk_name) 
+
+)`
+	}
+
+	if driver == drivers.Sqlite {
+		drop = `DROP TABLE IF EXISTS hasmanytextpk_relatedstotextpk_relateds`
+	} else if driver == drivers.Mysql {
+		drop = `DROP TABLE IF EXISTS hasmanytextpk_relatedstotextpk_relateds`
+	} else if driver == drivers.Pgsql {
+		drop = `DROP TABLE IF EXISTS hasmanytextpk_relatedstotextpk_relateds`
+	}
+
+	var indexes []string
+
+	if driver == drivers.Sqlite {
+
+	} else if driver == drivers.Mysql {
+
+	} else if driver == drivers.Pgsql {
+
+	}
+
+	return runtime.Table{
+		Name:       `hasmanytextpk_relatedstotextpk_relateds`,
+		CreateStmt: create,
+		DropStmt:   drop,
+		View:       !true,
+		Indexes:    indexes,
+	}
+}
+
+// jHasManyTextPkrelatedsToTextPkrelatedsModel provides helper to work with HasManyTextPkrelatedsToTextPkrelateds data provider
+type jHasManyTextPkrelatedsToTextPkrelatedsModel struct {
+	as string
+
+	HasManyTextPkID builder.ValuePropertyMeta
+
+	TextPkName builder.ValuePropertyMeta
+}
+
+// Eq provided items.
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Eq(s ...*HasManyTextPkrelatedsToTextPkrelateds) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHasManyTextPkrelatedsToTextPkrelatedsModel.HasManyTextPkID.Eq(t.HasManyTextPkID),
+
+			JHasManyTextPkrelatedsToTextPkrelatedsModel.TextPkName.Eq(t.TextPkName),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// In provided items.
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) In(s ...*HasManyTextPkrelatedsToTextPkrelateds) dbr.Builder {
+	ors := []dbr.Builder{}
+	for _, t := range s {
+		ors = append(ors, dbr.And(
+
+			JHasManyTextPkrelatedsToTextPkrelatedsModel.HasManyTextPkID.Eq(t.HasManyTextPkID),
+
+			JHasManyTextPkrelatedsToTextPkrelatedsModel.TextPkName.Eq(t.TextPkName),
+		))
+	}
+	return dbr.Or(ors...)
+}
+
+// As returns a copy with an alias.
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) As(as string) jHasManyTextPkrelatedsToTextPkrelatedsModel {
+	j.as = as
+
+	j.HasManyTextPkID.TableAlias = as
+
+	j.TextPkName.TableAlias = as
+
+	return j
+}
+
+// Table returns the sql table name
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Table() string {
+	return "hasmanytextpk_relatedstotextpk_relateds"
+}
+
+// Alias returns the current alias
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Alias() string {
+	if j.as == "" {
+		return j.Table()
+	}
+	return j.as
+}
+
+// Properties returns a map of property name => meta
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Properties() map[string]builder.MetaProvider {
+	ret := map[string]builder.MetaProvider{}
+
+	ret["HasManyTextPkID"] = j.HasManyTextPkID
+
+	ret["TextPkName"] = j.TextPkName
+
+	return ret
+}
+
+// Fields returns given sql fields with appropriate aliasing.
+func (j jHasManyTextPkrelatedsToTextPkrelatedsModel) Fields(ins ...string) []string {
+	dialect := runtime.GetDialect()
+	if len(ins) == 0 {
+		ins = append(ins, "*")
+	}
+	for i, in := range ins {
+		p := j.Table()
+		if j.as != "" {
+			p = j.as
+		}
+		if in == "*" {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), in)
+		} else {
+			ins[i] = fmt.Sprintf("%v.%v", dialect.QuoteIdent(p), dialect.QuoteIdent(in))
+		}
+	}
+	return ins
+}
+
+// JHasManyTextPkrelatedsToTextPkrelatedsModel provides helper to work with HasManyTextPkrelatedsToTextPkrelateds data provider
+var JHasManyTextPkrelatedsToTextPkrelatedsModel = jHasManyTextPkrelatedsToTextPkrelatedsModel{
+
+	HasManyTextPkID: builder.NewValueMeta(
+		`has_many_text_pk_id`, `INTEGER`,
+		`HasManyTextPkID`, `int64`,
+		true, false,
+	),
+
+	TextPkName: builder.NewValueMeta(
+		`text_pk_name`, `TEXT`,
+		`TextPkName`, `string`,
+		true, false,
+	),
+}
+
+// HasManyTextPkrelatedsToTextPkrelateds is automatically generated to handle a many to many relationship.
+type HasManyTextPkrelatedsToTextPkrelateds struct {
+	HasManyTextPkID int64
+
+	TextPkName string
+}
+
+type jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder struct {
+	*builder.DeleteBuilder
+}
+
+// //Build builds the sql string into given buffer using current dialect
+// func (c *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder) Build(b dbr.Buffer) error {
+// 	return c.DeleteBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+//Where returns a jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder instead of builder.DeleteBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder) Where(query interface{}, value ...interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder {
+	c.DeleteBuilder.Where(query, value...)
+	return c
+}
+
+type jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder struct {
+	as string
+	*builder.SelectBuilder
+}
+
+// //Build builds the sql string using current dialect into given bufer
+// func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Build(b dbr.Buffer) error {
+// 	return c.SelectBuilder.Build(runtime.GetDialect(), b)
+// }
+// //String returns the sql string for current dialect. It returns empty string if the build returns an error.
+// func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) String() string {
+// 	b := dbr.NewBuffer()
+// 	if err := c.Build(b); err != nil {
+// 		return ""
+// 	}
+// 	return b.String()
+// }
+
+//Read evaluates current select query and load the results into a HasManyTextPkrelatedsToTextPkrelateds
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Read() (*HasManyTextPkrelatedsToTextPkrelateds, error) {
+	var one HasManyTextPkrelatedsToTextPkrelateds
+	err := c.LoadStruct(&one)
+	return &one, err
+}
+
+//ReadAll evaluates current select query and load the results into a slice of HasManyTextPkrelatedsToTextPkrelateds
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) ReadAll() ([]*HasManyTextPkrelatedsToTextPkrelateds, error) {
+	var all []*HasManyTextPkrelatedsToTextPkrelateds
+	_, err := c.LoadStructs(&all)
+	return all, err
+}
+
+//Where returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Where(query interface{}, value ...interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Where(query, value...)
+	return c
+}
+
+//GroupBy returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) GroupBy(col ...string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.GroupBy(col...)
+	return c
+}
+
+//Having returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Having(query interface{}, value ...interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Having(query, value...)
+	return c
+}
+
+//Limit returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Limit(n uint64) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Limit(n)
+	return c
+}
+
+//Offset returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Offset(n uint64) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Offset(n)
+	return c
+}
+
+//OrderAsc returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderAsc(col string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.OrderAsc(col)
+	return c
+}
+
+//OrderDesc returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderDesc(col string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.OrderDesc(col)
+	return c
+}
+
+//OrderDir returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderDir(col string, isAsc bool) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.OrderDir(col, isAsc)
+	return c
+}
+
+//OrderBy returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) OrderBy(col string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.OrderBy(col)
+	return c
+}
+
+//Paginate returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Paginate(page, perPage uint64) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Paginate(page, perPage)
+	return c
+}
+
+//Join returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Join(table, on interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Join(table, on)
+	return c
+}
+
+//LeftJoin returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) LeftJoin(table, on interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.LeftJoin(table, on)
+	return c
+}
+
+//RightJoin returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) RightJoin(table, on interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.RightJoin(table, on)
+	return c
+}
+
+//FullJoin returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) FullJoin(table, on interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.FullJoin(table, on)
+	return c
+}
+
+//Distinct returns a jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder instead of builder.SelectBuilder.
+func (c *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder) Distinct() *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	c.SelectBuilder.Distinct()
+	return c
+}
+
+// JHasManyTextPkrelatedsToTextPkrelateds provides a basic querier
+func JHasManyTextPkrelatedsToTextPkrelateds(db dbr.SessionRunner) jHasManyTextPkrelatedsToTextPkrelatedsQuerier {
+	return jHasManyTextPkrelatedsToTextPkrelatedsQuerier{
+		db: db,
+	}
+}
+
+type jHasManyTextPkrelatedsToTextPkrelatedsQuerier struct {
+	db dbr.SessionRunner
+	as string
+}
+
+//As set alias prior building.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) As(as string) jHasManyTextPkrelatedsToTextPkrelatedsQuerier {
+	c.as = as
+	return c
+}
+
+//Model returns a model with appropriate aliasing.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Model() jHasManyTextPkrelatedsToTextPkrelatedsModel {
+	return JHasManyTextPkrelatedsToTextPkrelatedsModel.As(c.as)
+}
+
+//Select returns a HasManyTextPkrelatedsToTextPkrelateds Select Builder.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Select(what ...string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	m := c.Model()
+	dialect := runtime.GetDialect()
+	from := dialect.QuoteIdent(m.Table())
+	if m.Alias() != "" && m.Alias() != m.Table() {
+		from = fmt.Sprintf("%v as %v", from, dialect.QuoteIdent(m.Alias()))
+	}
+	if len(what) == 0 {
+		// alias := m.Table()
+		// if m.Alias()!="" && m.Alias()!=m.Table() {
+		// 	alias = m.Alias()
+		// }
+		// what = m.Fields(alias+".*")
+		what = m.Fields("*")
+	}
+	return &jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder{
+		as: c.as,
+		SelectBuilder: &builder.SelectBuilder{
+			SelectBuilder: c.db.Select(what...).From(from),
+		},
+	}
+}
+
+//Where returns a HasManyTextPkrelatedsToTextPkrelateds Select Builder.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Where(query interface{}, value ...interface{}) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	return c.Select().Where(query, value...)
+}
+
+//Count returns a HasManyTextPkrelatedsToTextPkrelateds Select Builder to count given expressions.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Count(what ...string) *jHasManyTextPkrelatedsToTextPkrelatedsSelectBuilder {
+	if len(what) == 0 {
+		what = append(what, "*")
+	}
+	return c.Select("COUNT(" + strings.Join(what, ",") + ")")
+}
+
+// Insert a new HasManyTextPkrelatedsToTextPkrelateds, if it has autoincrement primary key, the value will be set.
+// It stops on first error.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Insert(items ...*HasManyTextPkrelatedsToTextPkrelateds) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, data := range items {
+
+		if runtime.Runs(drivers.Mysql) {
+
+			if len(data.TextPkName) > 255 {
+				return nil, fmt.Errorf("TextPkName: PRIMARY KEY length exceeded max=255, got=%v", len(data.TextPkName))
+			}
+
+		}
+
+		query := c.db.InsertInto(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()).Columns(
+
+			`has_many_text_pk_id`,
+
+			`text_pk_name`,
+		).Record(data)
+		if runtime.Runs(drivers.Pgsql) {
+
+			res, err = query.Exec()
+
+		} else {
+			res, err = query.Exec()
+
+		}
+		if err != nil {
+			return res, err
+		}
+	}
+	return res, err
+}
+
+// InsertBulk inserts multiple items into the database.
+// It does not post update any auto increment field.
+// It builds an insert query of multiple rows and send it on the underlying connection.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) InsertBulk(items ...*HasManyTextPkrelatedsToTextPkrelateds) error {
+	panic("todo")
+}
+
+//Delete returns a delete builder
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Delete() *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder {
+	return &jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()),
+		},
+	}
+}
+
+// MustDelete requires the query to affeect rows.
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) MustDelete() *jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder {
+	ret := &jHasManyTextPkrelatedsToTextPkrelatedsDeleteBuilder{
+		&builder.DeleteBuilder{
+			DeleteBuilder: c.db.DeleteFrom(JHasManyTextPkrelatedsToTextPkrelatedsModel.Table()),
+		},
+	}
+	ret.MustDelete()
+	return ret
+}
+
+//DeleteByPk deletes one HasManyTextPkrelatedsToTextPkrelateds by its PKs
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) DeleteByPk(HasManyTextPkID int64, TextPkName string) error {
+	_, err := c.Delete().Where(
+
+		JHasManyTextPkrelatedsToTextPkrelatedsModel.HasManyTextPkID.Eq(HasManyTextPkID),
+
+		JHasManyTextPkrelatedsToTextPkrelatedsModel.TextPkName.Eq(TextPkName),
+	).Exec()
+	return err
+}
+
+// DeleteAll given HasManyTextPkrelatedsToTextPkrelateds
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) DeleteAll(items ...*HasManyTextPkrelatedsToTextPkrelateds) (sql.Result, error) {
+	q := c.Delete().Where(
+		JHasManyTextPkrelatedsToTextPkrelatedsModel.In(items...),
+	)
+	return q.Exec()
+}
+
+// MustDeleteAll given HasManyTextPkrelatedsToTextPkrelateds
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) MustDeleteAll(items ...*HasManyTextPkrelatedsToTextPkrelateds) (sql.Result, error) {
+	var res sql.Result
+	var err error
+	for _, d := range items {
+		res, err = c.DeleteAll(d)
+		if err != nil {
+			return res, err
+		}
+		if n, e := res.RowsAffected(); e != nil {
+			return res, e
+		} else if n == 0 {
+			q := c.Delete().Where(
+				JHasManyTextPkrelatedsToTextPkrelatedsModel.In(items...),
+			)
+			err = runtime.NewNoRowsAffected(q.String())
+			return res, err
+		}
+	}
+	return res, err
+}
+
+//Find one HasManyTextPkrelatedsToTextPkrelateds using its PKs
+func (c jHasManyTextPkrelatedsToTextPkrelatedsQuerier) Find(HasManyTextPkID int64, TextPkName string) (*HasManyTextPkrelatedsToTextPkrelateds, error) {
+	return c.Select().Where(
+
+		JHasManyTextPkrelatedsToTextPkrelatedsModel.HasManyTextPkID.Eq(HasManyTextPkID),
+
+		JHasManyTextPkrelatedsToTextPkrelatedsModel.TextPkName.Eq(TextPkName),
 	).Read()
 }

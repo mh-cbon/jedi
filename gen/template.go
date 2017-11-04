@@ -649,6 +649,7 @@ func (c j{{.current.Name}}Querier) Count(what ...string) *j{{.current.Name}}Sele
 			}
 			return res, err
 		}
+
 		// MustUpdate a {{.current.Name}}. It stops on first error. It errors if an update query does not affect row.
 		func (c j{{.current.Name}}Querier) MustUpdate(items ...*{{.current.Name}}) (sql.Result,error) {
 			var res sql.Result
