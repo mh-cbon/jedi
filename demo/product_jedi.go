@@ -79,15 +79,15 @@ master_id INTEGER NULL
 
 	if driver == drivers.Sqlite {
 
-		indexes = append(indexes, `CREATE UNIQUE INDEX unique_SKU ON product (sku) `)
+		indexes = append(indexes, `CREATE UNIQUE INDEX unique_product_SKU ON product (sku) `)
 
 	} else if driver == drivers.Mysql {
 
-		indexes = append(indexes, `CREATE UNIQUE INDEX unique_SKU ON product (sku(255)) `)
+		indexes = append(indexes, `CREATE UNIQUE INDEX unique_product_SKU ON product (sku(255)) `)
 
 	} else if driver == drivers.Pgsql {
 
-		indexes = append(indexes, `CREATE UNIQUE INDEX unique_SKU ON product (sku) `)
+		indexes = append(indexes, `CREATE UNIQUE INDEX unique_product_SKU ON product (sku) `)
 
 	}
 
@@ -1544,15 +1544,15 @@ name TEXT
 
 	if driver == drivers.Sqlite {
 
-		indexes = append(indexes, `CREATE INDEX index_Name ON category (name) `)
+		indexes = append(indexes, `CREATE INDEX index_category_Name ON category (name) `)
 
 	} else if driver == drivers.Mysql {
 
-		indexes = append(indexes, `CREATE INDEX index_Name ON category (name(255)) `)
+		indexes = append(indexes, `CREATE INDEX index_category_Name ON category (name(255)) `)
 
 	} else if driver == drivers.Pgsql {
 
-		indexes = append(indexes, `CREATE INDEX index_Name ON category (name) `)
+		indexes = append(indexes, `CREATE INDEX index_category_Name ON category (name) `)
 
 	}
 

@@ -303,9 +303,9 @@ func installIndexes(res []*model.Struct) []*model.Struct {
 		for _, index := range r.Indexes {
 			if len(index.Fields) == 1 && index.Name[:4] == "auto" {
 				if index.Unique {
-					index.Name = "unique_" + index.Fields[0]
+					index.Name = "unique_" + r.SQLName + "_" + index.Fields[0]
 				} else {
-					index.Name = "index_" + index.Fields[0]
+					index.Name = "index_" + r.SQLName + "_" + index.Fields[0]
 				}
 			}
 		}
